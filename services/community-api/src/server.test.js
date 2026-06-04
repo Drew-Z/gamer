@@ -168,3 +168,108 @@ test("HTTP server submits community-ready import draft", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP server returns generated score report", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-score-http-001",
+          baseIdentityStatus: "accepted"
+        },
+        review: {
+          blockers: [],
+          previewDecision: "keep",
+          exportStatus: "ready"
+        },
+        assets: {
+          previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+          exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+        }
+      },
+      ownershipClaimId: "claim-pet-score-http-001"
+    });
+
+    const reportResponse = await requestJson(
+      server,
+      "GET",
+      `/v1/score-reports/${draftResponse.body.scoreReportId}`
+    );
+
+    assert.equal(reportResponse.status, 200);
+    assert.equal(reportResponse.body.schema, "gamer.pet-score-report.v1");
+    assert.equal(reportResponse.body.petId, "pet-score-http-001");
+    assert.equal(reportResponse.body.rewardRecommendation.amount, 80);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP admin review uses score recommendation when reward amount is omitted", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-review-http-001",
+          baseIdentityStatus: "accepted"
+        },
+        review: {
+          blockers: [],
+          previewDecision: "keep",
+          exportStatus: "ready"
+        },
+        assets: {
+          previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+          exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+        }
+      },
+      ownershipClaimId: "claim-pet-review-http-001"
+    });
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      }
+    );
+
+    const reviewResponse = await requestJson(server, "POST", "/v1/admin/reviews", {
+      submissionId: submitResponse.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    });
+
+    assert.equal(reviewResponse.status, 200);
+    assert.equal(reviewResponse.body.rewardEntry.amount, 80);
+
+    const walletResponse = await requestJson(server, "GET", "/v1/wallet/me");
+    assert.equal(walletResponse.body.balance, 170);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

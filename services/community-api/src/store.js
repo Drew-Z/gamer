@@ -6,6 +6,7 @@ import {
   submissions,
   users
 } from "../../../packages/community-contracts/src/index.js";
+import { createScoreReportFromImportDraft } from "./scoring.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -16,7 +17,8 @@ const defaultSeed = {
   checkIns: [checkInState],
   submissions,
   reviewQueue,
-  importDrafts: []
+  importDrafts: [],
+  scoreReports: []
 };
 
 const nowIso = () => new Date().toISOString();
@@ -123,6 +125,11 @@ export function createCommunityStore(seed = defaultSeed) {
       };
     },
 
+    getScoreReport(scoreReportId) {
+      const report = state.scoreReports.find((item) => item.reportId === scoreReportId);
+      return clone(report ?? null);
+    },
+
     createImportDraft(input) {
       const draft = {
         id: nextId("import-draft-local", state.importDrafts),
@@ -135,6 +142,12 @@ export function createCommunityStore(seed = defaultSeed) {
         scoreReportId: input.scoreReportId ?? "",
         createdAt: nowIso()
       };
+
+      if (!draft.scoreReportId) {
+        const scoreReport = createScoreReportFromImportDraft(draft);
+        state.scoreReports.push(scoreReport);
+        draft.scoreReportId = scoreReport.reportId;
+      }
 
       state.importDrafts.push(draft);
       return clone(draft);
@@ -203,12 +216,22 @@ export function createCommunityStore(seed = defaultSeed) {
       submission.status = input.status;
 
       let rewardEntry = null;
-      if (input.status === "approved" && input.rewardAmount > 0) {
+      const scoreReport = state.scoreReports.find(
+        (item) => item.reportId === submission.scoreReportId
+      );
+      const recommendedAmount =
+        scoreReport?.rewardRecommendation?.grant === true
+          ? scoreReport.rewardRecommendation.amount
+          : 0;
+      const rewardAmount =
+        typeof input.rewardAmount === "number" ? input.rewardAmount : recommendedAmount;
+
+      if (input.status === "approved" && rewardAmount > 0) {
         rewardEntry = {
           schema: "gamer.currency-ledger-entry.v1",
           entryId: nextId("ledger-review", state.ledgerEntries),
           userId: submission.userId,
-          amount: input.rewardAmount,
+          amount: rewardAmount,
           sourceType: "submission-reward",
           sourceId: submission.id,
           status: "posted",

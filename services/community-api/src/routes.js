@@ -36,6 +36,22 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.listSubmissions());
   }
 
+  if (method === "GET" && url.pathname.startsWith("/v1/score-reports/")) {
+    const scoreReportId = decodeURIComponent(
+      url.pathname.slice("/v1/score-reports/".length)
+    );
+    const report = store.getScoreReport(scoreReportId);
+
+    if (!report) {
+      return json(404, {
+        error: "score_report_not_found",
+        scoreReportId
+      });
+    }
+
+    return json(200, report);
+  }
+
   if (method === "GET" && url.pathname === "/v1/import-drafts") {
     return json(200, store.listImportDrafts(currentUserId));
   }
@@ -84,7 +100,9 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       submissionId: body.submissionId,
       status: body.status,
       reviewer: body.reviewer ?? "admin-local",
-      rewardAmount: Number(body.rewardAmount ?? 0)
+      rewardAmount: Object.hasOwn(body, "rewardAmount")
+        ? Number(body.rewardAmount)
+        : undefined
     });
 
     if (review.error) {

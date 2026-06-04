@@ -115,3 +115,76 @@ test("community-ready import draft creates pending submission", () => {
   assert.equal(result.submission.status, "pending");
   assert.equal(result.submission.petId, "pet-ready-001");
 });
+
+test("community-ready import draft receives generated score report", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-scored-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-scored-001"
+  });
+
+  const report = store.getScoreReport(draft.scoreReportId);
+
+  assert.equal(report.schema, "gamer.pet-score-report.v1");
+  assert.equal(report.petId, "pet-scored-001");
+  assert.equal(report.rewardRecommendation.grant, true);
+});
+
+test("approving scored submission uses recommended reward when amount is omitted", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-rewarded-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-rewarded-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  const review = store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(review.rewardEntry.amount, 80);
+  assert.equal(store.getWallet("user-demo-001").balance, 170);
+});
