@@ -317,3 +317,55 @@ test("revoking approved submission posts reversal ledger entry", () => {
   assert.equal(revoke.rewardReversalEntry.sourceType, "submission-reward-reversal");
   assert.equal(store.getWallet("user-demo-001").balance, 90);
 });
+
+test("admin review queue aggregates submission evidence and reward status", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-queue-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-queue-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "revoked",
+    reviewer: "admin-demo"
+  });
+
+  const queue = store.listAdminReviewQueue();
+  const item = queue.items.find(
+    (entry) => entry.submission.id === submissionResult.submission.id
+  );
+
+  assert.equal(item.submission.status, "revoked");
+  assert.equal(item.scoreReport.petId, "pet-queue-001");
+  assert.equal(item.reviews.length, 2);
+  assert.equal(item.rewardLedgerEntries.length, 2);
+  assert.equal(item.outstandingReward, 0);
+});

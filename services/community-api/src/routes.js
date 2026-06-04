@@ -112,6 +112,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, review);
   }
 
+  if (method === "GET" && url.pathname === "/v1/admin/review-queue") {
+    return json(200, store.listAdminReviewQueue());
+  }
+
   if (method === "GET" && url.pathname === "/v1/me") {
     return json(200, store.getMe());
   }

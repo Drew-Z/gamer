@@ -339,3 +339,65 @@ test("HTTP admin review revokes posted reward with reversal ledger entry", async
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP admin review queue returns aggregated submission evidence", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-review-queue-http-001",
+          baseIdentityStatus: "accepted"
+        },
+        review: {
+          blockers: [],
+          previewDecision: "keep",
+          exportStatus: "ready"
+        },
+        assets: {
+          previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+          exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+        }
+      },
+      ownershipClaimId: "claim-pet-review-queue-http-001"
+    });
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      }
+    );
+    await requestJson(server, "POST", "/v1/admin/reviews", {
+      submissionId: submitResponse.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    });
+
+    const queueResponse = await requestJson(server, "GET", "/v1/admin/review-queue");
+    const item = queueResponse.body.items.find(
+      (entry) => entry.submission.id === submitResponse.body.submission.id
+    );
+
+    assert.equal(queueResponse.status, 200);
+    assert.equal(item.submission.petId, "pet-review-queue-http-001");
+    assert.equal(item.scoreReport.petId, "pet-review-queue-http-001");
+    assert.equal(item.reviews.length, 1);
+    assert.equal(item.rewardLedgerEntries.length, 1);
+    assert.equal(item.outstandingReward, 80);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

@@ -39,6 +39,14 @@ const sumPostedSubmissionReward = (entries, submissionId) =>
     )
     .reduce((sum, entry) => sum + entry.amount, 0);
 
+const submissionRewardLedgerEntries = (entries, submissionId) =>
+  entries.filter(
+    (entry) =>
+      entry.sourceId === submissionId &&
+      (entry.sourceType === "submission-reward" ||
+        entry.sourceType === "submission-reward-reversal")
+  );
+
 const draftStatusFromReadiness = (readiness) => {
   if (readiness?.status === "community-ready") {
     return "ready";
@@ -127,6 +135,34 @@ export function createCommunityStore(seed = defaultSeed) {
       return {
         submissions: clone(state.submissions),
         reviewQueue: clone(state.reviewQueue)
+      };
+    },
+
+    listAdminReviewQueue() {
+      return {
+        items: state.submissions.map((submission) => {
+          const scoreReport = state.scoreReports.find(
+            (report) => report.reportId === submission.scoreReportId
+          );
+          const reviews = state.reviewQueue.filter(
+            (review) => review.submissionId === submission.id
+          );
+          const rewardLedgerEntries = submissionRewardLedgerEntries(
+            state.ledgerEntries,
+            submission.id
+          );
+
+          return {
+            submission: clone(submission),
+            scoreReport: clone(scoreReport ?? null),
+            reviews: clone(reviews),
+            rewardLedgerEntries: clone(rewardLedgerEntries),
+            outstandingReward: sumPostedSubmissionReward(
+              state.ledgerEntries,
+              submission.id
+            )
+          };
+        })
       };
     },
 
