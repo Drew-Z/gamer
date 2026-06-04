@@ -3,9 +3,11 @@ package com.gamer.community.api
 import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 class HttpCommunityApiClientTest {
@@ -61,6 +63,18 @@ class HttpCommunityApiClientTest {
         }
 
         assertTrue(result is ApiCallResult.Failure)
+    }
+
+    @Test
+    fun decodeCatchingRethrowsCancellation() {
+        try {
+            HttpCommunityApiClient.decodeCatching("{}") {
+                throw CancellationException("cancelled")
+            }
+            fail("CancellationException should be rethrown")
+        } catch (error: CancellationException) {
+            assertEquals("cancelled", error.message)
+        }
     }
 
     @Test

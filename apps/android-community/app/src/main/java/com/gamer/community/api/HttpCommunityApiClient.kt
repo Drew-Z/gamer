@@ -82,6 +82,8 @@ class HttpCommunityApiClient(
         fun <T> decodeCatching(text: String, decode: (String) -> T): ApiCallResult<T> =
             try {
                 ApiCallResult.Success(decode(text))
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 ApiCallResult.Failure(error.message ?: error::class.java.simpleName)
             }
