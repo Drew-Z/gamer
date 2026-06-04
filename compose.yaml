@@ -1,4 +1,16 @@
 services:
+  admin-review:
+    build:
+      context: .
+      dockerfile: apps/admin-review/Dockerfile
+    environment:
+      PORT: "4200"
+      COMMUNITY_API_URL: "http://community-api:4000"
+    ports:
+      - "4200:4200"
+    depends_on:
+      - community-api
+
   community-api:
     build:
       context: .

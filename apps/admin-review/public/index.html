@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gamer Admin Review</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-mark">G</div>
+          <div>
+            <h1>Review Console</h1>
+            <p>Pet package evidence and reward control</p>
+          </div>
+        </div>
+
+        <section class="summary-panel" aria-label="Queue summary">
+          <div class="summary-row">
+            <span>Total</span>
+            <strong id="summary-total">0</strong>
+          </div>
+          <div class="summary-row">
+            <span>Pending</span>
+            <strong id="summary-pending">0</strong>
+          </div>
+          <div class="summary-row">
+            <span>Approved</span>
+            <strong id="summary-approved">0</strong>
+          </div>
+          <div class="summary-row">
+            <span>Outstanding</span>
+            <strong id="summary-outstanding">0 PC</strong>
+          </div>
+        </section>
+
+        <div class="filter-group" role="group" aria-label="Status filter">
+          <button class="filter-button is-active" data-filter="all">All</button>
+          <button class="filter-button" data-filter="pending">Pending</button>
+          <button class="filter-button" data-filter="held">Held</button>
+          <button class="filter-button" data-filter="approved">Approved</button>
+          <button class="filter-button" data-filter="revoked">Revoked</button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="toolbar">
+          <div>
+            <h2>Submission Queue</h2>
+            <p id="status-line">Connecting to community API...</p>
+          </div>
+          <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
+        </header>
+
+        <section id="queue-list" class="queue-list" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <template id="queue-item-template">
+      <article class="queue-item">
+        <div class="item-main">
+          <div class="pet-orb" aria-hidden="true"></div>
+          <div class="item-title">
+            <div class="item-heading">
+              <h3></h3>
+              <span class="status-pill"></span>
+            </div>
+            <p class="item-meta"></p>
+          </div>
+        </div>
+
+        <div class="score-strip">
+          <div>
+            <span>Score</span>
+            <strong class="score-value"></strong>
+          </div>
+          <div>
+            <span>Recommended</span>
+            <strong class="recommended-value"></strong>
+          </div>
+          <div>
+            <span>Outstanding</span>
+            <strong class="outstanding-value"></strong>
+          </div>
+          <div>
+            <span>Risk</span>
+            <strong class="risk-value"></strong>
+          </div>
+        </div>
+
+        <div class="evidence-grid">
+          <section>
+            <h4>Score Breakdown</h4>
+            <dl class="breakdown-list"></dl>
+          </section>
+          <section>
+            <h4>Review History</h4>
+            <ul class="history-list"></ul>
+          </section>
+          <section>
+            <h4>Reward Ledger</h4>
+            <ul class="ledger-list"></ul>
+          </section>
+        </div>
+
+        <div class="action-bar"></div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

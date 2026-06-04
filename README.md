@@ -28,6 +28,7 @@ npm.cmd test
 Run services:
 
 ```powershell
+npm.cmd run start:admin-review
 npm.cmd run start:community-api
 npm.cmd run start:pet-generator
 ```
@@ -44,6 +45,7 @@ The default ports are:
 
 - Community API: `http://localhost:4000`
 - Pet Generator Adapter: `http://localhost:4100`
+- Admin Review Prototype: `http://localhost:4200`
 
 ## Community API
 
@@ -78,6 +80,30 @@ Approve a submission and post a reward:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri http://localhost:4000/v1/admin/reviews -ContentType application/json -Body '{"submissionId":"submission-local-002","status":"approved","reviewer":"admin-demo","rewardAmount":55}'
+```
+
+Read the admin review queue:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:4000/v1/admin/review-queue
+```
+
+## Admin Review Prototype
+
+The static admin review prototype lives in `apps/admin-review`. It reads the
+community API review queue and can approve, hold, reject, or revoke submissions.
+
+Run it with the community API:
+
+```powershell
+npm.cmd run start:community-api
+npm.cmd run start:admin-review
+```
+
+Then open:
+
+```text
+http://localhost:4200
 ```
 
 ## Android Community Prototype
