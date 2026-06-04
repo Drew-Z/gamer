@@ -36,6 +36,39 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.listSubmissions());
   }
 
+  if (method === "GET" && url.pathname === "/v1/import-drafts") {
+    return json(200, store.listImportDrafts(currentUserId));
+  }
+
+  if (method === "POST" && url.pathname === "/v1/import-drafts") {
+    const draft = store.createImportDraft({
+      userId: currentUserId,
+      readiness: body.readiness,
+      importSummary: body.importSummary,
+      ownershipClaimId: body.ownershipClaimId,
+      scoreReportId: body.scoreReportId
+    });
+
+    return json(201, draft);
+  }
+
+  if (method === "POST" && url.pathname === "/v1/import-drafts/submit") {
+    const result = store.submitImportDraft({
+      draftId: body.draftId,
+      userId: currentUserId
+    });
+
+    if (result.error === "draft_not_found") {
+      return json(404, result);
+    }
+
+    if (result.error === "draft_not_ready") {
+      return json(409, result);
+    }
+
+    return json(201, result);
+  }
+
   if (method === "POST" && url.pathname === "/v1/submissions") {
     const submission = store.createSubmission({
       petId: body.petId,

@@ -15,7 +15,8 @@ const defaultSeed = {
   ledgerEntries,
   checkIns: [checkInState],
   submissions,
-  reviewQueue
+  reviewQueue,
+  importDrafts: []
 };
 
 const nowIso = () => new Date().toISOString();
@@ -24,6 +25,18 @@ const sumPostedLedger = (entries, userId) =>
   entries
     .filter((entry) => entry.userId === userId && entry.status === "posted")
     .reduce((sum, entry) => sum + entry.amount, 0);
+
+const draftStatusFromReadiness = (readiness) => {
+  if (readiness?.status === "community-ready") {
+    return "ready";
+  }
+
+  if (readiness?.status === "blocked") {
+    return "blocked";
+  }
+
+  return "in-progress";
+};
 
 export function createCommunityStore(seed = defaultSeed) {
   const state = clone(seed);
@@ -101,6 +114,65 @@ export function createCommunityStore(seed = defaultSeed) {
       return {
         submissions: clone(state.submissions),
         reviewQueue: clone(state.reviewQueue)
+      };
+    },
+
+    listImportDrafts(userId) {
+      return {
+        drafts: clone(state.importDrafts.filter((draft) => draft.userId === userId))
+      };
+    },
+
+    createImportDraft(input) {
+      const draft = {
+        id: nextId("import-draft-local", state.importDrafts),
+        userId: input.userId,
+        status: draftStatusFromReadiness(input.readiness),
+        readiness: clone(input.readiness ?? {}),
+        importSummary: clone(input.importSummary ?? {}),
+        petId: input.importSummary?.source?.petId ?? input.petId ?? "",
+        ownershipClaimId: input.ownershipClaimId ?? "",
+        scoreReportId: input.scoreReportId ?? "",
+        createdAt: nowIso()
+      };
+
+      state.importDrafts.push(draft);
+      return clone(draft);
+    },
+
+    submitImportDraft(input) {
+      const draft = state.importDrafts.find(
+        (item) => item.id === input.draftId && item.userId === input.userId
+      );
+
+      if (!draft) {
+        return {
+          error: "draft_not_found",
+          draftId: input.draftId
+        };
+      }
+
+      if (draft.status !== "ready") {
+        return {
+          error: "draft_not_ready",
+          draft: clone(draft)
+        };
+      }
+
+      const submission = this.createSubmission({
+        petId: draft.petId,
+        userId: draft.userId,
+        ownershipClaimId: draft.ownershipClaimId,
+        scoreReportId: draft.scoreReportId
+      });
+
+      draft.status = "submitted";
+      draft.submissionId = submission.id;
+      draft.submittedAt = nowIso();
+
+      return {
+        draft: clone(draft),
+        submission
       };
     },
 

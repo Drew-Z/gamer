@@ -97,3 +97,74 @@ test("HTTP server rejects invalid JSON body", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP server creates import draft from pet-generator summary", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "in-progress",
+        reason: "current stage is base-review"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-draft-001"
+        }
+      }
+    });
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.status, "in-progress");
+    assert.equal(response.body.petId, "pet-draft-001");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server submits community-ready import draft", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-ready-http-001"
+        }
+      },
+      ownershipClaimId: "claim-pet-ready-http-001",
+      scoreReportId: "score-pet-ready-http-001"
+    });
+
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      }
+    );
+
+    assert.equal(submitResponse.status, 201);
+    assert.equal(submitResponse.body.draft.status, "submitted");
+    assert.equal(submitResponse.body.submission.status, "pending");
+    assert.equal(submitResponse.body.submission.petId, "pet-ready-http-001");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

@@ -63,3 +63,55 @@ test("approving a submission posts reward ledger entry and marks review approved
   assert.equal(review.rewardEntry.amount, 55);
   assert.equal(store.getWallet("user-demo-001").balance, 145);
 });
+
+test("blocked import draft is stored but cannot be submitted", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "blocked",
+      reason: "state is missing"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-blocked-001"
+      }
+    }
+  });
+
+  const result = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  assert.equal(draft.status, "blocked");
+  assert.equal(result.error, "draft_not_ready");
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
+});
+
+test("community-ready import draft creates pending submission", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-ready-001"
+      }
+    },
+    ownershipClaimId: "claim-pet-ready-001",
+    scoreReportId: "score-pet-ready-001"
+  });
+
+  const result = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  assert.equal(result.draft.status, "submitted");
+  assert.equal(result.submission.status, "pending");
+  assert.equal(result.submission.petId, "pet-ready-001");
+});
