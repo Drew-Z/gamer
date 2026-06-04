@@ -56,6 +56,47 @@ object PetShellController {
             speechBubble = "Daily reward claimed: +10 petcoin."
         )
     }
+
+    fun applyCommunityLoad(
+        state: PetShellState,
+        posts: List<FeedPost>,
+        walletBalance: Int,
+        usedFallback: Boolean,
+        message: String
+    ): PetShellState {
+        val nextPosts = posts.ifEmpty { state.posts }
+        return state.copy(
+            petAction = if (usedFallback) state.petAction else PetAction.Idle,
+            speechBubble = message,
+            feedIndex = 0,
+            walletBalance = walletBalance,
+            posts = nextPosts
+        )
+    }
+
+    fun applyCheckInResult(
+        state: PetShellState,
+        walletBalance: Int?,
+        claimed: Boolean,
+        rewardAmount: Int,
+        usedFallback: Boolean,
+        message: String
+    ): PetShellState {
+        if (state.checkInClaimed) {
+            return state.copy(
+                petAction = PetAction.Idle,
+                speechBubble = "Daily reward already claimed."
+            )
+        }
+
+        val nextWalletBalance = walletBalance ?: state.walletBalance + rewardAmount
+        return state.copy(
+            walletBalance = nextWalletBalance,
+            checkInClaimed = claimed,
+            petAction = PetAction.Reward,
+            speechBubble = message
+        )
+    }
 }
 
 private fun Int.floorMod(divisor: Int): Int {

@@ -52,4 +52,86 @@ class PetShellControllerTest {
         assertEquals(PetAction.Reward, claimed.petAction)
         assertEquals("Daily reward claimed: +10 petcoin.", claimed.speechBubble)
     }
+
+    @Test
+    fun applyingRemoteCommunityLoadReplacesPostsAndWallet() {
+        val state = PetShellController.initialState()
+        val remotePost = FeedPost(
+            id = "post-live-001",
+            petId = "pet-live-001",
+            title = "Live feed",
+            body = "Remote body",
+            authorName = "Demo Keeper",
+            reactionCount = 18
+        )
+
+        val loaded = PetShellController.applyCommunityLoad(
+            state = state,
+            posts = listOf(remotePost),
+            walletBalance = 123,
+            usedFallback = false,
+            message = "Community ready."
+        )
+
+        assertEquals(0, loaded.feedIndex)
+        assertEquals(123, loaded.walletBalance)
+        assertEquals("Live feed", loaded.currentPost.title)
+        assertEquals(PetAction.Idle, loaded.petAction)
+        assertEquals("Community ready.", loaded.speechBubble)
+    }
+
+    @Test
+    fun applyingFallbackCommunityLoadKeepsExistingPostsWhenInputIsEmpty() {
+        val state = PetShellController.initialState()
+
+        val loaded = PetShellController.applyCommunityLoad(
+            state = state,
+            posts = emptyList(),
+            walletBalance = 90,
+            usedFallback = true,
+            message = "Local fallback active."
+        )
+
+        assertEquals("Stardust dragon launch pose", loaded.currentPost.title)
+        assertEquals(PetAction.AppLoading, loaded.petAction)
+        assertEquals("Local fallback active.", loaded.speechBubble)
+    }
+
+    @Test
+    fun applyingRemoteCheckInUsesRemoteWalletBalance() {
+        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+
+        val checkedIn = PetShellController.applyCheckInResult(
+            state = open,
+            walletBalance = 133,
+            claimed = true,
+            rewardAmount = 10,
+            usedFallback = false,
+            message = "Daily reward claimed: +10 petcoin."
+        )
+
+        assertEquals(133, checkedIn.walletBalance)
+        assertTrue(checkedIn.checkInClaimed)
+        assertEquals(PetAction.Reward, checkedIn.petAction)
+        assertEquals("Daily reward claimed: +10 petcoin.", checkedIn.speechBubble)
+    }
+
+    @Test
+    fun applyingFallbackCheckInUsesLocalIncrement() {
+        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+
+        val checkedIn = PetShellController.applyCheckInResult(
+            state = open,
+            walletBalance = null,
+            claimed = true,
+            rewardAmount = 10,
+            usedFallback = true,
+            message = "Local check-in fallback active."
+        )
+
+        assertEquals(100, checkedIn.walletBalance)
+        assertTrue(checkedIn.checkInClaimed)
+        assertEquals(PetAction.Reward, checkedIn.petAction)
+        assertEquals("Local check-in fallback active.", checkedIn.speechBubble)
+    }
 }
