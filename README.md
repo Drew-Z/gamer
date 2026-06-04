@@ -45,6 +45,41 @@ The default ports are:
 - Community API: `http://localhost:4000`
 - Pet Generator Adapter: `http://localhost:4100`
 
+## Community API
+
+The Phase 2 API uses local in-memory state. It is useful for Android and admin
+prototype integration before a database exists.
+
+Read feed:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:4000/v1/feed
+```
+
+Read wallet:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:4000/v1/wallet/me
+```
+
+Claim daily check-in:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:4000/v1/check-in -ContentType application/json -Body '{"date":"2026-06-05"}'
+```
+
+Create a pet submission:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:4000/v1/submissions -ContentType application/json -Body '{"petId":"pet-new-001","ownershipClaimId":"claim-pet-new-001","scoreReportId":"score-pet-new-001"}'
+```
+
+Approve a submission and post a reward:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:4000/v1/admin/reviews -ContentType application/json -Body '{"submissionId":"submission-local-002","status":"approved","reviewer":"admin-demo","rewardAmount":55}'
+```
+
 ## Android Community Prototype
 
 The Android prototype lives in `apps/android-community`. It uses the local verified

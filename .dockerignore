@@ -1,5 +1,11 @@
 .git
 .superpowers
+.gradle
+**/.gradle
+build
+**/build
+local.properties
+**/local.properties
 node_modules
 **/node_modules
 npm-debug.log
