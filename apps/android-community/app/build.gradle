@@ -1,0 +1,41 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = 'com.gamer.community'
+    compileSdk = libs.versions.android.compile.sdk.get().toInteger()
+
+    defaultConfig {
+        applicationId = 'com.gamer.community'
+        minSdk = libs.versions.android.min.sdk.get().toInteger()
+        targetSdk = libs.versions.android.target.sdk.get().toInteger()
+        versionCode = 1
+        versionName = '0.1.0'
+
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation platform(libs.compose.bom)
+    implementation libs.activity.compose
+    implementation libs.compose.material3
+    implementation libs.compose.ui
+    implementation libs.compose.ui.tooling.preview
+    implementation libs.core.ktx
+
+    debugImplementation libs.compose.ui.tooling
+
+    testImplementation libs.junit
+}
