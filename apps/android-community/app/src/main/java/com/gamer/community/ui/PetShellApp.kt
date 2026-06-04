@@ -96,11 +96,12 @@ fun PetShellApp(repository: CommunityRepository) {
 
 @Composable
 fun PetShellApp() {
-    PetShellApp(
-        repository = CommunityRepository(
+    val repository = remember {
+        CommunityRepository(
             client = HttpCommunityApiClient(com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL)
         )
-    )
+    }
+    PetShellApp(repository = repository)
 }
 
 @Composable
