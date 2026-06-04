@@ -21,9 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,15 +35,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.gamer.community.api.CommunityRepository
+import com.gamer.community.api.HttpCommunityApiClient
 import com.gamer.community.petshell.FeedDirection
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
 import com.gamer.community.petshell.ShellPhase
+import kotlinx.coroutines.launch
 
 @Composable
-fun PetShellApp() {
+fun PetShellApp(repository: CommunityRepository) {
     var state by remember { mutableStateOf(PetShellController.initialState()) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(repository) {
+        val result = repository.loadInitialCommunity()
+        state = PetShellController.applyCommunityLoad(
+            state = state,
+            posts = result.posts,
+            walletBalance = result.walletBalance,
+            usedFallback = result.usedFallback,
+            message = result.message
+        )
+    }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF7F8FA)) {
@@ -59,12 +76,31 @@ fun PetShellApp() {
                         state = PetShellController.navigateFeed(state, direction)
                     },
                     onCheckIn = {
-                        state = PetShellController.claimDailyReward(state)
+                        scope.launch {
+                            val result = repository.claimDailyCheckIn()
+                            state = PetShellController.applyCheckInResult(
+                                state = state,
+                                walletBalance = result.walletBalance,
+                                claimed = result.claimed,
+                                rewardAmount = result.rewardAmount,
+                                usedFallback = result.usedFallback,
+                                message = result.message
+                            )
+                        }
                     }
                 )
             }
         }
     }
+}
+
+@Composable
+fun PetShellApp() {
+    PetShellApp(
+        repository = CommunityRepository(
+            client = HttpCommunityApiClient(com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL)
+        )
+    )
 }
 
 @Composable
