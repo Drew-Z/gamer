@@ -188,3 +188,132 @@ test("approving scored submission uses recommended reward when amount is omitted
   assert.equal(review.rewardEntry.amount, 80);
   assert.equal(store.getWallet("user-demo-001").balance, 170);
 });
+
+test("holding scored submission does not post reward", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-held-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-held-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  const review = store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "held",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(review.status, "held");
+  assert.equal(review.rewardEntry, null);
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+});
+
+test("rejecting scored submission does not post reward", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-rejected-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-rejected-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  const review = store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "rejected",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(review.status, "rejected");
+  assert.equal(review.rewardEntry, null);
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+});
+
+test("revoking approved submission posts reversal ledger entry", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-revoked-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-revoked-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const revoke = store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "revoked",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(revoke.status, "revoked");
+  assert.equal(revoke.rewardReversalEntry.amount, -80);
+  assert.equal(revoke.rewardReversalEntry.sourceType, "submission-reward-reversal");
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+});

@@ -273,3 +273,69 @@ test("HTTP admin review uses score recommendation when reward amount is omitted"
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP admin review revokes posted reward with reversal ledger entry", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(server, "POST", "/v1/import-drafts", {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-revoke-http-001",
+          baseIdentityStatus: "accepted"
+        },
+        review: {
+          blockers: [],
+          previewDecision: "keep",
+          exportStatus: "ready"
+        },
+        assets: {
+          previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html",
+          exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+        }
+      },
+      ownershipClaimId: "claim-pet-revoke-http-001"
+    });
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      }
+    );
+    await requestJson(server, "POST", "/v1/admin/reviews", {
+      submissionId: submitResponse.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    });
+
+    const revokeResponse = await requestJson(server, "POST", "/v1/admin/reviews", {
+      submissionId: submitResponse.body.submission.id,
+      status: "revoked",
+      reviewer: "admin-demo"
+    });
+
+    assert.equal(revokeResponse.status, 200);
+    assert.equal(revokeResponse.body.rewardReversalEntry.amount, -80);
+    assert.equal(
+      revokeResponse.body.rewardReversalEntry.sourceType,
+      "submission-reward-reversal"
+    );
+
+    const walletResponse = await requestJson(server, "GET", "/v1/wallet/me");
+    assert.equal(walletResponse.body.balance, 90);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

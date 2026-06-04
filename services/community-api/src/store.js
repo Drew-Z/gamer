@@ -28,6 +28,17 @@ const sumPostedLedger = (entries, userId) =>
     .filter((entry) => entry.userId === userId && entry.status === "posted")
     .reduce((sum, entry) => sum + entry.amount, 0);
 
+const sumPostedSubmissionReward = (entries, submissionId) =>
+  entries
+    .filter(
+      (entry) =>
+        entry.sourceId === submissionId &&
+        entry.status === "posted" &&
+        (entry.sourceType === "submission-reward" ||
+          entry.sourceType === "submission-reward-reversal")
+    )
+    .reduce((sum, entry) => sum + entry.amount, 0);
+
 const draftStatusFromReadiness = (readiness) => {
   if (readiness?.status === "community-ready") {
     return "ready";
@@ -216,6 +227,7 @@ export function createCommunityStore(seed = defaultSeed) {
       submission.status = input.status;
 
       let rewardEntry = null;
+      let rewardReversalEntry = null;
       const scoreReport = state.scoreReports.find(
         (item) => item.reportId === submission.scoreReportId
       );
@@ -240,18 +252,41 @@ export function createCommunityStore(seed = defaultSeed) {
         state.ledgerEntries.push(rewardEntry);
       }
 
+      if (input.status === "revoked") {
+        const outstandingReward = sumPostedSubmissionReward(
+          state.ledgerEntries,
+          submission.id
+        );
+
+        if (outstandingReward > 0) {
+          rewardReversalEntry = {
+            schema: "gamer.currency-ledger-entry.v1",
+            entryId: nextId("ledger-reversal", state.ledgerEntries),
+            userId: submission.userId,
+            amount: -outstandingReward,
+            sourceType: "submission-reward-reversal",
+            sourceId: submission.id,
+            status: "posted",
+            createdAt: nowIso()
+          };
+          state.ledgerEntries.push(rewardReversalEntry);
+        }
+      }
+
       const review = {
         submissionId: submission.id,
         status: input.status,
         reviewer: input.reviewer,
         rewardEntryId: rewardEntry?.entryId ?? "",
+        rewardReversalEntryId: rewardReversalEntry?.entryId ?? "",
         reviewedAt: nowIso()
       };
       state.reviewQueue.push(review);
 
       return {
         ...clone(review),
-        rewardEntry: clone(rewardEntry)
+        rewardEntry: clone(rewardEntry),
+        rewardReversalEntry: clone(rewardReversalEntry)
       };
     }
   };
