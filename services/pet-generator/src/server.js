@@ -1,5 +1,14 @@
 import http from "node:http";
-import { summarizeFantasyPetRuleState } from "./adapter.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  createFantasyPetRuleImportSummary,
+  summarizeFantasyPetRuleState
+} from "./adapter.js";
+import {
+  resolveFantasyPetRuleState,
+  StateSourceError
+} from "./state-source.js";
 
 const port = Number.parseInt(process.env.PORT ?? "4100", 10);
 
@@ -13,39 +22,78 @@ const readBody = (request) =>
     request.on("error", reject);
   });
 
-const server = http.createServer(async (request, response) => {
-  const url = new URL(request.url ?? "/", "http://localhost");
+const writeJson = (response, status, body) => {
+  response.writeHead(status, {
+    "Content-Type": "application/json"
+  });
+  response.end(JSON.stringify(body));
+};
 
-  if (request.method === "GET" && url.pathname === "/health") {
-    response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ ok: true, service: "pet-generator" }));
-    return;
-  }
-
-  if (request.method === "POST" && url.pathname === "/v1/fantasy-pet-rule/summarize") {
+export function createPetGeneratorHttpHandler(options = {}) {
+  return async (request, response) => {
     try {
-      const body = await readBody(request);
-      const payload = body ? JSON.parse(body) : {};
-      const summary = summarizeFantasyPetRuleState(payload.state);
+      const url = new URL(request.url ?? "/", "http://localhost");
 
-      response.writeHead(200, { "Content-Type": "application/json" });
-      response.end(JSON.stringify(summary));
+      if (request.method === "GET" && url.pathname === "/health") {
+        writeJson(response, 200, { ok: true, service: "pet-generator" });
+        return;
+      }
+
+      const rawBody = await readBody(request);
+      let payload = {};
+
+      if (rawBody.trim() !== "") {
+        try {
+          payload = JSON.parse(rawBody);
+        } catch {
+          writeJson(response, 400, {
+            error: "invalid_json"
+          });
+          return;
+        }
+      }
+
+      if (request.method === "POST" && url.pathname === "/v1/fantasy-pet-rule/summarize") {
+        const state = await resolveFantasyPetRuleState(payload, options);
+        const summary = summarizeFantasyPetRuleState(state);
+
+        writeJson(response, 200, summary);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/v1/fantasy-pet-rule/import-summary") {
+        const state = await resolveFantasyPetRuleState(payload, options);
+        const summary = createFantasyPetRuleImportSummary(state);
+
+        writeJson(response, 200, summary);
+        return;
+      }
+
+      writeJson(response, 404, { error: "not_found", path: url.pathname });
     } catch (error) {
-      response.writeHead(400, { "Content-Type": "application/json" });
-      response.end(
-        JSON.stringify({
-          error: "invalid_request",
-          message: error instanceof Error ? error.message : "Unable to parse request"
-        })
-      );
+      if (error instanceof StateSourceError) {
+        writeJson(response, error.status, {
+          error: error.code,
+          message: error.message
+        });
+        return;
+      }
+
+      writeJson(response, 500, {
+        error: "internal_error",
+        message: error instanceof Error ? error.message : "Unknown server error"
+      });
     }
-    return;
-  }
+  };
+}
 
-  response.writeHead(404, { "Content-Type": "application/json" });
-  response.end(JSON.stringify({ error: "not_found", path: url.pathname }));
-});
+const isDirectRun =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`pet-generator listening on ${port}`);
-});
+if (isDirectRun) {
+  const server = http.createServer(createPetGeneratorHttpHandler());
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`pet-generator listening on ${port}`);
+  });
+}

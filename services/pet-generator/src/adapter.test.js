@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { summarizeFantasyPetRuleState } from "./adapter.js";
+import {
+  createFantasyPetRuleImportSummary,
+  summarizeFantasyPetRuleState
+} from "./adapter.js";
 
 test("missing state is blocked", () => {
   const summary = summarizeFantasyPetRuleState(null);
@@ -49,4 +52,40 @@ test("active state without blockers is in-progress", () => {
 
   assert.equal(summary.status, "in-progress");
   assert.equal(summary.reason, "current stage is action-design");
+});
+
+test("import summary captures stable fantasy-pet-rule fields", () => {
+  const result = createFantasyPetRuleImportSummary({
+    schema: "fantasy-pet.codex-state.v1",
+    petId: "demo-pet",
+    currentStage: "preview-review",
+    baseIdentity: { status: "accepted" },
+    preview: {
+      userDecision: "keep",
+      urlOrPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html"
+    },
+    export: {
+      decision: "asked",
+      status: "ready",
+      artifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+    },
+    blockers: []
+  });
+
+  assert.equal(result.readiness.status, "community-ready");
+  assert.equal(result.importSummary.source.schema, "fantasy-pet.codex-state.v1");
+  assert.equal(result.importSummary.source.petId, "demo-pet");
+  assert.equal(result.importSummary.source.currentStage, "preview-review");
+  assert.equal(result.importSummary.source.baseIdentityStatus, "accepted");
+  assert.equal(result.importSummary.review.previewDecision, "keep");
+  assert.equal(result.importSummary.review.exportDecision, "asked");
+  assert.equal(result.importSummary.review.exportStatus, "ready");
+  assert.equal(
+    result.importSummary.assets.previewPath,
+    "D:/workspace4Codex/fantasy-pet-rule/runs/demo/preview.html"
+  );
+  assert.equal(
+    result.importSummary.assets.exportArtifactPath,
+    "D:/workspace4Codex/fantasy-pet-rule/runs/demo/export.zip"
+  );
 });

@@ -29,3 +29,33 @@ export function summarizeFantasyPetRuleState(state) {
     evidence: []
   };
 }
+
+export function createFantasyPetRuleImportSummary(state) {
+  const readiness = summarizeFantasyPetRuleState(state);
+
+  return {
+    readiness,
+    importSummary: {
+      source: {
+        schema: state?.schema ?? "",
+        petId: state?.petId ?? "",
+        currentStage: state?.currentStage ?? "",
+        baseIdentityStatus: state?.baseIdentity?.status ?? ""
+      },
+      review: {
+        blockers: Array.isArray(state?.blockers) ? state.blockers : [],
+        previewDecision: state?.preview?.userDecision ?? "",
+        exportDecision: state?.export?.decision ?? "",
+        exportStatus: state?.export?.status ?? ""
+      },
+      assets: {
+        previewPath: state?.preview?.urlOrPath ?? "",
+        exportArtifactPath: state?.export?.artifactPath ?? ""
+      },
+      notes: [
+        "read-only summary; no fantasy-pet-rule files were mutated",
+        "not a gamer.pet-package.v1 manifest"
+      ]
+    }
+  };
+}
