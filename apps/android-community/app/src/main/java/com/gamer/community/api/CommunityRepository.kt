@@ -11,7 +11,7 @@ data class InitialCommunityResult(
 )
 
 data class CheckInResult(
-    val walletBalance: Int,
+    val walletBalance: Int?,
     val rewardAmount: Int,
     val claimed: Boolean,
     val message: String,
@@ -24,19 +24,28 @@ class CommunityRepository(
     suspend fun loadInitialCommunity(): InitialCommunityResult {
         val feedResult = client.getFeed()
         val walletResult = client.getWallet()
+        val remotePosts = when (feedResult) {
+            is ApiCallResult.Success -> feedResult.value.toFeedPosts()
+            is ApiCallResult.Failure -> emptyList()
+        }
+        val walletBalance = when (walletResult) {
+            is ApiCallResult.Success -> walletResult.value.balance
+            is ApiCallResult.Failure -> FALLBACK_WALLET_BALANCE
+        }
+        val hasRemotePosts = remotePosts.isNotEmpty()
+        val hasRemoteWallet = walletResult is ApiCallResult.Success
 
-        return when {
-            feedResult is ApiCallResult.Success && walletResult is ApiCallResult.Success ->
+        return if (hasRemotePosts && hasRemoteWallet) {
                 InitialCommunityResult(
-                    posts = feedResult.value.toFeedPosts(),
-                    walletBalance = walletResult.value.balance,
+                    posts = remotePosts,
+                    walletBalance = walletBalance,
                     message = "Community ready.",
                     usedFallback = false
                 )
-            else ->
+        } else {
                 InitialCommunityResult(
-                    posts = fixtureFeedPosts,
-                    walletBalance = FALLBACK_WALLET_BALANCE,
+                    posts = remotePosts.ifEmpty { fixtureFeedPosts },
+                    walletBalance = walletBalance,
                     message = "Local fallback active.",
                     usedFallback = true
                 )
@@ -57,7 +66,7 @@ class CommunityRepository(
             }
             is ApiCallResult.Failure ->
                 CheckInResult(
-                    walletBalance = FALLBACK_WALLET_BALANCE,
+                    walletBalance = null,
                     rewardAmount = FALLBACK_CHECK_IN_REWARD,
                     claimed = true,
                     message = "Local check-in fallback active.",
