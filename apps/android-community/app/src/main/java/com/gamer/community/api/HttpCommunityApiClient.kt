@@ -5,6 +5,7 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
@@ -57,6 +58,8 @@ class HttpCommunityApiClient(
 
             val text = connection.inputStream.readUtf8Text()
             decodeCatching(text, decode)
+        } catch (error: CancellationException) {
+            throw error
         } catch (error: Exception) {
             ApiCallResult.Failure(error.message ?: error::class.java.simpleName)
         } finally {

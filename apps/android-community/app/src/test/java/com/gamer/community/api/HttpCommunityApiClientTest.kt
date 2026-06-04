@@ -1,5 +1,9 @@
 package com.gamer.community.api
 
+import com.sun.net.httpserver.HttpServer
+import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,7 +21,8 @@ class HttpCommunityApiClientTest {
                   "title": "Live feed",
                   "body": "Remote body",
                   "reactionCount": 18,
-                  "createdAt": "2026-06-05T00:00:00.000Z"
+                  "createdAt": "2026-06-05T00:00:00.000Z",
+                  "ignored": true
                 }
               ],
               "nextCursor": "page-2"
@@ -57,4 +62,76 @@ class HttpCommunityApiClientTest {
 
         assertTrue(result is ApiCallResult.Failure)
     }
+
+    @Test
+    fun getFeedReturnsFailureForNonSuccessStatus() = runTest {
+        TestServer(status = 500, responseBody = "server error").use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl).getFeed()
+
+            assertEquals(ApiCallResult.Failure("http_500"), result)
+        }
+    }
+
+    @Test
+    fun claimDailyCheckInPostsJsonBody() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "checkIn": {
+                "userId": "user-demo-001",
+                "date": "2026-06-05",
+                "claimed": true,
+                "rewardAmount": 10,
+                "ledgerEntryId": "ledger-checkin-2026-06-05"
+              },
+              "wallet": {
+                "userId": "user-demo-001",
+                "balance": 133,
+                "currencyCode": "petcoin",
+                "ledgerEntries": []
+              },
+              "ledgerEntry": null
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl).claimDailyCheckIn()
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("POST", recordedRequest.get()?.method)
+            assertEquals("/v1/check-in", recordedRequest.get()?.path)
+            assertEquals("{}", recordedRequest.get()?.body)
+        }
+    }
 }
+
+private class TestServer(
+    private val status: Int = 200,
+    private val responseBody: String = "{}",
+    private val handler: ((RecordedRequest) -> Unit)? = null
+) : AutoCloseable {
+    private val server = HttpServer.create(InetSocketAddress(0), 0)
+
+    val baseUrl: String
+        get() = "http://127.0.0.1:${server.address.port}"
+
+    init {
+        server.createContext("/") { exchange ->
+            val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            handler?.invoke(RecordedRequest(exchange.requestMethod, exchange.requestURI.path, body))
+            val bytes = responseBody.toByteArray(Charsets.UTF_8)
+            exchange.sendResponseHeaders(status, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
+        }
+        server.start()
+    }
+
+    override fun close() {
+        server.stop(0)
+    }
+}
+
+private data class RecordedRequest(val method: String, val path: String, val body: String)
