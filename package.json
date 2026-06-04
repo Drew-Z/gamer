@@ -1,0 +1,17 @@
+{
+  "name": "gamer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"packages/**/*.test.js\" \"services/**/*.test.js\"",
+    "start:community-api": "node services/community-api/src/server.js",
+    "start:pet-generator": "node services/pet-generator/src/server.js"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}

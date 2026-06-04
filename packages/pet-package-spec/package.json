@@ -1,0 +1,7 @@
+{
+  "name": "@gamer/pet-package-spec",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js"
+}
