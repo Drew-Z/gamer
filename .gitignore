@@ -1,0 +1,10 @@
+.superpowers/
+.gradle/
+.kotlin/
+build/
+dist/
+node_modules/
+.venv/
+__pycache__/
+*.log
+*.tmp
