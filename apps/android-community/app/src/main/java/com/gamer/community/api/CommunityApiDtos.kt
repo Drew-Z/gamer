@@ -16,7 +16,17 @@ data class FeedPostDto(
     val title: String,
     val body: String,
     val reactionCount: Int,
-    val createdAt: String
+    val createdAt: String,
+    val metadata: FeedPostMetadataDto? = null
+)
+
+@Serializable
+data class FeedPostMetadataDto(
+    val sourceType: String? = null,
+    val importDraftId: String? = null,
+    val submissionId: String? = null,
+    val scoreReportId: String? = null,
+    val rewardAmount: Int? = null
 )
 
 @Serializable

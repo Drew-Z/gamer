@@ -52,4 +52,33 @@ class CommunityApiMappersTest {
 
         assertEquals("Keeper user-new-999", posts[0].authorName)
     }
+
+    @Test
+    fun mapsApprovedImportMetadataToDisplayLabels() {
+        val response = FeedResponseDto(
+            items = listOf(
+                FeedPostDto(
+                    id = "post-import-001",
+                    authorId = "user-demo-001",
+                    petId = "pet-import-001",
+                    title = "Approved pet import: pet-import-001",
+                    body = "preview accepted by user",
+                    reactionCount = 0,
+                    createdAt = "2026-06-05T00:02:00.000Z",
+                    metadata = FeedPostMetadataDto(
+                        sourceType = "approved-import",
+                        importDraftId = "import-draft-local-001",
+                        submissionId = "submission-local-002",
+                        scoreReportId = "score-import-draft-local-001",
+                        rewardAmount = 80
+                    )
+                )
+            )
+        )
+
+        val posts = response.toFeedPosts()
+
+        assertEquals("Approved import", posts[0].sourceLabel)
+        assertEquals("+80 petcoin", posts[0].rewardLabel)
+    }
 }

@@ -28,7 +28,9 @@ data class FeedPost(
     val title: String,
     val body: String,
     val authorName: String,
-    val reactionCount: Int
+    val reactionCount: Int,
+    val sourceLabel: String? = null,
+    val rewardLabel: String? = null
 )
 
 data class PetShellState(

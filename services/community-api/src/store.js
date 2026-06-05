@@ -59,14 +59,21 @@ const draftStatusFromReadiness = (readiness) => {
   return "in-progress";
 };
 
-const createFeedPostFromApprovedImport = (submission, draft) => ({
+const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
   id: `post-${submission.id}`,
   authorId: submission.userId,
   petId: submission.petId,
   title: `Approved pet import: ${submission.petId}`,
   body: draft?.readiness?.reason ?? "Approved community pet import.",
   reactionCount: 0,
-  createdAt: nowIso()
+  createdAt: nowIso(),
+  metadata: {
+    sourceType: "approved-import",
+    importDraftId: submission.importDraftId,
+    submissionId: submission.id,
+    scoreReportId: submission.scoreReportId,
+    rewardAmount: rewardEntry?.amount ?? scoreReport?.rewardRecommendation?.amount ?? 0
+  }
 });
 
 export function createCommunityStore(seed = defaultSeed) {
@@ -308,7 +315,9 @@ export function createCommunityStore(seed = defaultSeed) {
           const draft = state.importDrafts.find(
             (item) => item.id === submission.importDraftId
           );
-          state.feedPosts.unshift(createFeedPostFromApprovedImport(submission, draft));
+          state.feedPosts.unshift(
+            createFeedPostFromApprovedImport(submission, draft, scoreReport, rewardEntry)
+          );
         }
       }
 

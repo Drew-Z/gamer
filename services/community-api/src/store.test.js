@@ -416,6 +416,54 @@ test("approving imported submission publishes one community feed post", () => {
   assert.equal(published.authorId, "user-demo-001");
 });
 
+test("approved import feed post includes import metadata", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-feed-metadata-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-metadata/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-metadata/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-feed-metadata-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const feed = store.getFeed();
+  const published = feed.items.find((post) => post.petId === "pet-feed-metadata-001");
+
+  assert.deepEqual(published.metadata, {
+    sourceType: "approved-import",
+    importDraftId: draft.id,
+    submissionId: submissionResult.submission.id,
+    scoreReportId: draft.scoreReportId,
+    rewardAmount: 80
+  });
+});
+
 test("approving imported submission twice does not duplicate feed post", () => {
   const store = createCommunityStore();
   const draft = store.createImportDraft({

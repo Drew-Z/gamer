@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.HttpCommunityApiClient
 import com.gamer.community.petshell.FeedDirection
+import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
@@ -195,6 +196,17 @@ private fun CommunityScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
+                val metadataLabels = feedPostMetadataLabels(state.currentPost)
+                if (metadataLabels.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (label in metadataLabels) {
+                            MetadataPill(label = label)
+                        }
+                    }
+                }
                 Text(
                     text = state.currentPost.body,
                     style = MaterialTheme.typography.bodyMedium,
@@ -307,3 +319,21 @@ private fun WalletPill(balance: Int) {
         )
     }
 }
+
+@Composable
+private fun MetadataPill(label: String) {
+    Surface(
+        color = Color(0xFFE8F3EE),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFF157A52)
+        )
+    }
+}
+
+internal fun feedPostMetadataLabels(post: FeedPost): List<String> =
+    listOfNotNull(post.sourceLabel, post.rewardLabel)
