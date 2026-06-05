@@ -212,6 +212,18 @@ private fun CommunityScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF344054)
                 )
+                val auditLabels = feedPostAuditLabels(state.currentPost)
+                if (auditLabels.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        for (label in auditLabels) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF667085)
+                            )
+                        }
+                    }
+                }
                 Text(
                     text = "${state.currentPost.authorName} · ${state.currentPost.petId} · ${state.currentPost.reactionCount} reactions",
                     style = MaterialTheme.typography.bodySmall,
@@ -337,3 +349,6 @@ private fun MetadataPill(label: String) {
 
 internal fun feedPostMetadataLabels(post: FeedPost): List<String> =
     listOfNotNull(post.sourceLabel, post.rewardLabel)
+
+internal fun feedPostAuditLabels(post: FeedPost): List<String> =
+    listOfNotNull(post.importDraftLabel, post.submissionLabel, post.scoreReportLabel)

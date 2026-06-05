@@ -80,5 +80,8 @@ class CommunityApiMappersTest {
 
         assertEquals("Approved import", posts[0].sourceLabel)
         assertEquals("+80 petcoin", posts[0].rewardLabel)
+        assertEquals("Draft import-draft-local-001", posts[0].importDraftLabel)
+        assertEquals("Submission submission-local-002", posts[0].submissionLabel)
+        assertEquals("Score score-import-draft-local-001", posts[0].scoreReportLabel)
     }
 }

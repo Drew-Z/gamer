@@ -30,7 +30,10 @@ data class FeedPost(
     val authorName: String,
     val reactionCount: Int,
     val sourceLabel: String? = null,
-    val rewardLabel: String? = null
+    val rewardLabel: String? = null,
+    val importDraftLabel: String? = null,
+    val submissionLabel: String? = null,
+    val scoreReportLabel: String? = null
 )
 
 data class PetShellState(
