@@ -678,3 +678,29 @@ test("invalid review status is rejected without mutating submission", () => {
   assert.equal(queueItem.reviews.length, 0);
   assert.equal(store.getWallet("user-demo-001").balance, 90);
 });
+
+test("invalid explicit reward amount is rejected without mutating submission", () => {
+  const store = createCommunityStore();
+  const submission = store.createSubmission({
+    petId: "pet-invalid-reward-001",
+    userId: "user-demo-001",
+    ownershipClaimId: "claim-invalid-reward-001",
+    scoreReportId: "score-invalid-reward-001"
+  });
+
+  const result = store.reviewSubmission({
+    submissionId: submission.id,
+    status: "approved",
+    reviewer: "admin-demo",
+    rewardAmount: -5
+  });
+  const queueItem = store
+    .listAdminReviewQueue()
+    .items.find((item) => item.submission.id === submission.id);
+
+  assert.equal(result.error, "invalid_reward_amount");
+  assert.equal(result.rewardAmount, -5);
+  assert.equal(queueItem.submission.status, "pending");
+  assert.equal(queueItem.reviews.length, 0);
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+});

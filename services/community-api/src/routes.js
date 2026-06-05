@@ -141,6 +141,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
         return json(400, review);
       }
 
+      if (review.error === "invalid_reward_amount") {
+        return json(400, review);
+      }
+
       if (review.error === "submission_terminal") {
         return json(409, review);
       }

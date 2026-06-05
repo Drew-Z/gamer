@@ -61,6 +61,8 @@ const draftStatusFromReadiness = (readiness) => {
 
 const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
 const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
+const isValidExplicitRewardAmount = (amount) =>
+  amount === undefined || (Number.isInteger(amount) && amount >= 0);
 
 const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
   id: `post-${submission.id}`,
@@ -300,6 +302,14 @@ export function createCommunityStore(seed = defaultSeed) {
           error: "submission_terminal",
           submissionId: submission.id,
           status: submission.status
+        };
+      }
+
+      if (!isValidExplicitRewardAmount(input.rewardAmount)) {
+        return {
+          error: "invalid_reward_amount",
+          submissionId: submission.id,
+          rewardAmount: input.rewardAmount
         };
       }
 

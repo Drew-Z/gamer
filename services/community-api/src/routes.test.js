@@ -143,6 +143,32 @@ test("admin review route rejects invalid review status", () => {
   ]);
 });
 
+test("admin review route rejects invalid reward amount", () => {
+  const store = createCommunityStore();
+  const created = handleCommunityRequest("POST", "/v1/submissions", {
+    store,
+    body: {
+      petId: "pet-invalid-reward-route-001",
+      ownershipClaimId: "claim-invalid-reward-route-001",
+      scoreReportId: "score-invalid-reward-route-001"
+    }
+  });
+
+  const response = handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: created.body.id,
+      status: "approved",
+      reviewer: "admin-demo",
+      rewardAmount: -5
+    }
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_reward_amount");
+  assert.equal(response.body.rewardAmount, -5);
+});
+
 test("approved import draft appears in feed through route flow", () => {
   const store = createCommunityStore();
   const draft = handleCommunityRequest("POST", "/v1/import-drafts", {
