@@ -550,6 +550,13 @@ test("revoking imported submission removes approved import feed post", () => {
   assert.ok(
     store.getFeed().items.some((post) => post.petId === "pet-feed-revoked-001")
   );
+  const approvedQueueItem = store
+    .listAdminReviewQueue()
+    .items.find((item) => item.submission.id === submissionResult.submission.id);
+  assert.equal(
+    approvedQueueItem.publishedFeedPost.id,
+    `post-${submissionResult.submission.id}`
+  );
 
   store.reviewSubmission({
     submissionId: submissionResult.submission.id,
@@ -561,4 +568,8 @@ test("revoking imported submission removes approved import feed post", () => {
     store.getFeed().items.some((post) => post.petId === "pet-feed-revoked-001"),
     false
   );
+  const revokedQueueItem = store
+    .listAdminReviewQueue()
+    .items.find((item) => item.submission.id === submissionResult.submission.id);
+  assert.equal(revokedQueueItem.publishedFeedPost, null);
 });

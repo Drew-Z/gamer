@@ -95,6 +95,8 @@ export function createReviewDashboardModel(queue = { items: [] }) {
     const risks = Array.isArray(scoreReport.risks) ? scoreReport.risks : [];
     const rewardRecommendation = scoreReport.rewardRecommendation ?? {};
     const status = submission.status ?? "pending";
+    const publishedFeedPost = item.publishedFeedPost ?? null;
+    const publishedFeedPostId = publishedFeedPost?.id ?? "";
 
     if (Object.hasOwn(counts, status)) {
       counts[status] += 1;
@@ -122,6 +124,11 @@ export function createReviewDashboardModel(queue = { items: [] }) {
         : [],
       outstandingReward: Number(item.outstandingReward ?? 0),
       outstandingRewardLabel: formatReward(Number(item.outstandingReward ?? 0)),
+      publishedFeedPostId,
+      feedPublicationStatus: publishedFeedPostId ? "published" : "unpublished",
+      feedPublicationLabel: publishedFeedPostId
+        ? `Feed: ${publishedFeedPostId}`
+        : "Feed: unpublished",
       actions: actionsForStatus(status)
     };
   });

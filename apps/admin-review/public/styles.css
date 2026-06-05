@@ -77,10 +77,24 @@ h1 {
 
 .brand-block p,
 .toolbar p,
-.item-meta {
+.item-meta,
+.feed-publication {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.feed-publication {
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.feed-publication[data-status="published"] {
+  color: var(--good);
+}
+
+.feed-publication[data-status="unpublished"] {
+  color: var(--muted);
 }
 
 .summary-panel {

@@ -140,6 +140,9 @@ function renderList() {
     node.querySelector("h3").textContent = row.petId;
     node.querySelector(".item-meta").textContent =
       `${row.submissionId} by ${row.userId}`;
+    const feedPublication = node.querySelector(".feed-publication");
+    feedPublication.textContent = row.feedPublicationLabel;
+    feedPublication.dataset.status = row.feedPublicationStatus;
 
     const pill = node.querySelector(".status-pill");
     pill.textContent = row.status;

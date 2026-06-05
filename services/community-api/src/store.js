@@ -168,12 +168,16 @@ export function createCommunityStore(seed = defaultSeed) {
             state.ledgerEntries,
             submission.id
           );
+          const publishedFeedPost = state.feedPosts.find(
+            (post) => post.id === `post-${submission.id}`
+          );
 
           return {
             submission: clone(submission),
             scoreReport: clone(scoreReport ?? null),
             reviews: clone(reviews),
             rewardLedgerEntries: clone(rewardLedgerEntries),
+            publishedFeedPost: clone(publishedFeedPost ?? null),
             outstandingReward: sumPostedSubmissionReward(
               state.ledgerEntries,
               submission.id

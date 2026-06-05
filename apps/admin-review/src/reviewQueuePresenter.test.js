@@ -78,6 +78,10 @@ const queueFixture = {
           sourceType: "submission-reward"
         }
       ],
+      publishedFeedPost: {
+        id: "post-submission-local-003",
+        petId: "pet-moon-003"
+      },
       outstandingReward: 74
     }
   ]
@@ -110,9 +114,14 @@ test("createReviewDashboardModel summarizes queue counts and rows", () => {
     "Community-ready import has enough accepted evidence."
   );
   assert.equal(model.rows[0].actions.length, 3);
+  assert.equal(model.rows[0].feedPublicationStatus, "unpublished");
+  assert.equal(model.rows[0].feedPublicationLabel, "Feed: unpublished");
   assert.equal(model.rows[1].riskLabel, "1 risk");
   assert.deepEqual(model.rows[1].riskItems, ["manual IP review requested"]);
   assert.equal(model.rows[1].latestReview.status, "approved");
+  assert.equal(model.rows[1].feedPublicationStatus, "published");
+  assert.equal(model.rows[1].feedPublicationLabel, "Feed: post-submission-local-003");
+  assert.equal(model.rows[1].publishedFeedPostId, "post-submission-local-003");
 });
 
 test("createFantasyPetImportPayload trims state path and ownership claim", () => {
