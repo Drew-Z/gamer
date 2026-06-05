@@ -109,6 +109,7 @@ export function createReviewDashboardModel(queue = { items: [] }) {
       recommendedRewardLabel: formatReward(Number(rewardRecommendation.amount ?? 0)),
       recommendationReason: rewardRecommendation.reason ?? "",
       risks,
+      riskItems: risks,
       riskLabel: risks.length === 1 ? "1 risk" : `${risks.length} risks`,
       latestReview: reviews.at(-1) ?? null,
       reviews,

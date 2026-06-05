@@ -382,6 +382,37 @@ h1 {
   font-size: 18px;
 }
 
+.recommendation-block {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+  padding: 12px 0;
+}
+
+.recommendation-block h4 {
+  font-size: 13px;
+}
+
+.recommendation-reason,
+.risk-list {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.risk-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.risk-list li {
+  overflow-wrap: anywhere;
+}
+
 .evidence-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

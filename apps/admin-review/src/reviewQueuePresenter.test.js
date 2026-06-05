@@ -105,8 +105,13 @@ test("createReviewDashboardModel summarizes queue counts and rows", () => {
   assert.equal(model.summary.outstandingReward, 74);
   assert.equal(model.rows[0].petId, "pet-stardust-002");
   assert.equal(model.rows[0].recommendedRewardLabel, "+80 PC");
+  assert.equal(
+    model.rows[0].recommendationReason,
+    "Community-ready import has enough accepted evidence."
+  );
   assert.equal(model.rows[0].actions.length, 3);
   assert.equal(model.rows[1].riskLabel, "1 risk");
+  assert.deepEqual(model.rows[1].riskItems, ["manual IP review requested"]);
   assert.equal(model.rows[1].latestReview.status, "approved");
 });
 

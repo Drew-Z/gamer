@@ -138,6 +138,22 @@ function renderList() {
     node.querySelector(".recommended-value").textContent = row.recommendedRewardLabel;
     node.querySelector(".outstanding-value").textContent = row.outstandingRewardLabel;
     node.querySelector(".risk-value").textContent = row.riskLabel;
+    node.querySelector(".recommendation-reason").textContent =
+      row.recommendationReason || "No recommendation reason.";
+
+    const riskList = node.querySelector(".risk-list");
+    const riskItems = Array.isArray(row.riskItems) ? row.riskItems : [];
+    if (riskItems.length === 0) {
+      const item = document.createElement("li");
+      item.textContent = "No risk evidence.";
+      riskList.append(item);
+    } else {
+      for (const risk of riskItems) {
+        const item = document.createElement("li");
+        item.textContent = risk;
+        riskList.append(item);
+      }
+    }
 
     const breakdown = node.querySelector(".breakdown-list");
     for (const [field, value] of Object.entries(row.breakdown)) {
