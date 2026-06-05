@@ -102,8 +102,19 @@ function renderDraftList() {
         ? `${row.id} -> ${row.scoreReportId}`
         : row.id;
 
+    const actions = document.createElement("div");
+    actions.className = "draft-actions";
+    for (const action of row.actions) {
+      const button = document.createElement("button");
+      button.className = "action-button primary";
+      button.type = "button";
+      button.textContent = labelForAction(action);
+      button.addEventListener("click", () => submitImportDraft(row.id));
+      actions.append(button);
+    }
+
     heading.append(title, status);
-    node.append(heading, reason, meta);
+    node.append(heading, reason, meta, actions);
     elements.draftList.append(node);
   }
 }
@@ -243,6 +254,18 @@ async function reviewSubmission(submissionId, status) {
     })
   });
   await loadQueue();
+}
+
+async function submitImportDraft(draftId) {
+  elements.importStatus.textContent = `Submitting ${draftId}...`;
+  const result = await requestJson("/v1/import-drafts/submit", {
+    method: "POST",
+    body: JSON.stringify({
+      draftId
+    })
+  });
+  elements.importStatus.textContent = `Submitted ${result.submission.id}.`;
+  await loadDashboard();
 }
 
 async function importFantasyPetState(event) {

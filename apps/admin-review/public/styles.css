@@ -235,6 +235,16 @@ h1 {
   color: var(--warn);
 }
 
+.draft-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.draft-actions:empty {
+  display: none;
+}
+
 .filter-button,
 .secondary-button,
 .action-button {

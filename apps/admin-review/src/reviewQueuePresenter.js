@@ -61,6 +61,8 @@ export function createImportDraftListModel(response = { drafts: [] }) {
       summary.inProgress += 1;
     }
 
+    const canSubmit = status === "ready";
+
     return {
       id: draft.id ?? "",
       petId: draft.petId ?? "",
@@ -69,7 +71,9 @@ export function createImportDraftListModel(response = { drafts: [] }) {
       reason: draft.readiness?.reason ?? "",
       scoreReportId: draft.scoreReportId ?? "",
       submissionId: draft.submissionId ?? "",
-      createdAt: draft.createdAt ?? ""
+      createdAt: draft.createdAt ?? "",
+      canSubmit,
+      actions: canSubmit ? ["submit"] : []
     };
   });
 

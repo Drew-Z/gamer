@@ -177,6 +177,12 @@ test("createImportDraftListModel summarizes draft statuses and rows", () => {
   assert.equal(model.summary.blocked, 1);
   assert.equal(model.summary.inProgress, 1);
   assert.equal(model.rows[0].statusLabel, "ready");
+  assert.equal(model.rows[0].canSubmit, true);
+  assert.deepEqual(model.rows[0].actions, ["submit"]);
   assert.equal(model.rows[1].reason, "state has blockers");
+  assert.equal(model.rows[1].canSubmit, false);
+  assert.deepEqual(model.rows[1].actions, []);
   assert.equal(model.rows[2].scoreReportId, "");
+  assert.equal(model.rows[2].canSubmit, false);
+  assert.deepEqual(model.rows[2].actions, []);
 });
