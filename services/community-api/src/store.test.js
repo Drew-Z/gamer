@@ -651,3 +651,30 @@ test("terminal submissions cannot be reviewed again", () => {
     false
   );
 });
+
+test("invalid review status is rejected without mutating submission", () => {
+  const store = createCommunityStore();
+  const submission = store.createSubmission({
+    petId: "pet-invalid-review-001",
+    userId: "user-demo-001",
+    ownershipClaimId: "claim-invalid-review-001",
+    scoreReportId: "score-invalid-review-001"
+  });
+
+  const result = store.reviewSubmission({
+    submissionId: submission.id,
+    status: "published",
+    reviewer: "admin-demo",
+    rewardAmount: 40
+  });
+  const queueItem = store
+    .listAdminReviewQueue()
+    .items.find((item) => item.submission.id === submission.id);
+
+  assert.equal(result.error, "invalid_review_status");
+  assert.equal(result.status, "published");
+  assert.deepEqual(result.allowedStatuses, ["approved", "held", "rejected", "revoked"]);
+  assert.equal(queueItem.submission.status, "pending");
+  assert.equal(queueItem.reviews.length, 0);
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+});

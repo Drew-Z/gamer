@@ -60,6 +60,7 @@ const draftStatusFromReadiness = (readiness) => {
 };
 
 const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
+const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
 
 const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
   id: `post-${submission.id}`,
@@ -282,6 +283,15 @@ export function createCommunityStore(seed = defaultSeed) {
         return {
           error: "submission_not_found",
           submissionId: input.submissionId
+        };
+      }
+
+      if (!ALLOWED_REVIEW_STATUSES.includes(input.status)) {
+        return {
+          error: "invalid_review_status",
+          submissionId: submission.id,
+          status: input.status,
+          allowedStatuses: [...ALLOWED_REVIEW_STATUSES]
         };
       }
 

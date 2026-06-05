@@ -113,6 +113,36 @@ test("admin review route rejects terminal submissions", () => {
   assert.equal(response.body.status, "rejected");
 });
 
+test("admin review route rejects invalid review status", () => {
+  const store = createCommunityStore();
+  const created = handleCommunityRequest("POST", "/v1/submissions", {
+    store,
+    body: {
+      petId: "pet-invalid-route-001",
+      ownershipClaimId: "claim-invalid-route-001",
+      scoreReportId: "score-invalid-route-001"
+    }
+  });
+
+  const response = handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: created.body.id,
+      status: "published",
+      reviewer: "admin-demo"
+    }
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_review_status");
+  assert.deepEqual(response.body.allowedStatuses, [
+    "approved",
+    "held",
+    "rejected",
+    "revoked"
+  ]);
+});
+
 test("approved import draft appears in feed through route flow", () => {
   const store = createCommunityStore();
   const draft = handleCommunityRequest("POST", "/v1/import-drafts", {
