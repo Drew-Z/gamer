@@ -13,6 +13,12 @@ const requireNumber = (errors, value, field) => {
   }
 };
 
+const requireNonNegativeNumber = (errors, value, field) => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    errors.push(`${field} must be a non-negative number`);
+  }
+};
+
 const result = (errors) => ({ ok: errors.length === 0, errors });
 
 export function validatePetPackageManifest(manifest) {
@@ -83,7 +89,7 @@ export function validateScoreReport(report) {
 
   requireString(errors, report.schema, "schema");
   requireString(errors, report.petId, "petId");
-  requireNumber(errors, report.totalScore, "totalScore");
+  requireNonNegativeNumber(errors, report.totalScore, "totalScore");
 
   if (!isObject(report.breakdown)) {
     errors.push("breakdown must be an object");
@@ -96,7 +102,7 @@ export function validateScoreReport(report) {
       "previewEvidence",
       "licenseReadiness"
     ]) {
-      requireNumber(errors, report.breakdown[field], `breakdown.${field}`);
+      requireNonNegativeNumber(errors, report.breakdown[field], `breakdown.${field}`);
     }
   }
 
@@ -106,7 +112,19 @@ export function validateScoreReport(report) {
     if (typeof report.rewardRecommendation.grant !== "boolean") {
       errors.push("rewardRecommendation.grant must be a boolean");
     }
-    requireNumber(errors, report.rewardRecommendation.amount, "rewardRecommendation.amount");
+    if (
+      typeof report.rewardRecommendation.amount !== "number" ||
+      !Number.isInteger(report.rewardRecommendation.amount) ||
+      report.rewardRecommendation.amount < 0
+    ) {
+      errors.push("rewardRecommendation.amount must be a non-negative integer");
+    }
+    if (
+      report.rewardRecommendation.grant === false &&
+      report.rewardRecommendation.amount !== 0
+    ) {
+      errors.push("rewardRecommendation.amount must be 0 when grant is false");
+    }
     requireString(errors, report.rewardRecommendation.reason, "rewardRecommendation.reason");
   }
 
