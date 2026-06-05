@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Gamer Admin Review</title>
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -43,6 +44,33 @@
           <button class="filter-button" data-filter="approved">Approved</button>
           <button class="filter-button" data-filter="revoked">Revoked</button>
         </div>
+
+        <form id="import-form" class="import-panel">
+          <h2>Import State</h2>
+          <label>
+            <span>State path</span>
+            <input
+              id="state-path-input"
+              name="statePath"
+              type="text"
+              autocomplete="off"
+              placeholder="D:/workspace4Codex/fantasy-pet-rule/runs/.../state.json"
+              required
+            />
+          </label>
+          <label>
+            <span>Ownership claim</span>
+            <input
+              id="ownership-claim-input"
+              name="ownershipClaimId"
+              type="text"
+              autocomplete="off"
+              placeholder="claim-pet-demo-001"
+            />
+          </label>
+          <button id="import-button" class="secondary-button import-button" type="submit">Create Draft</button>
+          <p id="import-status" class="import-status">Ready for local import.</p>
+        </form>
       </aside>
 
       <main class="workspace">

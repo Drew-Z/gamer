@@ -1,5 +1,7 @@
 import {
+  createFantasyPetImportPayload,
   createReviewDashboardModel,
+  formatImportDraftStatus,
   formatReward
 } from "/src/reviewQueuePresenter.js";
 
@@ -12,6 +14,11 @@ const elements = {
   list: document.querySelector("#queue-list"),
   statusLine: document.querySelector("#status-line"),
   refreshButton: document.querySelector("#refresh-button"),
+  importForm: document.querySelector("#import-form"),
+  importButton: document.querySelector("#import-button"),
+  importStatus: document.querySelector("#import-status"),
+  statePathInput: document.querySelector("#state-path-input"),
+  ownershipClaimInput: document.querySelector("#ownership-claim-input"),
   filters: [...document.querySelectorAll(".filter-button")],
   summary: {
     total: document.querySelector("#summary-total"),
@@ -160,8 +167,50 @@ async function reviewSubmission(submissionId, status) {
   await loadQueue();
 }
 
+async function importFantasyPetState(event) {
+  event.preventDefault();
+  elements.importButton.disabled = true;
+  elements.importStatus.textContent = "Creating import draft...";
+
+  try {
+    const draft = await requestJson("/v1/import-drafts/from-fantasy-pet-rule", {
+      method: "POST",
+      body: JSON.stringify(
+        createFantasyPetImportPayload({
+          statePath: elements.statePathInput.value,
+          ownershipClaimId: elements.ownershipClaimInput.value
+        })
+      )
+    });
+
+    let message = formatImportDraftStatus(draft);
+
+    if (draft.status === "ready") {
+      const result = await requestJson("/v1/import-drafts/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          draftId: draft.id
+        })
+      });
+      message = `${message} Submitted ${result.submission.id}.`;
+    }
+
+    elements.importStatus.textContent = message;
+    await loadQueue();
+  } finally {
+    elements.importButton.disabled = false;
+  }
+}
+
 elements.refreshButton.addEventListener("click", () => {
   loadQueue().catch(showError);
+});
+
+elements.importForm.addEventListener("submit", (event) => {
+  importFantasyPetState(event).catch((error) => {
+    elements.importStatus.textContent =
+      error instanceof Error ? error.message : "Unable to create import draft";
+  });
 });
 
 for (const button of elements.filters) {

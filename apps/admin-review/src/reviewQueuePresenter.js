@@ -24,6 +24,21 @@ export function actionsForStatus(status) {
   return [];
 }
 
+export function createFantasyPetImportPayload(input = {}) {
+  return {
+    statePath: String(input.statePath ?? "").trim(),
+    ownershipClaimId: String(input.ownershipClaimId ?? "").trim()
+  };
+}
+
+export function formatImportDraftStatus(draft = {}) {
+  const status = draft.status ?? "unknown";
+  const id = draft.id ?? "unknown draft";
+  const petId = draft.petId ?? "unknown pet";
+
+  return `Created ${status} draft ${id} for ${petId}.`;
+}
+
 export function createReviewDashboardModel(queue = { items: [] }) {
   const items = Array.isArray(queue.items) ? queue.items : [];
   const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0]));

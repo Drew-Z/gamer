@@ -109,6 +109,51 @@ h1 {
   gap: 8px;
 }
 
+.import-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
+.import-panel h2 {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.import-panel label {
+  display: grid;
+  gap: 6px;
+}
+
+.import-panel label span,
+.import-status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.import-panel input {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 10px;
+}
+
+.import-button {
+  width: 100%;
+}
+
+.import-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
 .filter-button,
 .secondary-button,
 .action-button {

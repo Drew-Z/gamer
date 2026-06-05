@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   actionsForStatus,
   createReviewDashboardModel,
+  createFantasyPetImportPayload,
+  formatImportDraftStatus,
   formatReward
 } from "./reviewQueuePresenter.js";
 
@@ -105,4 +107,30 @@ test("createReviewDashboardModel summarizes queue counts and rows", () => {
   assert.equal(model.rows[0].actions.length, 3);
   assert.equal(model.rows[1].riskLabel, "1 risk");
   assert.equal(model.rows[1].latestReview.status, "approved");
+});
+
+test("createFantasyPetImportPayload trims state path and ownership claim", () => {
+  const payload = createFantasyPetImportPayload({
+    statePath: "  D:/workspace4Codex/fantasy-pet-rule/runs/demo/state.json  ",
+    ownershipClaimId: "  claim-pet-demo-001  "
+  });
+
+  assert.deepEqual(payload, {
+    statePath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/state.json",
+    ownershipClaimId: "claim-pet-demo-001"
+  });
+});
+
+test("formatImportDraftStatus summarizes created draft", () => {
+  const message = formatImportDraftStatus({
+    id: "import-draft-local-003",
+    status: "ready",
+    petId: "pet-demo-003",
+    scoreReportId: "score-import-draft-local-003"
+  });
+
+  assert.equal(
+    message,
+    "Created ready draft import-draft-local-003 for pet-demo-003."
+  );
 });
