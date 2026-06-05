@@ -369,3 +369,97 @@ test("admin review queue aggregates submission evidence and reward status", () =
   assert.equal(item.rewardLedgerEntries.length, 2);
   assert.equal(item.outstandingReward, 0);
 });
+
+test("approving imported submission publishes one community feed post", () => {
+  const store = createCommunityStore();
+  const initialFeed = store.getFeed();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-feed-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-feed-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const feed = store.getFeed();
+  const published = feed.items.find((post) => post.petId === "pet-feed-001");
+
+  assert.equal(feed.items.length, initialFeed.items.length + 1);
+  assert.equal(published.title, "Approved pet import: pet-feed-001");
+  assert.equal(published.body, "preview accepted by user");
+  assert.equal(published.authorId, "user-demo-001");
+});
+
+test("approving imported submission twice does not duplicate feed post", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-feed-idempotent-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-idempotent/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-idempotent/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-feed-idempotent-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const matchingPosts = store
+    .getFeed()
+    .items.filter((post) => post.petId === "pet-feed-idempotent-001");
+
+  assert.equal(matchingPosts.length, 1);
+});

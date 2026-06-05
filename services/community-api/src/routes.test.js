@@ -79,6 +79,57 @@ test("admin review route approves submission and updates wallet", () => {
   assert.equal(wallet.body.balance, 145);
 });
 
+test("approved import draft appears in feed through route flow", () => {
+  const store = createCommunityStore();
+  const draft = handleCommunityRequest("POST", "/v1/import-drafts", {
+    store,
+    body: {
+      readiness: {
+        status: "community-ready",
+        reason: "preview accepted by user"
+      },
+      importSummary: {
+        source: {
+          petId: "pet-route-feed-001",
+          baseIdentityStatus: "accepted"
+        },
+        review: {
+          blockers: [],
+          previewDecision: "keep",
+          exportStatus: "ready"
+        },
+        assets: {
+          previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/route-feed/preview.html",
+          exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/route-feed/export.zip"
+        }
+      },
+      ownershipClaimId: "claim-pet-route-feed-001"
+    }
+  });
+  const submitted = handleCommunityRequest("POST", "/v1/import-drafts/submit", {
+    store,
+    body: {
+      draftId: draft.body.id
+    }
+  });
+
+  handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: submitted.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    }
+  });
+  const feed = handleCommunityRequest("GET", "/v1/feed", { store });
+  const published = feed.body.items.find((post) => post.petId === "pet-route-feed-001");
+
+  assert.equal(draft.status, 201);
+  assert.equal(submitted.status, 201);
+  assert.equal(feed.status, 200);
+  assert.equal(published.title, "Approved pet import: pet-route-feed-001");
+});
+
 test("unsupported route returns 404", () => {
   const response = handleCommunityRequest("GET", "/missing");
 

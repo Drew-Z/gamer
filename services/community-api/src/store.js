@@ -59,6 +59,16 @@ const draftStatusFromReadiness = (readiness) => {
   return "in-progress";
 };
 
+const createFeedPostFromApprovedImport = (submission, draft) => ({
+  id: `post-${submission.id}`,
+  authorId: submission.userId,
+  petId: submission.petId,
+  title: `Approved pet import: ${submission.petId}`,
+  body: draft?.readiness?.reason ?? "Approved community pet import.",
+  reactionCount: 0,
+  createdAt: nowIso()
+});
+
 export function createCommunityStore(seed = defaultSeed) {
   const state = clone(seed);
 
@@ -223,7 +233,8 @@ export function createCommunityStore(seed = defaultSeed) {
         petId: draft.petId,
         userId: draft.userId,
         ownershipClaimId: draft.ownershipClaimId,
-        scoreReportId: draft.scoreReportId
+        scoreReportId: draft.scoreReportId,
+        importDraftId: draft.id
       });
 
       draft.status = "submitted";
@@ -244,6 +255,7 @@ export function createCommunityStore(seed = defaultSeed) {
         status: "pending",
         scoreReportId: input.scoreReportId,
         ownershipClaimId: input.ownershipClaimId,
+        importDraftId: input.importDraftId ?? "",
         submittedAt: nowIso()
       };
 
@@ -286,6 +298,18 @@ export function createCommunityStore(seed = defaultSeed) {
           createdAt: nowIso()
         };
         state.ledgerEntries.push(rewardEntry);
+      }
+
+      if (input.status === "approved" && submission.importDraftId) {
+        const feedPostId = `post-${submission.id}`;
+        const alreadyPublished = state.feedPosts.some((post) => post.id === feedPostId);
+
+        if (!alreadyPublished) {
+          const draft = state.importDrafts.find(
+            (item) => item.id === submission.importDraftId
+          );
+          state.feedPosts.unshift(createFeedPostFromApprovedImport(submission, draft));
+        }
       }
 
       if (input.status === "revoked") {
