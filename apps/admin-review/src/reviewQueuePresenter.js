@@ -39,6 +39,46 @@ export function formatImportDraftStatus(draft = {}) {
   return `Created ${status} draft ${id} for ${petId}.`;
 }
 
+export function createImportDraftListModel(response = { drafts: [] }) {
+  const drafts = Array.isArray(response.drafts) ? response.drafts : [];
+  const summary = {
+    total: drafts.length,
+    ready: 0,
+    blocked: 0,
+    inProgress: 0,
+    submitted: 0
+  };
+
+  const rows = drafts.map((draft) => {
+    const status = draft.status ?? "in-progress";
+    if (status === "ready") {
+      summary.ready += 1;
+    } else if (status === "blocked") {
+      summary.blocked += 1;
+    } else if (status === "submitted") {
+      summary.submitted += 1;
+    } else {
+      summary.inProgress += 1;
+    }
+
+    return {
+      id: draft.id ?? "",
+      petId: draft.petId ?? "",
+      status,
+      statusLabel: status,
+      reason: draft.readiness?.reason ?? "",
+      scoreReportId: draft.scoreReportId ?? "",
+      submissionId: draft.submissionId ?? "",
+      createdAt: draft.createdAt ?? ""
+    };
+  });
+
+  return {
+    summary,
+    rows
+  };
+}
+
 export function createReviewDashboardModel(queue = { items: [] }) {
   const items = Array.isArray(queue.items) ? queue.items : [];
   const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0]));

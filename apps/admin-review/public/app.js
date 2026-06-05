@@ -1,5 +1,6 @@
 import {
   createFantasyPetImportPayload,
+  createImportDraftListModel,
   createReviewDashboardModel,
   formatImportDraftStatus,
   formatReward
@@ -7,6 +8,7 @@ import {
 
 const state = {
   filter: "all",
+  draftModel: createImportDraftListModel({ drafts: [] }),
   model: createReviewDashboardModel({ items: [] })
 };
 
@@ -19,6 +21,8 @@ const elements = {
   importStatus: document.querySelector("#import-status"),
   statePathInput: document.querySelector("#state-path-input"),
   ownershipClaimInput: document.querySelector("#ownership-claim-input"),
+  draftSummary: document.querySelector("#draft-summary"),
+  draftList: document.querySelector("#draft-list"),
   filters: [...document.querySelectorAll(".filter-button")],
   summary: {
     total: document.querySelector("#summary-total"),
@@ -57,6 +61,51 @@ function renderSummary() {
   elements.summary.outstanding.textContent = formatReward(
     state.model.summary.outstandingReward
   );
+}
+
+function renderDraftList() {
+  elements.draftSummary.textContent =
+    `${state.draftModel.summary.total} drafts / ${state.draftModel.summary.blocked} blocked`;
+  elements.draftList.replaceChildren();
+
+  if (state.draftModel.rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "draft-empty";
+    empty.textContent = "No import drafts yet.";
+    elements.draftList.append(empty);
+    return;
+  }
+
+  for (const row of state.draftModel.rows) {
+    const node = document.createElement("article");
+    node.className = "draft-item";
+    node.dataset.status = row.status;
+
+    const heading = document.createElement("div");
+    heading.className = "draft-item-heading";
+
+    const title = document.createElement("strong");
+    title.textContent = row.petId || row.id;
+
+    const status = document.createElement("span");
+    status.className = "draft-status";
+    status.dataset.status = row.status;
+    status.textContent = row.statusLabel;
+
+    const reason = document.createElement("p");
+    reason.textContent = row.reason || "No readiness reason.";
+
+    const meta = document.createElement("small");
+    meta.textContent = row.submissionId
+      ? `${row.id} -> ${row.submissionId}`
+      : row.scoreReportId
+        ? `${row.id} -> ${row.scoreReportId}`
+        : row.id;
+
+    heading.append(title, status);
+    node.append(heading, reason, meta);
+    elements.draftList.append(node);
+  }
 }
 
 function renderList() {
@@ -143,12 +192,25 @@ function renderList() {
 
 function render() {
   renderSummary();
+  renderDraftList();
   renderList();
 }
 
 async function loadQueue() {
   elements.statusLine.textContent = "Loading review queue...";
   const queue = await requestJson("/v1/admin/review-queue");
+  state.model = createReviewDashboardModel(queue);
+  elements.statusLine.textContent = `Loaded ${state.model.summary.total} submissions`;
+  render();
+}
+
+async function loadDashboard() {
+  elements.statusLine.textContent = "Loading review queue...";
+  const [drafts, queue] = await Promise.all([
+    requestJson("/v1/import-drafts"),
+    requestJson("/v1/admin/review-queue")
+  ]);
+  state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
   elements.statusLine.textContent = `Loaded ${state.model.summary.total} submissions`;
   render();
@@ -196,14 +258,14 @@ async function importFantasyPetState(event) {
     }
 
     elements.importStatus.textContent = message;
-    await loadQueue();
+    await loadDashboard();
   } finally {
     elements.importButton.disabled = false;
   }
 }
 
 elements.refreshButton.addEventListener("click", () => {
-  loadQueue().catch(showError);
+  loadDashboard().catch(showError);
 });
 
 elements.importForm.addEventListener("submit", (event) => {
@@ -232,4 +294,4 @@ function showError(error) {
   elements.list.append(node);
 }
 
-loadQueue().catch(showError);
+loadDashboard().catch(showError);

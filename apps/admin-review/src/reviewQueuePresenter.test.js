@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   actionsForStatus,
+  createImportDraftListModel,
   createReviewDashboardModel,
   createFantasyPetImportPayload,
   formatImportDraftStatus,
@@ -133,4 +134,44 @@ test("formatImportDraftStatus summarizes created draft", () => {
     message,
     "Created ready draft import-draft-local-003 for pet-demo-003."
   );
+});
+
+test("createImportDraftListModel summarizes draft statuses and rows", () => {
+  const model = createImportDraftListModel({
+    drafts: [
+      {
+        id: "import-draft-local-001",
+        petId: "pet-ready-001",
+        status: "ready",
+        readiness: {
+          reason: "preview accepted by user"
+        },
+        scoreReportId: "score-import-draft-local-001"
+      },
+      {
+        id: "import-draft-local-002",
+        petId: "pet-blocked-002",
+        status: "blocked",
+        readiness: {
+          reason: "state has blockers"
+        }
+      },
+      {
+        id: "import-draft-local-003",
+        petId: "pet-progress-003",
+        status: "in-progress",
+        readiness: {
+          reason: "current stage is base-review"
+        }
+      }
+    ]
+  });
+
+  assert.equal(model.summary.total, 3);
+  assert.equal(model.summary.ready, 1);
+  assert.equal(model.summary.blocked, 1);
+  assert.equal(model.summary.inProgress, 1);
+  assert.equal(model.rows[0].statusLabel, "ready");
+  assert.equal(model.rows[1].reason, "state has blockers");
+  assert.equal(model.rows[2].scoreReportId, "");
 });

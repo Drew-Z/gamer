@@ -154,6 +154,87 @@ h1 {
   opacity: 0.65;
 }
 
+.draft-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
+.draft-panel-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.draft-panel-heading h2 {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.draft-panel-heading span,
+.draft-empty,
+.draft-item p,
+.draft-item small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.draft-list {
+  display: grid;
+  gap: 8px;
+}
+
+.draft-item {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px;
+}
+
+.draft-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.draft-item strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.draft-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 3px 7px;
+}
+
+.draft-status[data-status="ready"],
+.draft-status[data-status="submitted"] {
+  background: #e5f3ea;
+  color: var(--good);
+}
+
+.draft-status[data-status="blocked"] {
+  background: #f8e5e5;
+  color: var(--danger);
+}
+
+.draft-status[data-status="in-progress"] {
+  background: #fff2db;
+  color: var(--warn);
+}
+
 .filter-button,
 .secondary-button,
 .action-button {
