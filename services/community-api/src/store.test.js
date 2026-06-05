@@ -511,3 +511,54 @@ test("approving imported submission twice does not duplicate feed post", () => {
 
   assert.equal(matchingPosts.length, 1);
 });
+
+test("revoking imported submission removes approved import feed post", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-feed-revoked-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-revoked/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-revoked/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-feed-revoked-001"
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+  assert.ok(
+    store.getFeed().items.some((post) => post.petId === "pet-feed-revoked-001")
+  );
+
+  store.reviewSubmission({
+    submissionId: submissionResult.submission.id,
+    status: "revoked",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(
+    store.getFeed().items.some((post) => post.petId === "pet-feed-revoked-001"),
+    false
+  );
+});

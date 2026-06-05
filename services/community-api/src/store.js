@@ -340,6 +340,11 @@ export function createCommunityStore(seed = defaultSeed) {
           };
           state.ledgerEntries.push(rewardReversalEntry);
         }
+
+        if (submission.importDraftId) {
+          const feedPostId = `post-${submission.id}`;
+          state.feedPosts = state.feedPosts.filter((post) => post.id !== feedPostId);
+        }
       }
 
       const review = {
