@@ -137,6 +137,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     });
 
     if (review.error) {
+      if (review.error === "submission_terminal") {
+        return json(409, review);
+      }
+
       return json(404, review);
     }
 

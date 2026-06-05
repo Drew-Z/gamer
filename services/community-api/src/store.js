@@ -59,6 +59,8 @@ const draftStatusFromReadiness = (readiness) => {
   return "in-progress";
 };
 
+const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
+
 const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
   id: `post-${submission.id}`,
   authorId: submission.userId,
@@ -280,6 +282,14 @@ export function createCommunityStore(seed = defaultSeed) {
         return {
           error: "submission_not_found",
           submissionId: input.submissionId
+        };
+      }
+
+      if (TERMINAL_SUBMISSION_STATUSES.has(submission.status)) {
+        return {
+          error: "submission_terminal",
+          submissionId: submission.id,
+          status: submission.status
         };
       }
 

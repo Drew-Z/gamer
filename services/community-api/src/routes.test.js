@@ -79,6 +79,40 @@ test("admin review route approves submission and updates wallet", () => {
   assert.equal(wallet.body.balance, 145);
 });
 
+test("admin review route rejects terminal submissions", () => {
+  const store = createCommunityStore();
+  const created = handleCommunityRequest("POST", "/v1/submissions", {
+    store,
+    body: {
+      petId: "pet-terminal-route-001",
+      ownershipClaimId: "claim-terminal-route-001",
+      scoreReportId: "score-terminal-route-001"
+    }
+  });
+  handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: created.body.id,
+      status: "rejected",
+      reviewer: "admin-demo"
+    }
+  });
+
+  const response = handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: created.body.id,
+      status: "approved",
+      reviewer: "admin-demo",
+      rewardAmount: 40
+    }
+  });
+
+  assert.equal(response.status, 409);
+  assert.equal(response.body.error, "submission_terminal");
+  assert.equal(response.body.status, "rejected");
+});
+
 test("approved import draft appears in feed through route flow", () => {
   const store = createCommunityStore();
   const draft = handleCommunityRequest("POST", "/v1/import-drafts", {

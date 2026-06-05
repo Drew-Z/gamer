@@ -573,3 +573,81 @@ test("revoking imported submission removes approved import feed post", () => {
     .items.find((item) => item.submission.id === submissionResult.submission.id);
   assert.equal(revokedQueueItem.publishedFeedPost, null);
 });
+
+test("terminal submissions cannot be reviewed again", () => {
+  const store = createCommunityStore();
+  const rejected = store.createSubmission({
+    petId: "pet-terminal-rejected-001",
+    userId: "user-demo-001",
+    ownershipClaimId: "claim-terminal-rejected-001",
+    scoreReportId: "score-terminal-rejected-001"
+  });
+  store.reviewSubmission({
+    submissionId: rejected.id,
+    status: "rejected",
+    reviewer: "admin-demo"
+  });
+
+  const rejectedResult = store.reviewSubmission({
+    submissionId: rejected.id,
+    status: "approved",
+    reviewer: "admin-demo",
+    rewardAmount: 40
+  });
+
+  assert.equal(rejectedResult.error, "submission_terminal");
+  assert.equal(rejectedResult.status, "rejected");
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+
+  const revokedDraft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-terminal-revoked-001",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/terminal-revoked/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/terminal-revoked/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-terminal-revoked-001"
+  });
+  const revokedSubmission = store.submitImportDraft({
+    draftId: revokedDraft.id,
+    userId: "user-demo-001"
+  }).submission;
+  store.reviewSubmission({
+    submissionId: revokedSubmission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+  store.reviewSubmission({
+    submissionId: revokedSubmission.id,
+    status: "revoked",
+    reviewer: "admin-demo"
+  });
+
+  const revokedResult = store.reviewSubmission({
+    submissionId: revokedSubmission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  assert.equal(revokedResult.error, "submission_terminal");
+  assert.equal(revokedResult.status, "revoked");
+  assert.equal(store.getWallet("user-demo-001").balance, 90);
+  assert.equal(
+    store.getFeed().items.some((post) => post.petId === "pet-terminal-revoked-001"),
+    false
+  );
+});
