@@ -130,6 +130,47 @@ test("approved import draft appears in feed through route flow", () => {
   assert.equal(published.title, "Approved pet import: pet-route-feed-001");
 });
 
+test("fantasy pet rule bridge creates import draft from inline state", async () => {
+  const store = createCommunityStore();
+  const response = await handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-fantasy-pet-rule",
+    {
+      store,
+      body: {
+        ownershipClaimId: "claim-pet-bridge-001",
+        state: {
+          schema: "fantasy-pet.codex-state.v1",
+          petId: "pet-bridge-001",
+          currentStage: "preview-review",
+          baseIdentity: {
+            status: "accepted"
+          },
+          blockers: [],
+          preview: {
+            userDecision: "keep",
+            urlOrPath: "D:/workspace4Codex/fantasy-pet-rule/runs/bridge/preview.html"
+          },
+          export: {
+            decision: "asked",
+            status: "ready",
+            artifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/bridge/export.zip"
+          }
+        }
+      }
+    }
+  );
+  const report = store.getScoreReport(response.body.scoreReportId);
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.status, "ready");
+  assert.equal(response.body.petId, "pet-bridge-001");
+  assert.equal(response.body.readiness.status, "community-ready");
+  assert.equal(response.body.importSummary.source.schema, "fantasy-pet.codex-state.v1");
+  assert.equal(report.petId, "pet-bridge-001");
+  assert.equal(report.rewardRecommendation.amount, 80);
+});
+
 test("unsupported route returns 404", () => {
   const response = handleCommunityRequest("GET", "/missing");
 

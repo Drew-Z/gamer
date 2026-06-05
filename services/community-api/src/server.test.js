@@ -127,6 +127,61 @@ test("HTTP server creates import draft from pet-generator summary", async () => 
   }
 });
 
+test("HTTP server creates import draft from fantasy pet rule statePath", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store,
+      readFile: async () =>
+        JSON.stringify({
+          schema: "fantasy-pet.codex-state.v1",
+          petId: "pet-statepath-http-001",
+          currentStage: "preview-review",
+          baseIdentity: {
+            status: "accepted"
+          },
+          blockers: [],
+          preview: {
+            userDecision: "keep",
+            urlOrPath: "D:/workspace4Codex/fantasy-pet-rule/runs/statepath/preview.html"
+          },
+          export: {
+            decision: "asked",
+            status: "ready",
+            artifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/statepath/export.zip"
+          }
+        })
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/from-fantasy-pet-rule",
+      {
+        statePath: "D:/workspace4Codex/fantasy-pet-rule/runs/statepath/state.json",
+        ownershipClaimId: "claim-pet-statepath-http-001"
+      }
+    );
+    const reportResponse = await requestJson(
+      server,
+      "GET",
+      `/v1/score-reports/${response.body.scoreReportId}`
+    );
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.status, "ready");
+    assert.equal(response.body.petId, "pet-statepath-http-001");
+    assert.equal(response.body.importSummary.assets.exportArtifactPath, "D:/workspace4Codex/fantasy-pet-rule/runs/statepath/export.zip");
+    assert.equal(reportResponse.status, 200);
+    assert.equal(reportResponse.body.rewardRecommendation.amount, 80);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP server submits community-ready import draft", async () => {
   const store = createCommunityStore();
   const server = http.createServer(

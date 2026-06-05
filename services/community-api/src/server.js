@@ -39,7 +39,7 @@ export function createCommunityHttpHandler(options = {}) {
         }
       }
 
-      const result = handleCommunityRequest(
+      const result = await handleCommunityRequest(
         request.method ?? "GET",
         request.url ?? "/",
         {

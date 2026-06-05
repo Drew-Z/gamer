@@ -1,6 +1,11 @@
 import {
   users
 } from "../../../packages/community-contracts/src/index.js";
+import { createFantasyPetRuleImportSummary } from "../../pet-generator/src/adapter.js";
+import {
+  resolveFantasyPetRuleState,
+  StateSourceError
+} from "../../pet-generator/src/state-source.js";
 import { createCommunityStore } from "./store.js";
 
 const json = (status, body) => ({ status, body });
@@ -66,6 +71,32 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     });
 
     return json(201, draft);
+  }
+
+  if (method === "POST" && url.pathname === "/v1/import-drafts/from-fantasy-pet-rule") {
+    return resolveFantasyPetRuleState(body, options)
+      .then((state) => {
+        const result = createFantasyPetRuleImportSummary(state);
+        const draft = store.createImportDraft({
+          userId: currentUserId,
+          readiness: result.readiness,
+          importSummary: result.importSummary,
+          ownershipClaimId: body.ownershipClaimId,
+          scoreReportId: body.scoreReportId
+        });
+
+        return json(201, draft);
+      })
+      .catch((error) => {
+        if (error instanceof StateSourceError) {
+          return json(error.status, {
+            error: error.code,
+            message: error.message
+          });
+        }
+
+        throw error;
+      });
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts/submit") {
