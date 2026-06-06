@@ -573,6 +573,7 @@ test("approved import feed post includes import metadata", () => {
     rewardAmount: 80,
     importSourceKind: "fantasy-pet-rule",
     importPreviewPath: "previews/overall-showcase.png",
+    exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-metadata/export.zip",
     motionSheetCount: 2
   });
   assert.equal(published.metadata.importSourceKind, "fantasy-pet-rule");

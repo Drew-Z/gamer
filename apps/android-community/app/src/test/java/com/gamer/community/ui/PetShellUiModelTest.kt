@@ -47,14 +47,18 @@ class PetShellUiModelTest {
             reactionCount = 0,
             importDraftLabel = "Draft import-draft-local-001",
             submissionLabel = "Submission submission-local-002",
-            scoreReportLabel = "Score score-import-draft-local-001"
+            scoreReportLabel = "Score score-import-draft-local-001",
+            importPreviewLabel = "Preview previews/overall-showcase.png",
+            exportArtifactLabel = "Package exports/stardust-package.zip"
         )
 
         assertEquals(
             listOf(
                 "Draft import-draft-local-001",
                 "Submission submission-local-002",
-                "Score score-import-draft-local-001"
+                "Score score-import-draft-local-001",
+                "Preview previews/overall-showcase.png",
+                "Package exports/stardust-package.zip"
             ),
             feedPostAuditLabels(post)
         )

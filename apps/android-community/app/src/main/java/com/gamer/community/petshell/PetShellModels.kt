@@ -38,6 +38,7 @@ data class FeedPost(
     val scoreReportLabel: String? = null,
     val importSourceLabel: String? = null,
     val importPreviewLabel: String? = null,
+    val exportArtifactLabel: String? = null,
     val motionSheetLabel: String? = null
 )
 

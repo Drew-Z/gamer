@@ -29,6 +29,7 @@ data class FeedPostMetadataDto(
     val rewardAmount: Int? = null,
     val importSourceKind: String? = null,
     val importPreviewPath: String? = null,
+    val exportArtifactPath: String? = null,
     val motionSheetCount: Int? = null
 )
 

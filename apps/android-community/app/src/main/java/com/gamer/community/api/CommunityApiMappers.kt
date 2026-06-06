@@ -19,6 +19,7 @@ fun FeedResponseDto.toFeedPosts(): List<FeedPost> =
             scoreReportLabel = item.metadata.scoreReportLabel(),
             importSourceLabel = item.metadata.importSourceLabel(),
             importPreviewLabel = item.metadata.importPreviewLabel(),
+            exportArtifactLabel = item.metadata.exportArtifactLabel(),
             motionSheetLabel = item.metadata.motionSheetLabel()
         )
     }
@@ -76,6 +77,11 @@ private fun FeedPostMetadataDto?.importSourceLabel(): String? {
 private fun FeedPostMetadataDto?.importPreviewLabel(): String? {
     val path = this?.importPreviewPath ?: return null
     return if (path.isNotBlank()) "Preview $path" else null
+}
+
+private fun FeedPostMetadataDto?.exportArtifactLabel(): String? {
+    val path = this?.exportArtifactPath ?: return null
+    return if (path.isNotBlank()) "Package $path" else null
 }
 
 private fun FeedPostMetadataDto?.motionSheetLabel(): String? {

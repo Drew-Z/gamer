@@ -443,6 +443,7 @@ internal fun feedPostAuditLabels(post: FeedPost): List<String> =
         post.scoreReportLabel,
         post.importSourceLabel,
         post.importPreviewLabel,
+        post.exportArtifactLabel,
         post.motionSheetLabel
     )
 

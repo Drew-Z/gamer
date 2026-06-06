@@ -73,6 +73,7 @@ class CommunityApiMappersTest {
                         rewardAmount = 80,
                         importSourceKind = "fantasy-pet-rule",
                         importPreviewPath = "previews/overall-showcase.png",
+                        exportArtifactPath = "exports/stardust-package.zip",
                         motionSheetCount = 2
                     )
                 )
@@ -88,6 +89,7 @@ class CommunityApiMappersTest {
         assertEquals("Score score-import-draft-local-001", posts[0].scoreReportLabel)
         assertEquals("Source fantasy-pet-rule", posts[0].importSourceLabel)
         assertEquals("Preview previews/overall-showcase.png", posts[0].importPreviewLabel)
+        assertEquals("Package exports/stardust-package.zip", posts[0].exportArtifactLabel)
         assertEquals("2 motion sheets", posts[0].motionSheetLabel)
     }
 
