@@ -77,6 +77,24 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.listImportDrafts(currentUserId));
   }
 
+  if (method === "POST" && url.pathname === "/v1/import-drafts/from-pet-package-bundle") {
+    const validation = validatePetPackageBundle(body.bundle);
+
+    if (!validation.ok) {
+      return json(400, {
+        error: "invalid_pet_package_bundle",
+        validation
+      });
+    }
+
+    const draft = store.createImportDraftFromPetPackageBundle({
+      userId: currentUserId,
+      bundle: body.bundle
+    });
+
+    return json(201, draft);
+  }
+
   if (method === "POST" && url.pathname === "/v1/import-drafts") {
     const draft = store.createImportDraft({
       userId: currentUserId,

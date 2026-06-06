@@ -97,6 +97,52 @@ test("pet package bundle validation route rejects invalid bundle", () => {
   );
 });
 
+test("pet package bundle route creates ready import draft", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+  const report = store.getScoreReport(response.body.scoreReportId);
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.status, "ready");
+  assert.equal(response.body.petId, "pet-stardust-001");
+  assert.equal(response.body.ownershipClaimId, "claim-pet-stardust-001");
+  assert.equal(report.totalScore, validPetPackageBundle.scoreReport.totalScore);
+});
+
+test("pet package bundle route rejects invalid import draft bundle", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: {
+          ...validPetPackageBundle,
+          ownershipClaim: {
+            ...validPetPackageBundle.ownershipClaim,
+            petId: "pet-other-route-002"
+          }
+        }
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_pet_package_bundle");
+  assert.equal(response.body.validation.ok, false);
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 0);
+});
+
 test("admin review route approves submission and updates wallet", () => {
   const store = createCommunityStore();
   const created = handleCommunityRequest("POST", "/v1/submissions", {

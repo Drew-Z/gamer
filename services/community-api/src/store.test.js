@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { createCommunityStore } from "./store.js";
 
 test("fresh store exposes initial wallet balance", () => {
@@ -147,6 +148,32 @@ test("community-ready import draft receives generated score report", () => {
   assert.equal(report.schema, "gamer.pet-score-report.v1");
   assert.equal(report.petId, "pet-scored-001");
   assert.equal(report.rewardRecommendation.grant, true);
+});
+
+test("pet package bundle creates ready import draft with uploaded score report", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraftFromPetPackageBundle({
+    userId: "user-demo-001",
+    bundle: validPetPackageBundle
+  });
+  const report = store.getScoreReport(draft.scoreReportId);
+
+  assert.equal(draft.status, "ready");
+  assert.equal(draft.petId, "pet-stardust-001");
+  assert.equal(draft.ownershipClaimId, "claim-pet-stardust-001");
+  assert.equal(draft.importSummary.source.kind, "fantasy-pet-rule");
+  assert.equal(draft.importSummary.assets.previewPath, "previews/overall-showcase.png");
+  assert.deepEqual(draft.importSummary.assets.motionSheets, [
+    "motion/sheets/idle.png",
+    "motion/sheets/happy_click.png"
+  ]);
+  assert.equal(report.reportId, draft.scoreReportId);
+  assert.equal(report.petId, "pet-stardust-001");
+  assert.equal(report.totalScore, validPetPackageBundle.scoreReport.totalScore);
+  assert.equal(
+    report.rewardRecommendation.amount,
+    validPetPackageBundle.scoreReport.rewardRecommendation.amount
+  );
 });
 
 test("approving scored submission uses recommended reward when amount is omitted", () => {

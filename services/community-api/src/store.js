@@ -59,6 +59,26 @@ const draftStatusFromReadiness = (readiness) => {
   return "in-progress";
 };
 
+const createImportSummaryFromPetPackageBundle = (bundle) => ({
+  source: {
+    petId: bundle.manifest.petId,
+    schema: bundle.manifest.schema,
+    kind: bundle.manifest.source.kind,
+    runId: bundle.manifest.source.runId,
+    statePath: bundle.manifest.source.statePath
+  },
+  review: {
+    blockers: [],
+    previewDecision: "keep",
+    exportStatus: "ready"
+  },
+  assets: {
+    baseImage: bundle.manifest.assets.baseImage,
+    previewPath: bundle.manifest.assets.previewImage,
+    motionSheets: clone(bundle.manifest.assets.motionSheets)
+  }
+});
+
 const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
 const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
 const isValidExplicitRewardAmount = (amount) =>
@@ -216,7 +236,14 @@ export function createCommunityStore(seed = defaultSeed) {
         createdAt: nowIso()
       };
 
-      if (!draft.scoreReportId) {
+      if (input.scoreReport) {
+        const scoreReport = {
+          ...clone(input.scoreReport),
+          reportId: input.scoreReport.reportId ?? `score-${draft.id}`
+        };
+        state.scoreReports.push(scoreReport);
+        draft.scoreReportId = scoreReport.reportId;
+      } else if (!draft.scoreReportId) {
         const scoreReport = createScoreReportFromImportDraft(draft);
         state.scoreReports.push(scoreReport);
         draft.scoreReportId = scoreReport.reportId;
@@ -224,6 +251,19 @@ export function createCommunityStore(seed = defaultSeed) {
 
       state.importDrafts.push(draft);
       return clone(draft);
+    },
+
+    createImportDraftFromPetPackageBundle(input) {
+      return this.createImportDraft({
+        userId: input.userId,
+        readiness: {
+          status: "community-ready",
+          reason: "validated pet package bundle"
+        },
+        importSummary: createImportSummaryFromPetPackageBundle(input.bundle),
+        ownershipClaimId: input.bundle.ownershipClaim.claimId,
+        scoreReport: input.bundle.scoreReport
+      });
     },
 
     submitImportDraft(input) {
