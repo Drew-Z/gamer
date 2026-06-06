@@ -254,6 +254,15 @@ export function createCommunityStore(seed = defaultSeed) {
     },
 
     createImportDraftFromPetPackageBundle(input) {
+      const ownerUserId = input.bundle.manifest.ownerUserId;
+      if (input.userId !== ownerUserId) {
+        return {
+          error: "bundle_owner_mismatch",
+          userId: input.userId,
+          ownerUserId
+        };
+      }
+
       return this.createImportDraft({
         userId: input.userId,
         readiness: {

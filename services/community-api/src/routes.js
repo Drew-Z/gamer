@@ -92,6 +92,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       bundle: body.bundle
     });
 
+    if (draft.error === "bundle_owner_mismatch") {
+      return json(403, draft);
+    }
+
     return json(201, draft);
   }
 

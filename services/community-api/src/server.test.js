@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
+import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { createCommunityHttpHandler } from "./server.js";
 import { createCommunityStore } from "./store.js";
 
@@ -177,6 +178,35 @@ test("HTTP server creates import draft from fantasy pet rule statePath", async (
     assert.equal(response.body.importSummary.assets.exportArtifactPath, "D:/workspace4Codex/fantasy-pet-rule/runs/statepath/export.zip");
     assert.equal(reportResponse.status, 200);
     assert.equal(reportResponse.body.rewardRecommendation.amount, 80);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server rejects pet package bundle owned by another user", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/from-pet-package-bundle",
+      {
+        userId: "user-other-001",
+        bundle: validPetPackageBundle
+      }
+    );
+
+    assert.equal(response.status, 403);
+    assert.equal(response.body.error, "bundle_owner_mismatch");
+    assert.equal(response.body.ownerUserId, "user-demo-001");
+    assert.equal(store.listImportDrafts("user-other-001").drafts.length, 0);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

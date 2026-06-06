@@ -143,6 +143,26 @@ test("pet package bundle route rejects invalid import draft bundle", () => {
   assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 0);
 });
 
+test("pet package bundle route rejects bundle owned by another user", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        userId: "user-other-001",
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(response.body.error, "bundle_owner_mismatch");
+  assert.equal(response.body.ownerUserId, "user-demo-001");
+  assert.equal(store.listImportDrafts("user-other-001").drafts.length, 0);
+});
+
 test("admin review route approves submission and updates wallet", () => {
   const store = createCommunityStore();
   const created = handleCommunityRequest("POST", "/v1/submissions", {

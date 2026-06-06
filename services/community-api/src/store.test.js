@@ -176,6 +176,19 @@ test("pet package bundle creates ready import draft with uploaded score report",
   );
 });
 
+test("pet package bundle owned by another user does not create import draft", () => {
+  const store = createCommunityStore();
+  const result = store.createImportDraftFromPetPackageBundle({
+    userId: "user-other-001",
+    bundle: validPetPackageBundle
+  });
+
+  assert.equal(result.error, "bundle_owner_mismatch");
+  assert.equal(result.userId, "user-other-001");
+  assert.equal(result.ownerUserId, "user-demo-001");
+  assert.equal(store.listImportDrafts("user-other-001").drafts.length, 0);
+});
+
 test("approving scored submission uses recommended reward when amount is omitted", () => {
   const store = createCommunityStore();
   const draft = store.createImportDraft({
