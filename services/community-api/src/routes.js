@@ -1,6 +1,7 @@
 import {
   users
 } from "../../../packages/community-contracts/src/index.js";
+import { validatePetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { createFantasyPetRuleImportSummary } from "../../pet-generator/src/adapter.js";
 import {
   resolveFantasyPetRuleState,
@@ -39,6 +40,21 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
 
   if (method === "GET" && url.pathname === "/v1/submissions") {
     return json(200, store.listSubmissions());
+  }
+
+  if (method === "POST" && url.pathname === "/v1/pet-package-bundles/validate") {
+    const validation = validatePetPackageBundle(body.bundle);
+
+    if (!validation.ok) {
+      return json(400, {
+        error: "invalid_pet_package_bundle",
+        validation
+      });
+    }
+
+    return json(200, {
+      validation
+    });
   }
 
   if (method === "GET" && url.pathname.startsWith("/v1/score-reports/")) {

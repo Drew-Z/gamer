@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { handleCommunityRequest } from "./routes.js";
 import { createCommunityStore } from "./store.js";
 
@@ -49,6 +50,51 @@ test("submission route creates pending submission", () => {
   assert.equal(response.status, 201);
   assert.equal(response.body.status, "pending");
   assert.equal(response.body.petId, "pet-new-001");
+});
+
+test("pet package bundle validation route accepts valid bundle", () => {
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/pet-package-bundles/validate",
+    {
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.validation, {
+    ok: true,
+    errors: []
+  });
+});
+
+test("pet package bundle validation route rejects invalid bundle", () => {
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/pet-package-bundles/validate",
+    {
+      body: {
+        bundle: {
+          ...validPetPackageBundle,
+          scoreReport: {
+            ...validPetPackageBundle.scoreReport,
+            petId: "pet-other-route-001"
+          }
+        }
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_pet_package_bundle");
+  assert.equal(response.body.validation.ok, false);
+  assert.ok(
+    response.body.validation.errors.includes(
+      "manifest.petId must match scoreReport.petId"
+    )
+  );
 });
 
 test("admin review route approves submission and updates wallet", () => {
