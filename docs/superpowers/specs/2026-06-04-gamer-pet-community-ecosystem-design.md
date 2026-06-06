@@ -240,12 +240,20 @@ natural pet idea or existing run
   "assets": {
     "baseImage": "string",
     "previewImage": "string",
+    "exportArtifact": "exports/stardust-package.zip",
     "motionSheets": []
   },
   "license": "license.json",
   "scoreReport": "score-report.json"
 }
 ```
+
+### Export Artifact Field Mapping
+
+- `manifest.assets.exportArtifact` is the package-relative archive path declared by uploaded `gamer.pet-package.v1` bundles.
+- `importSummary.assets.exportArtifactPath` is the community import summary field produced from `manifest.assets.exportArtifact` or `fantasy-pet-rule` state `export.artifactPath`.
+- `approvedPets.items[].assets.exportArtifactPath` is the approved pet registry field exposed by `/v1/pets/approved`.
+- `feed.items[].metadata.exportArtifactPath` is the approved-import feed metadata field exposed by `/v1/feed`; Android renders it as `Package <path>` in feed audit labels.
 
 ### Ownership Claim
 
