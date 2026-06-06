@@ -111,6 +111,7 @@ const approvedPetsFixture = {
       },
       assets: {
         previewPath: "previews/overall-showcase.png",
+        exportArtifactPath: "exports/stardust.zip",
         motionSheetCount: 2
       },
       submissionId: "submission-local-002",
@@ -284,6 +285,8 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
     "fantasy-pet-rule / score 86 / 2 motion sheets"
   );
   assert.equal(model.rows[0].previewPath, "previews/overall-showcase.png");
+  assert.equal(model.rows[0].exportArtifactPath, "exports/stardust.zip");
+  assert.equal(model.rows[0].packageArtifactLabel, "Package exports/stardust.zip");
   assert.equal(model.rows[0].submissionLabel, "Submission submission-local-002");
   assert.equal(model.rows[0].approvedAt, "2026-06-07T02:30:00.000Z");
   assert.equal(
@@ -312,6 +315,11 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   assert.equal(missingSubmission.rows[0].focusSubmissionLabel, "");
   assert.equal(missingSubmission.rows[0].canRevokeSubmission, false);
   assert.equal(missingSubmission.rows[0].revokeSubmissionLabel, "");
+  assert.equal(missingSubmission.rows[0].exportArtifactPath, "");
+  assert.equal(
+    missingSubmission.rows[0].packageArtifactLabel,
+    "Package artifact pending"
+  );
 
   const empty = createApprovedPetRegistryModel({});
   assert.equal(empty.summary.total, 0);

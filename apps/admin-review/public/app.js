@@ -161,6 +161,10 @@ function renderApprovedPetList() {
     const previewPath = document.createElement("code");
     previewPath.textContent = row.previewPath || "No preview path";
 
+    const packageArtifact = document.createElement("code");
+    packageArtifact.className = "approved-pet-package-path";
+    packageArtifact.textContent = row.packageArtifactLabel;
+
     const traceList = document.createElement("ul");
     traceList.className = "approved-pet-trace";
     for (const label of [
@@ -193,7 +197,15 @@ function renderApprovedPetList() {
       actions.append(button);
     }
 
-    node.append(title, petMeta, assetLabel, previewPath, traceList, actions);
+    node.append(
+      title,
+      petMeta,
+      assetLabel,
+      previewPath,
+      packageArtifact,
+      traceList,
+      actions
+    );
     elements.approvedPetList.append(node);
   }
 }

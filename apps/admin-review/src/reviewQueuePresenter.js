@@ -104,6 +104,7 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
     const importDraftId = item.importDraftId ?? "";
     const scoreReportId = item.scoreReportId ?? "";
     const approvedAt = item.approvedAt ?? "";
+    const exportArtifactPath = item.assets?.exportArtifactPath ?? "";
 
     return {
       petId: item.petId ?? "",
@@ -113,6 +114,7 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       totalScore,
       motionSheetCount,
       previewPath: item.assets?.previewPath ?? "",
+      exportArtifactPath,
       submissionId,
       importDraftId,
       scoreReportId,
@@ -125,6 +127,9 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       focusSubmissionLabel: submissionId ? "View submission" : "",
       canRevokeSubmission: Boolean(submissionId),
       revokeSubmissionLabel: submissionId ? "Revoke publication" : "",
+      packageArtifactLabel: exportArtifactPath
+        ? `Package ${exportArtifactPath}`
+        : "Package artifact pending",
       assetLabel: `${sourceKind} / score ${totalScore} / ${motionSheetCount} motion sheets`
     };
   });
