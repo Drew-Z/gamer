@@ -77,6 +77,7 @@ const createImportSummaryFromPetPackageBundle = (bundle) => ({
   assets: {
     baseImage: bundle.manifest.assets.baseImage,
     previewPath: bundle.manifest.assets.previewImage,
+    exportArtifactPath: bundle.manifest.assets.exportArtifact,
     motionSheets: clone(bundle.manifest.assets.motionSheets)
   }
 });

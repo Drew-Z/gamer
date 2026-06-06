@@ -37,6 +37,7 @@ test("manifest rejects unsupported source kind and invalid motion sheets", () =>
     },
     assets: {
       ...validPetPackageManifest.assets,
+      exportArtifact: "",
       motionSheets: ["motion/sheets/idle.png", "", 42]
     }
   };
@@ -50,6 +51,9 @@ test("manifest rejects unsupported source kind and invalid motion sheets", () =>
   );
   assert.ok(
     validation.errors.includes("assets.motionSheets[2] must be a non-empty string")
+  );
+  assert.ok(
+    validation.errors.includes("assets.exportArtifact must be a non-empty string")
   );
 });
 

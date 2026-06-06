@@ -167,6 +167,10 @@ test("pet package bundle creates ready import draft with uploaded score report",
     "motion/sheets/idle.png",
     "motion/sheets/happy_click.png"
   ]);
+  assert.equal(
+    draft.importSummary.assets.exportArtifactPath,
+    "exports/stardust-package.zip"
+  );
   assert.equal(report.reportId, draft.scoreReportId);
   assert.equal(report.petId, "pet-stardust-001");
   assert.equal(report.totalScore, validPetPackageBundle.scoreReport.totalScore);

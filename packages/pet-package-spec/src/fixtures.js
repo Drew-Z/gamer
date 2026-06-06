@@ -11,6 +11,7 @@ export const validPetPackageManifest = {
   assets: {
     baseImage: "assets/base_identity_accepted_clean.png",
     previewImage: "previews/overall-showcase.png",
+    exportArtifact: "exports/stardust-package.zip",
     motionSheets: ["motion/sheets/idle.png", "motion/sheets/happy_click.png"]
   },
   license: "license.json",

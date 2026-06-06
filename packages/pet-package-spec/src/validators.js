@@ -65,6 +65,7 @@ export function validatePetPackageManifest(manifest) {
   } else {
     requireString(errors, manifest.assets.baseImage, "assets.baseImage");
     requireString(errors, manifest.assets.previewImage, "assets.previewImage");
+    requireString(errors, manifest.assets.exportArtifact, "assets.exportArtifact");
     if (!Array.isArray(manifest.assets.motionSheets)) {
       errors.push("assets.motionSheets must be an array");
     } else {
