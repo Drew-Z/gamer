@@ -30,6 +30,35 @@ test("valid ownership claim passes", () => {
   assert.equal(validateOwnershipClaim(validOwnershipClaim).ok, true);
 });
 
+test("ownership claim rejects invalid claim type status and source references", () => {
+  const claim = {
+    ...validOwnershipClaim,
+    claimType: "unknown",
+    reviewStatus: "maybe",
+    sourceReferences: ["", 42]
+  };
+
+  const validation = validateOwnershipClaim(claim);
+
+  assert.equal(validation.ok, false);
+  assert.ok(
+    validation.errors.includes(
+      "claimType must be one of original-created, licensed, derivative-permitted"
+    )
+  );
+  assert.ok(
+    validation.errors.includes(
+      "reviewStatus must be one of pending, approved, rejected, revoked"
+    )
+  );
+  assert.ok(
+    validation.errors.includes("sourceReferences[0] must be a non-empty string")
+  );
+  assert.ok(
+    validation.errors.includes("sourceReferences[1] must be a non-empty string")
+  );
+});
+
 test("valid score report passes", () => {
   assert.equal(validateScoreReport(validScoreReport).ok, true);
 });

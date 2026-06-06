@@ -25,6 +25,12 @@ const ALLOWED_LEDGER_SOURCE_TYPES = [
   "submission-reward-reversal"
 ];
 const ALLOWED_LEDGER_STATUSES = ["posted", "pending", "voided"];
+const ALLOWED_CLAIM_TYPES = [
+  "original-created",
+  "licensed",
+  "derivative-permitted"
+];
+const ALLOWED_CLAIM_REVIEW_STATUSES = ["pending", "approved", "rejected", "revoked"];
 
 const result = (errors) => ({ ok: errors.length === 0, errors });
 
@@ -82,6 +88,19 @@ export function validateOwnershipClaim(claim) {
 
   if (!Array.isArray(claim.sourceReferences)) {
     errors.push("sourceReferences must be an array");
+  } else {
+    claim.sourceReferences.forEach((reference, index) => {
+      requireString(errors, reference, `sourceReferences[${index}]`);
+    });
+  }
+
+  if (!ALLOWED_CLAIM_TYPES.includes(claim.claimType)) {
+    errors.push(
+      "claimType must be one of original-created, licensed, derivative-permitted"
+    );
+  }
+  if (!ALLOWED_CLAIM_REVIEW_STATUSES.includes(claim.reviewStatus)) {
+    errors.push("reviewStatus must be one of pending, approved, rejected, revoked");
   }
 
   return result(errors);
