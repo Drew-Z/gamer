@@ -15,7 +15,10 @@ fun FeedResponseDto.toFeedPosts(): List<FeedPost> =
             rewardLabel = item.metadata.rewardLabel(),
             importDraftLabel = item.metadata.importDraftLabel(),
             submissionLabel = item.metadata.submissionLabel(),
-            scoreReportLabel = item.metadata.scoreReportLabel()
+            scoreReportLabel = item.metadata.scoreReportLabel(),
+            importSourceLabel = item.metadata.importSourceLabel(),
+            importPreviewLabel = item.metadata.importPreviewLabel(),
+            motionSheetLabel = item.metadata.motionSheetLabel()
         )
     }
 
@@ -49,4 +52,19 @@ private fun FeedPostMetadataDto?.submissionLabel(): String? {
 private fun FeedPostMetadataDto?.scoreReportLabel(): String? {
     val id = this?.scoreReportId ?: return null
     return if (id.isNotBlank()) "Score $id" else null
+}
+
+private fun FeedPostMetadataDto?.importSourceLabel(): String? {
+    val kind = this?.importSourceKind ?: return null
+    return if (kind.isNotBlank()) "Source $kind" else null
+}
+
+private fun FeedPostMetadataDto?.importPreviewLabel(): String? {
+    val path = this?.importPreviewPath ?: return null
+    return if (path.isNotBlank()) "Preview $path" else null
+}
+
+private fun FeedPostMetadataDto?.motionSheetLabel(): String? {
+    val count = this?.motionSheetCount ?: return null
+    return if (count > 0) "$count motion sheets" else null
 }

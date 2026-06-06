@@ -351,4 +351,11 @@ internal fun feedPostMetadataLabels(post: FeedPost): List<String> =
     listOfNotNull(post.sourceLabel, post.rewardLabel)
 
 internal fun feedPostAuditLabels(post: FeedPost): List<String> =
-    listOfNotNull(post.importDraftLabel, post.submissionLabel, post.scoreReportLabel)
+    listOfNotNull(
+        post.importDraftLabel,
+        post.submissionLabel,
+        post.scoreReportLabel,
+        post.importSourceLabel,
+        post.importPreviewLabel,
+        post.motionSheetLabel
+    )

@@ -33,7 +33,10 @@ data class FeedPost(
     val rewardLabel: String? = null,
     val importDraftLabel: String? = null,
     val submissionLabel: String? = null,
-    val scoreReportLabel: String? = null
+    val scoreReportLabel: String? = null,
+    val importSourceLabel: String? = null,
+    val importPreviewLabel: String? = null,
+    val motionSheetLabel: String? = null
 )
 
 data class PetShellState(

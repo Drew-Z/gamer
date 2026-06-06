@@ -70,7 +70,10 @@ class CommunityApiMappersTest {
                         importDraftId = "import-draft-local-001",
                         submissionId = "submission-local-002",
                         scoreReportId = "score-import-draft-local-001",
-                        rewardAmount = 80
+                        rewardAmount = 80,
+                        importSourceKind = "fantasy-pet-rule",
+                        importPreviewPath = "previews/overall-showcase.png",
+                        motionSheetCount = 2
                     )
                 )
             )
@@ -83,5 +86,8 @@ class CommunityApiMappersTest {
         assertEquals("Draft import-draft-local-001", posts[0].importDraftLabel)
         assertEquals("Submission submission-local-002", posts[0].submissionLabel)
         assertEquals("Score score-import-draft-local-001", posts[0].scoreReportLabel)
+        assertEquals("Source fantasy-pet-rule", posts[0].importSourceLabel)
+        assertEquals("Preview previews/overall-showcase.png", posts[0].importPreviewLabel)
+        assertEquals("2 motion sheets", posts[0].motionSheetLabel)
     }
 }

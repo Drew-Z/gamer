@@ -531,6 +531,7 @@ test("approved import feed post includes import metadata", () => {
     importSummary: {
       source: {
         petId: "pet-feed-metadata-001",
+        kind: "fantasy-pet-rule",
         baseIdentityStatus: "accepted"
       },
       review: {
@@ -539,7 +540,8 @@ test("approved import feed post includes import metadata", () => {
         exportStatus: "ready"
       },
       assets: {
-        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-metadata/preview.html",
+        previewPath: "previews/overall-showcase.png",
+        motionSheets: ["motion/sheets/idle.png", "motion/sheets/happy_click.png"],
         exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/feed-metadata/export.zip"
       }
     },
@@ -564,8 +566,14 @@ test("approved import feed post includes import metadata", () => {
     importDraftId: draft.id,
     submissionId: submissionResult.submission.id,
     scoreReportId: draft.scoreReportId,
-    rewardAmount: 80
+    rewardAmount: 80,
+    importSourceKind: "fantasy-pet-rule",
+    importPreviewPath: "previews/overall-showcase.png",
+    motionSheetCount: 2
   });
+  assert.equal(published.metadata.importSourceKind, "fantasy-pet-rule");
+  assert.equal(published.metadata.importPreviewPath, "previews/overall-showcase.png");
+  assert.equal(published.metadata.motionSheetCount, 2);
 });
 
 test("approving imported submission twice does not duplicate feed post", () => {

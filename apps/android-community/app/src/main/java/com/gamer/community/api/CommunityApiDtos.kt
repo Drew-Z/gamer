@@ -26,7 +26,10 @@ data class FeedPostMetadataDto(
     val importDraftId: String? = null,
     val submissionId: String? = null,
     val scoreReportId: String? = null,
-    val rewardAmount: Int? = null
+    val rewardAmount: Int? = null,
+    val importSourceKind: String? = null,
+    val importPreviewPath: String? = null,
+    val motionSheetCount: Int? = null
 )
 
 @Serializable

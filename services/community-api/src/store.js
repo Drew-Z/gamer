@@ -97,7 +97,12 @@ const createFeedPostFromApprovedImport = (submission, draft, scoreReport, reward
     importDraftId: submission.importDraftId,
     submissionId: submission.id,
     scoreReportId: submission.scoreReportId,
-    rewardAmount: rewardEntry?.amount ?? scoreReport?.rewardRecommendation?.amount ?? 0
+    rewardAmount: rewardEntry?.amount ?? scoreReport?.rewardRecommendation?.amount ?? 0,
+    importSourceKind: draft?.importSummary?.source?.kind ?? "",
+    importPreviewPath: draft?.importSummary?.assets?.previewPath ?? "",
+    motionSheetCount: Array.isArray(draft?.importSummary?.assets?.motionSheets)
+      ? draft.importSummary.assets.motionSheets.length
+      : 0
   }
 });
 
