@@ -577,9 +577,31 @@ test("HTTP server returns approved imported pet registry", async () => {
     const draftResponse = await requestJson(
       server,
       "POST",
-      "/v1/import-drafts/from-pet-package-bundle",
+      "/v1/import-drafts",
       {
-        bundle: validPetPackageBundle
+        readiness: {
+          status: "community-ready",
+          reason: "preview accepted by user"
+        },
+        importSummary: {
+          source: {
+            petId: "pet-approved-registry-001",
+            displayName: "Approved Registry Pet",
+            kind: "fantasy-pet-rule",
+            baseIdentityStatus: "accepted"
+          },
+          review: {
+            blockers: [],
+            previewDecision: "keep",
+            exportStatus: "ready"
+          },
+          assets: {
+            previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/approved-registry/preview.html",
+            motionSheets: ["motion/sheets/idle.png", "motion/sheets/happy_click.png"],
+            exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/approved-registry/export.zip"
+          }
+        },
+        ownershipClaimId: "claim-pet-approved-registry-001"
       }
     );
     const submitResponse = await requestJson(
@@ -599,8 +621,12 @@ test("HTTP server returns approved imported pet registry", async () => {
     const response = await requestJson(server, "GET", "/v1/pets/approved");
 
     assert.equal(response.status, 200);
-    assert.equal(response.body.items[0].petId, "pet-stardust-001");
+    assert.equal(response.body.items[0].petId, "pet-approved-registry-001");
     assert.equal(response.body.items[0].assets.motionSheetCount, 2);
+    assert.equal(
+      response.body.items[0].assets.exportArtifactPath,
+      "D:/workspace4Codex/fantasy-pet-rule/runs/approved-registry/export.zip"
+    );
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

@@ -86,6 +86,7 @@ class PetShellUiModelTest {
             displayName = "Stardust Dragon",
             sourceKind = "fantasy-pet-rule",
             previewPath = "previews/overall-showcase.png",
+            exportArtifactPath = "",
             motionSheetCount = 2,
             totalScore = 86
         )
@@ -161,18 +162,35 @@ class PetShellUiModelTest {
         assertEquals("Preview asset pending", approvedPetShowcaseAsset(emptyList(), selectedIndex = 1))
     }
 
+    @Test
+    fun approvedPetShowcasePackageShowsSelectedExportArtifactPath() {
+        val pets = listOf(
+            approvedPet("pet-stardust-001", "Stardust Dragon"),
+            approvedPet(
+                petId = "pet-moonfox-001",
+                displayName = "Moon Fox",
+                exportArtifactPath = "exports/moonfox.zip"
+            )
+        )
+
+        assertEquals("Package exports/moonfox.zip", approvedPetShowcasePackage(pets, selectedIndex = 1))
+        assertEquals("Package artifact pending", approvedPetShowcasePackage(emptyList(), selectedIndex = 1))
+    }
+
     private fun approvedPet(
         petId: String,
         displayName: String,
         totalScore: Int = 86,
         motionSheetCount: Int = 2,
-        previewPath: String = "previews/overall-showcase.png"
+        previewPath: String = "previews/overall-showcase.png",
+        exportArtifactPath: String = ""
     ): ApprovedPet =
         ApprovedPet(
             petId = petId,
             displayName = displayName,
             sourceKind = "fantasy-pet-rule",
             previewPath = previewPath,
+            exportArtifactPath = exportArtifactPath,
             motionSheetCount = motionSheetCount,
             totalScore = totalScore
         )

@@ -605,6 +605,53 @@ test("approved imported submission registers approved pet asset", () => {
   assert.equal(pet.importDraftId, draft.id);
 });
 
+test("approved imported submission registers export artifact asset", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraft({
+    userId: "user-demo-001",
+    readiness: {
+      status: "community-ready",
+      reason: "preview accepted by user"
+    },
+    importSummary: {
+      source: {
+        petId: "pet-export-registry-001",
+        displayName: "Export Registry Pet",
+        kind: "fantasy-pet-rule",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready"
+      },
+      assets: {
+        previewPath: "D:/workspace4Codex/fantasy-pet-rule/runs/export-registry/preview.html",
+        exportArtifactPath: "D:/workspace4Codex/fantasy-pet-rule/runs/export-registry/export.zip"
+      }
+    },
+    ownershipClaimId: "claim-pet-export-registry-001"
+  });
+  const submitted = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submitted.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const registry = store.listApprovedPets();
+  const pet = registry.items.find((item) => item.petId === "pet-export-registry-001");
+
+  assert.equal(
+    pet.assets.exportArtifactPath,
+    "D:/workspace4Codex/fantasy-pet-rule/runs/export-registry/export.zip"
+  );
+});
+
 test("approving imported submission twice does not duplicate feed post", () => {
   const store = createCommunityStore();
   const draft = store.createImportDraft({

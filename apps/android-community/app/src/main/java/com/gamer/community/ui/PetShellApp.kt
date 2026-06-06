@@ -226,6 +226,14 @@ private fun CommunityScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF667085)
                 )
+                Text(
+                    text = approvedPetShowcasePackage(
+                        pets = state.approvedPets,
+                        selectedIndex = state.approvedPetIndex
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085)
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -474,6 +482,18 @@ internal fun approvedPetShowcaseAsset(
 ): String {
     val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Preview asset pending"
     return "Preview ${pet.previewPath}"
+}
+
+internal fun approvedPetShowcasePackage(
+    pets: List<ApprovedPet>,
+    selectedIndex: Int
+): String {
+    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Package artifact pending"
+    return if (pet.exportArtifactPath.isBlank()) {
+        "Package artifact pending"
+    } else {
+        "Package ${pet.exportArtifactPath}"
+    }
 }
 
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {

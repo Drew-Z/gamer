@@ -55,6 +55,7 @@ data class ApprovedPetSourceDto(
 @Serializable
 data class ApprovedPetAssetsDto(
     val previewPath: String = "",
+    val exportArtifactPath: String = "",
     val motionSheetCount: Int = 0
 )
 

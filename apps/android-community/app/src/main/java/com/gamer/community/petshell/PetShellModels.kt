@@ -46,6 +46,7 @@ data class ApprovedPet(
     val displayName: String,
     val sourceKind: String,
     val previewPath: String,
+    val exportArtifactPath: String,
     val motionSheetCount: Int,
     val totalScore: Int
 )

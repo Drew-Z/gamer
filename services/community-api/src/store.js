@@ -119,6 +119,7 @@ const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   },
   assets: {
     previewPath: draft?.importSummary?.assets?.previewPath ?? "",
+    exportArtifactPath: draft?.importSummary?.assets?.exportArtifactPath ?? "",
     motionSheetCount: Array.isArray(draft?.importSummary?.assets?.motionSheets)
       ? draft.importSummary.assets.motionSheets.length
       : 0

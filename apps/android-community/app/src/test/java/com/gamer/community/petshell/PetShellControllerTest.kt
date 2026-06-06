@@ -70,6 +70,7 @@ class PetShellControllerTest {
             displayName = "Stardust Dragon",
             sourceKind = "fantasy-pet-rule",
             previewPath = "previews/overall-showcase.png",
+            exportArtifactPath = "",
             motionSheetCount = 2,
             totalScore = 86
         )
@@ -215,6 +216,7 @@ class PetShellControllerTest {
             displayName = displayName,
             sourceKind = "fantasy-pet-rule",
             previewPath = "previews/overall-showcase.png",
+            exportArtifactPath = "",
             motionSheetCount = 2,
             totalScore = 86
         )

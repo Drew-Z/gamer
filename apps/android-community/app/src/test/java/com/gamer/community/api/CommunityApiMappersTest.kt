@@ -102,7 +102,8 @@ class CommunityApiMappersTest {
                     source = ApprovedPetSourceDto(kind = "fantasy-pet-rule"),
                     assets = ApprovedPetAssetsDto(
                         previewPath = "previews/overall-showcase.png",
-                        motionSheetCount = 2
+                        motionSheetCount = 2,
+                        exportArtifactPath = "exports/stardust.zip"
                     ),
                     totalScore = 86
                 )
@@ -116,6 +117,7 @@ class CommunityApiMappersTest {
         assertEquals("Stardust Dragon", pets[0].displayName)
         assertEquals("fantasy-pet-rule", pets[0].sourceKind)
         assertEquals("previews/overall-showcase.png", pets[0].previewPath)
+        assertEquals("exports/stardust.zip", pets[0].exportArtifactPath)
         assertEquals(2, pets[0].motionSheetCount)
         assertEquals(86, pets[0].totalScore)
     }

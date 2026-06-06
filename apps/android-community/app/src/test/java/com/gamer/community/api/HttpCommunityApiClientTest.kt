@@ -66,7 +66,11 @@ class HttpCommunityApiClientTest {
                   "displayName": "Stardust Dragon",
                   "ownerUserId": "user-demo-001",
                   "source": {"kind": "fantasy-pet-rule"},
-                  "assets": {"previewPath": "previews/overall-showcase.png", "motionSheetCount": 2},
+                  "assets": {
+                    "previewPath": "previews/overall-showcase.png",
+                    "motionSheetCount": 2,
+                    "exportArtifactPath": "exports/stardust.zip"
+                  },
                   "totalScore": 86
                 }
               ]
@@ -77,6 +81,7 @@ class HttpCommunityApiClientTest {
 
         assertEquals("Stardust Dragon", response.items[0].displayName)
         assertEquals(2, response.items[0].assets.motionSheetCount)
+        assertEquals("exports/stardust.zip", response.items[0].assets.exportArtifactPath)
     }
 
     @Test

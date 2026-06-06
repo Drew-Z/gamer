@@ -30,6 +30,7 @@ fun ApprovedPetsResponseDto.toApprovedPets(): List<ApprovedPet> =
             displayName = item.displayName,
             sourceKind = item.source.kind,
             previewPath = item.assets.previewPath,
+            exportArtifactPath = item.assets.exportArtifactPath,
             motionSheetCount = item.assets.motionSheetCount,
             totalScore = item.totalScore
         )
