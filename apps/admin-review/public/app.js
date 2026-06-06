@@ -184,6 +184,14 @@ function renderApprovedPetList() {
       button.addEventListener("click", () => focusSubmission(row.submissionId));
       actions.append(button);
     }
+    if (row.canRevokeSubmission) {
+      const button = document.createElement("button");
+      button.className = "approved-pet-revoke-button";
+      button.type = "button";
+      button.textContent = row.revokeSubmissionLabel;
+      button.addEventListener("click", () => revokeApprovedPet(row.submissionId));
+      actions.append(button);
+    }
 
     node.append(title, petMeta, assetLabel, previewPath, traceList, actions);
     elements.approvedPetList.append(node);
@@ -337,7 +345,7 @@ async function reviewSubmission(submissionId, status) {
       reviewer: "admin-ui"
     })
   });
-  await loadQueue();
+  await loadDashboard();
 }
 
 async function submitImportDraft(draftId) {
@@ -372,6 +380,19 @@ function focusSubmission(submissionId) {
   target.classList.add("is-focused");
   target.scrollIntoView({ behavior: "smooth", block: "center" });
   elements.statusLine.textContent = `Focused ${submissionId}.`;
+}
+
+async function revokeApprovedPet(submissionId) {
+  elements.statusLine.textContent = `Revoking ${submissionId}...`;
+  await requestJson("/v1/admin/reviews", {
+    method: "POST",
+    body: JSON.stringify({
+      submissionId,
+      status: "revoked",
+      reviewer: "admin-ui"
+    })
+  });
+  await loadDashboard();
 }
 
 async function importFantasyPetState(event) {

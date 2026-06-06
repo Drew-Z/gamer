@@ -297,6 +297,8 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   assert.equal(model.rows[0].importDraftLabel, "Draft import-draft-local-001");
   assert.equal(model.rows[0].canFocusSubmission, true);
   assert.equal(model.rows[0].focusSubmissionLabel, "View submission");
+  assert.equal(model.rows[0].canRevokeSubmission, true);
+  assert.equal(model.rows[0].revokeSubmissionLabel, "Revoke publication");
 
   const missingSubmission = createApprovedPetRegistryModel({
     items: [
@@ -308,6 +310,8 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   });
   assert.equal(missingSubmission.rows[0].canFocusSubmission, false);
   assert.equal(missingSubmission.rows[0].focusSubmissionLabel, "");
+  assert.equal(missingSubmission.rows[0].canRevokeSubmission, false);
+  assert.equal(missingSubmission.rows[0].revokeSubmissionLabel, "");
 
   const empty = createApprovedPetRegistryModel({});
   assert.equal(empty.summary.total, 0);

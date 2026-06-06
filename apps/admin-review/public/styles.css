@@ -301,19 +301,30 @@ h1 {
 
 .approved-pet-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
 }
 
-.approved-pet-focus-button {
+.approved-pet-focus-button,
+.approved-pet-revoke-button {
   min-height: 32px;
-  border: 1px solid var(--accent);
   border-radius: 8px;
   background: var(--surface);
-  color: var(--accent-strong);
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
   padding: 0 10px;
+}
+
+.approved-pet-focus-button {
+  border: 1px solid var(--accent);
+  color: var(--accent-strong);
+}
+
+.approved-pet-revoke-button {
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .draft-item-heading {

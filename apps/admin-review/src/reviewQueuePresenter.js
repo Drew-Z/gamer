@@ -123,6 +123,8 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       approvedAtLabel: approvedAt ? `Approved ${approvedAt}` : "Approved time unknown",
       canFocusSubmission: Boolean(submissionId),
       focusSubmissionLabel: submissionId ? "View submission" : "",
+      canRevokeSubmission: Boolean(submissionId),
+      revokeSubmissionLabel: submissionId ? "Revoke publication" : "",
       assetLabel: `${sourceKind} / score ${totalScore} / ${motionSheetCount} motion sheets`
     };
   });
