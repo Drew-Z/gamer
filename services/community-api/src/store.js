@@ -193,12 +193,16 @@ export function createCommunityStore(seed = defaultSeed) {
             state.ledgerEntries,
             submission.id
           );
+          const importDraft = state.importDrafts.find(
+            (draft) => draft.id === submission.importDraftId
+          );
           const publishedFeedPost = state.feedPosts.find(
             (post) => post.id === `post-${submission.id}`
           );
 
           return {
             submission: clone(submission),
+            importDraft: clone(importDraft ?? null),
             scoreReport: clone(scoreReport ?? null),
             reviews: clone(reviews),
             rewardLedgerEntries: clone(rewardLedgerEntries),

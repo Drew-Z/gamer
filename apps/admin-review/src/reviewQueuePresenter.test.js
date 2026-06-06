@@ -38,6 +38,17 @@ const queueFixture = {
       },
       reviews: [],
       rewardLedgerEntries: [],
+      importDraft: {
+        importSummary: {
+          source: {
+            kind: "fantasy-pet-rule"
+          },
+          assets: {
+            previewPath: "previews/overall-showcase.png",
+            motionSheets: ["motion/sheets/idle.png", "motion/sheets/happy_click.png"]
+          }
+        }
+      },
       outstandingReward: 0
     },
     {
@@ -114,6 +125,13 @@ test("createReviewDashboardModel summarizes queue counts and rows", () => {
     "Community-ready import has enough accepted evidence."
   );
   assert.equal(model.rows[0].actions.length, 3);
+  assert.equal(model.rows[0].importSourceKind, "fantasy-pet-rule");
+  assert.equal(model.rows[0].importPreviewPath, "previews/overall-showcase.png");
+  assert.equal(model.rows[0].motionSheetCount, 2);
+  assert.equal(
+    model.rows[0].importEvidenceLabel,
+    "fantasy-pet-rule / 2 motion sheets"
+  );
   assert.equal(model.rows[0].feedPublicationStatus, "unpublished");
   assert.equal(model.rows[0].feedPublicationLabel, "Feed: unpublished");
   assert.equal(model.rows[1].riskLabel, "1 risk");

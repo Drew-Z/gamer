@@ -97,6 +97,13 @@ export function createReviewDashboardModel(queue = { items: [] }) {
     const status = submission.status ?? "pending";
     const publishedFeedPost = item.publishedFeedPost ?? null;
     const publishedFeedPostId = publishedFeedPost?.id ?? "";
+    const importSummary = item.importDraft?.importSummary ?? {};
+    const importSourceKind = importSummary.source?.kind ?? "";
+    const importPreviewPath = importSummary.assets?.previewPath ?? "";
+    const motionSheets = Array.isArray(importSummary.assets?.motionSheets)
+      ? importSummary.assets.motionSheets
+      : [];
+    const motionSheetCount = motionSheets.length;
 
     if (Object.hasOwn(counts, status)) {
       counts[status] += 1;
@@ -129,6 +136,12 @@ export function createReviewDashboardModel(queue = { items: [] }) {
       feedPublicationLabel: publishedFeedPostId
         ? `Feed: ${publishedFeedPostId}`
         : "Feed: unpublished",
+      importSourceKind,
+      importPreviewPath,
+      motionSheetCount,
+      importEvidenceLabel: importSourceKind
+        ? `${importSourceKind} / ${motionSheetCount} motion sheets`
+        : "No import evidence",
       actions: actionsForStatus(status)
     };
   });

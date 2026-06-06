@@ -450,6 +450,30 @@ test("admin review queue aggregates submission evidence and reward status", () =
   assert.equal(item.outstandingReward, 0);
 });
 
+test("admin review queue includes import draft evidence", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraftFromPetPackageBundle({
+    userId: "user-demo-001",
+    bundle: validPetPackageBundle
+  });
+  const submissionResult = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  const queue = store.listAdminReviewQueue();
+  const item = queue.items.find(
+    (entry) => entry.submission.id === submissionResult.submission.id
+  );
+
+  assert.equal(item.importDraft.id, draft.id);
+  assert.equal(item.importDraft.importSummary.source.kind, "fantasy-pet-rule");
+  assert.equal(
+    item.importDraft.importSummary.assets.previewPath,
+    "previews/overall-showcase.png"
+  );
+});
+
 test("approving imported submission publishes one community feed post", () => {
   const store = createCommunityStore();
   const initialFeed = store.getFeed();
