@@ -96,6 +96,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       return json(403, draft);
     }
 
+    if (draft.error === "duplicate_import_draft") {
+      return json(409, draft);
+    }
+
     return json(201, draft);
   }
 

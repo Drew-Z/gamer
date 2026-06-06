@@ -189,6 +189,24 @@ test("pet package bundle owned by another user does not create import draft", ()
   assert.equal(store.listImportDrafts("user-other-001").drafts.length, 0);
 });
 
+test("pet package bundle cannot create duplicate active import draft", () => {
+  const store = createCommunityStore();
+  const first = store.createImportDraftFromPetPackageBundle({
+    userId: "user-demo-001",
+    bundle: validPetPackageBundle
+  });
+  const second = store.createImportDraftFromPetPackageBundle({
+    userId: "user-demo-001",
+    bundle: validPetPackageBundle
+  });
+
+  assert.equal(first.status, "ready");
+  assert.equal(second.error, "duplicate_import_draft");
+  assert.equal(second.petId, "pet-stardust-001");
+  assert.equal(second.existingDraftId, first.id);
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
+});
+
 test("approving scored submission uses recommended reward when amount is omitted", () => {
   const store = createCommunityStore();
   const draft = store.createImportDraft({
