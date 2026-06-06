@@ -78,3 +78,34 @@ test("score report rejects invalid reward recommendation amount", () => {
 test("valid currency ledger entry passes", () => {
   assert.equal(validateCurrencyLedgerEntry(validCurrencyLedgerEntry).ok, true);
 });
+
+test("ledger entry rejects invalid amount and status", () => {
+  const entry = {
+    ...validCurrencyLedgerEntry,
+    amount: 1.5,
+    status: "unknown"
+  };
+
+  const validation = validateCurrencyLedgerEntry(entry);
+
+  assert.equal(validation.ok, false);
+  assert.ok(validation.errors.includes("amount must be an integer"));
+  assert.ok(validation.errors.includes("status must be one of posted, pending, voided"));
+});
+
+test("ledger entry requires reversal amounts to be negative", () => {
+  const entry = {
+    ...validCurrencyLedgerEntry,
+    sourceType: "submission-reward-reversal",
+    amount: 80
+  };
+
+  const validation = validateCurrencyLedgerEntry(entry);
+
+  assert.equal(validation.ok, false);
+  assert.ok(
+    validation.errors.includes(
+      "amount must be negative for submission-reward-reversal"
+    )
+  );
+});

@@ -19,6 +19,13 @@ const requireNonNegativeNumber = (errors, value, field) => {
   }
 };
 
+const ALLOWED_LEDGER_SOURCE_TYPES = [
+  "daily-checkin",
+  "submission-reward",
+  "submission-reward-reversal"
+];
+const ALLOWED_LEDGER_STATUSES = ["posted", "pending", "voided"];
+
 const result = (errors) => ({ ok: errors.length === 0, errors });
 
 export function validatePetPackageManifest(manifest) {
@@ -145,11 +152,28 @@ export function validateCurrencyLedgerEntry(entry) {
   requireString(errors, entry.schema, "schema");
   requireString(errors, entry.entryId, "entryId");
   requireString(errors, entry.userId, "userId");
-  requireNumber(errors, entry.amount, "amount");
+  if (typeof entry.amount !== "number" || !Number.isInteger(entry.amount)) {
+    errors.push("amount must be an integer");
+  }
   requireString(errors, entry.sourceType, "sourceType");
   requireString(errors, entry.sourceId, "sourceId");
   requireString(errors, entry.status, "status");
   requireString(errors, entry.createdAt, "createdAt");
+
+  if (!ALLOWED_LEDGER_SOURCE_TYPES.includes(entry.sourceType)) {
+    errors.push(
+      "sourceType must be one of daily-checkin, submission-reward, submission-reward-reversal"
+    );
+  }
+  if (!ALLOWED_LEDGER_STATUSES.includes(entry.status)) {
+    errors.push("status must be one of posted, pending, voided");
+  }
+  if (entry.sourceType === "submission-reward-reversal" && entry.amount >= 0) {
+    errors.push("amount must be negative for submission-reward-reversal");
+  }
+  if (entry.sourceType !== "submission-reward-reversal" && entry.amount < 0) {
+    errors.push("amount must be non-negative unless sourceType is submission-reward-reversal");
+  }
 
   return result(errors);
 }
