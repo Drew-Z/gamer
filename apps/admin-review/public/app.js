@@ -43,6 +43,13 @@ const labelForField = (field) =>
 
 const labelForAction = (action) => (action === "held" ? "hold" : action);
 
+function setActiveFilter(filter) {
+  state.filter = filter;
+  for (const filterButton of elements.filters) {
+    filterButton.classList.toggle("is-active", filterButton.dataset.filter === filter);
+  }
+}
+
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
     headers: {
@@ -167,7 +174,18 @@ function renderApprovedPetList() {
       traceList.append(item);
     }
 
-    node.append(title, petMeta, assetLabel, previewPath, traceList);
+    const actions = document.createElement("div");
+    actions.className = "approved-pet-actions";
+    if (row.canFocusSubmission) {
+      const button = document.createElement("button");
+      button.className = "approved-pet-focus-button";
+      button.type = "button";
+      button.textContent = row.focusSubmissionLabel;
+      button.addEventListener("click", () => focusSubmission(row.submissionId));
+      actions.append(button);
+    }
+
+    node.append(title, petMeta, assetLabel, previewPath, traceList, actions);
     elements.approvedPetList.append(node);
   }
 }
@@ -334,6 +352,28 @@ async function submitImportDraft(draftId) {
   await loadDashboard();
 }
 
+function focusSubmission(submissionId) {
+  setActiveFilter("all");
+  renderList();
+
+  const target = [...elements.list.querySelectorAll(".queue-item")].find(
+    (node) => node.dataset.submissionId === submissionId
+  );
+
+  if (!target) {
+    elements.statusLine.textContent = `Submission ${submissionId} is not in the loaded queue.`;
+    return;
+  }
+
+  for (const node of elements.list.querySelectorAll(".queue-item.is-focused")) {
+    node.classList.remove("is-focused");
+  }
+
+  target.classList.add("is-focused");
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  elements.statusLine.textContent = `Focused ${submissionId}.`;
+}
+
 async function importFantasyPetState(event) {
   event.preventDefault();
   elements.importButton.disabled = true;
@@ -382,10 +422,7 @@ elements.importForm.addEventListener("submit", (event) => {
 
 for (const button of elements.filters) {
   button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-    for (const filterButton of elements.filters) {
-      filterButton.classList.toggle("is-active", filterButton === button);
-    }
+    setActiveFilter(button.dataset.filter);
     renderList();
   });
 }

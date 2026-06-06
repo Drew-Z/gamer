@@ -295,6 +295,19 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
     "Score score-import-draft-local-001"
   );
   assert.equal(model.rows[0].importDraftLabel, "Draft import-draft-local-001");
+  assert.equal(model.rows[0].canFocusSubmission, true);
+  assert.equal(model.rows[0].focusSubmissionLabel, "View submission");
+
+  const missingSubmission = createApprovedPetRegistryModel({
+    items: [
+      {
+        petId: "pet-unlinked-001",
+        displayName: "Unlinked Pet"
+      }
+    ]
+  });
+  assert.equal(missingSubmission.rows[0].canFocusSubmission, false);
+  assert.equal(missingSubmission.rows[0].focusSubmissionLabel, "");
 
   const empty = createApprovedPetRegistryModel({});
   assert.equal(empty.summary.total, 0);

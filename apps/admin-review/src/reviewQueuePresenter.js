@@ -121,6 +121,8 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       importDraftLabel: importDraftId ? `Draft ${importDraftId}` : "No import draft",
       scoreReportLabel: scoreReportId ? `Score ${scoreReportId}` : "No score report",
       approvedAtLabel: approvedAt ? `Approved ${approvedAt}` : "Approved time unknown",
+      canFocusSubmission: Boolean(submissionId),
+      focusSubmissionLabel: submissionId ? "View submission" : "",
       assetLabel: `${sourceKind} / score ${totalScore} / ${motionSheetCount} motion sheets`
     };
   });

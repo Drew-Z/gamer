@@ -299,6 +299,23 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.approved-pet-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.approved-pet-focus-button {
+  min-height: 32px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
 .draft-item-heading {
   display: flex;
   align-items: center;
@@ -403,6 +420,11 @@ h1 {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 18px;
+}
+
+.queue-item.is-focused {
+  border-color: var(--accent);
+  outline: 3px solid rgba(23, 126, 137, 0.2);
 }
 
 .item-main,
