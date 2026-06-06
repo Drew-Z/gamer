@@ -249,6 +249,46 @@ test("HTTP server rejects duplicate pet package bundle import draft", async () =
   }
 });
 
+test("HTTP server rejects duplicate pet package bundle import after submission", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const first = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/from-pet-package-bundle",
+      {
+        bundle: validPetPackageBundle
+      }
+    );
+    await requestJson(server, "POST", "/v1/import-drafts/submit", {
+      draftId: first.body.id
+    });
+    const second = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/from-pet-package-bundle",
+      {
+        bundle: validPetPackageBundle
+      }
+    );
+
+    assert.equal(first.status, 201);
+    assert.equal(second.status, 409);
+    assert.equal(second.body.error, "duplicate_import_draft");
+    assert.equal(second.body.existingDraftId, first.body.id);
+    assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP server submits community-ready import draft", async () => {
   const store = createCommunityStore();
   const server = http.createServer(

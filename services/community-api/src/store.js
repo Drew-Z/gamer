@@ -266,8 +266,7 @@ export function createCommunityStore(seed = defaultSeed) {
       const existingDraft = state.importDrafts.find(
         (draft) =>
           draft.userId === input.userId &&
-          draft.petId === input.bundle.manifest.petId &&
-          draft.status !== "submitted"
+          draft.petId === input.bundle.manifest.petId
       );
       if (existingDraft) {
         return {

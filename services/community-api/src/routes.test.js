@@ -193,6 +193,42 @@ test("pet package bundle route rejects duplicate active import draft", () => {
   assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
 });
 
+test("pet package bundle route rejects duplicate import after submission", () => {
+  const store = createCommunityStore();
+  const first = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+  handleCommunityRequest("POST", "/v1/import-drafts/submit", {
+    store,
+    body: {
+      draftId: first.body.id
+    }
+  });
+  const second = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+
+  assert.equal(first.status, 201);
+  assert.equal(second.status, 409);
+  assert.equal(second.body.error, "duplicate_import_draft");
+  assert.equal(second.body.existingDraftId, first.body.id);
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
+});
+
 test("admin review route approves submission and updates wallet", () => {
   const store = createCommunityStore();
   const created = handleCommunityRequest("POST", "/v1/submissions", {
