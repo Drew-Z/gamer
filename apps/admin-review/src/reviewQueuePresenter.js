@@ -39,6 +39,16 @@ export function formatImportDraftStatus(draft = {}) {
   return `Created ${status} draft ${id} for ${petId}.`;
 }
 
+export function formatImportEvidenceDetails(row = {}) {
+  const previewPath = row.importPreviewPath || "No preview path";
+
+  return {
+    label: row.importEvidenceLabel || "No import evidence",
+    previewPath,
+    hasPreviewPath: previewPath !== "No preview path"
+  };
+}
+
 export function createImportDraftListModel(response = { drafts: [] }) {
   const drafts = Array.isArray(response.drafts) ? response.drafts : [];
   const summary = {

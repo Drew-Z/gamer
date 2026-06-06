@@ -5,6 +5,7 @@ import {
   createImportDraftListModel,
   createReviewDashboardModel,
   createFantasyPetImportPayload,
+  formatImportEvidenceDetails,
   formatImportDraftStatus,
   formatReward
 } from "./reviewQueuePresenter.js";
@@ -140,6 +141,26 @@ test("createReviewDashboardModel summarizes queue counts and rows", () => {
   assert.equal(model.rows[1].feedPublicationStatus, "published");
   assert.equal(model.rows[1].feedPublicationLabel, "Feed: post-submission-local-003");
   assert.equal(model.rows[1].publishedFeedPostId, "post-submission-local-003");
+});
+
+test("formatImportEvidenceDetails summarizes import evidence fields", () => {
+  assert.deepEqual(
+    formatImportEvidenceDetails({
+      importEvidenceLabel: "fantasy-pet-rule / 2 motion sheets",
+      importPreviewPath: "previews/overall-showcase.png"
+    }),
+    {
+      label: "fantasy-pet-rule / 2 motion sheets",
+      previewPath: "previews/overall-showcase.png",
+      hasPreviewPath: true
+    }
+  );
+
+  assert.deepEqual(formatImportEvidenceDetails({}), {
+    label: "No import evidence",
+    previewPath: "No preview path",
+    hasPreviewPath: false
+  });
 });
 
 test("createFantasyPetImportPayload trims state path and ownership claim", () => {

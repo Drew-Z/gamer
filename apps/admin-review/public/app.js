@@ -3,6 +3,7 @@ import {
   createImportDraftListModel,
   createReviewDashboardModel,
   formatImportDraftStatus,
+  formatImportEvidenceDetails,
   formatReward
 } from "/src/reviewQueuePresenter.js";
 
@@ -143,6 +144,13 @@ function renderList() {
     const feedPublication = node.querySelector(".feed-publication");
     feedPublication.textContent = row.feedPublicationLabel;
     feedPublication.dataset.status = row.feedPublicationStatus;
+    const importEvidence = formatImportEvidenceDetails(row);
+    const importEvidenceBlock = node.querySelector(".import-evidence");
+    const importEvidenceLabel = node.querySelector(".import-evidence-label");
+    const importPreviewPath = node.querySelector(".import-preview-path");
+    importEvidenceLabel.textContent = importEvidence.label;
+    importPreviewPath.textContent = importEvidence.previewPath;
+    importEvidenceBlock.dataset.hasPreviewPath = String(importEvidence.hasPreviewPath);
 
     const pill = node.querySelector(".status-pill");
     pill.textContent = row.status;

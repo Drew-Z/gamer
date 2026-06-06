@@ -97,6 +97,41 @@ h1 {
   color: var(--muted);
 }
 
+.import-evidence {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 8px;
+}
+
+.import-evidence-label {
+  border: 1px solid #b8d4d8;
+  border-radius: 999px;
+  background: #edf7f8;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.import-preview-path {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 3px 6px;
+}
+
+.import-evidence[data-has-preview-path="false"] .import-preview-path {
+  display: none;
+}
+
 .summary-panel {
   display: grid;
   gap: 10px;
