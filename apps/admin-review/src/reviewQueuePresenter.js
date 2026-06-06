@@ -101,6 +101,9 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
     const totalScore = Number(item.totalScore ?? 0);
     const motionSheetCount = Number(item.assets?.motionSheetCount ?? 0);
     const submissionId = item.submissionId ?? "";
+    const importDraftId = item.importDraftId ?? "";
+    const scoreReportId = item.scoreReportId ?? "";
+    const approvedAt = item.approvedAt ?? "";
 
     return {
       petId: item.petId ?? "",
@@ -111,7 +114,13 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       motionSheetCount,
       previewPath: item.assets?.previewPath ?? "",
       submissionId,
+      importDraftId,
+      scoreReportId,
+      approvedAt,
       submissionLabel: submissionId ? `Submission ${submissionId}` : "No submission",
+      importDraftLabel: importDraftId ? `Draft ${importDraftId}` : "No import draft",
+      scoreReportLabel: scoreReportId ? `Score ${scoreReportId}` : "No score report",
+      approvedAtLabel: approvedAt ? `Approved ${approvedAt}` : "Approved time unknown",
       assetLabel: `${sourceKind} / score ${totalScore} / ${motionSheetCount} motion sheets`
     };
   });

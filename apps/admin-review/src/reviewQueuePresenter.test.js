@@ -114,6 +114,9 @@ const approvedPetsFixture = {
         motionSheetCount: 2
       },
       submissionId: "submission-local-002",
+      importDraftId: "import-draft-local-001",
+      scoreReportId: "score-import-draft-local-001",
+      approvedAt: "2026-06-07T02:30:00.000Z",
       totalScore: 86
     },
     {
@@ -282,6 +285,16 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   );
   assert.equal(model.rows[0].previewPath, "previews/overall-showcase.png");
   assert.equal(model.rows[0].submissionLabel, "Submission submission-local-002");
+  assert.equal(model.rows[0].approvedAt, "2026-06-07T02:30:00.000Z");
+  assert.equal(
+    model.rows[0].approvedAtLabel,
+    "Approved 2026-06-07T02:30:00.000Z"
+  );
+  assert.equal(
+    model.rows[0].scoreReportLabel,
+    "Score score-import-draft-local-001"
+  );
+  assert.equal(model.rows[0].importDraftLabel, "Draft import-draft-local-001");
 
   const empty = createApprovedPetRegistryModel({});
   assert.equal(empty.summary.total, 0);

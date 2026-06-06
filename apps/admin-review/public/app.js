@@ -154,10 +154,20 @@ function renderApprovedPetList() {
     const previewPath = document.createElement("code");
     previewPath.textContent = row.previewPath || "No preview path";
 
-    const submission = document.createElement("small");
-    submission.textContent = row.submissionLabel;
+    const traceList = document.createElement("ul");
+    traceList.className = "approved-pet-trace";
+    for (const label of [
+      row.approvedAtLabel,
+      row.scoreReportLabel,
+      row.importDraftLabel,
+      row.submissionLabel
+    ]) {
+      const item = document.createElement("li");
+      item.textContent = label;
+      traceList.append(item);
+    }
 
-    node.append(title, petMeta, assetLabel, previewPath, submission);
+    node.append(title, petMeta, assetLabel, previewPath, traceList);
     elements.approvedPetList.append(node);
   }
 }
