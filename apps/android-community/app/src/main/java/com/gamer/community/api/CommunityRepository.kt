@@ -1,10 +1,12 @@
 package com.gamer.community.api
 
+import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.fixtureFeedPosts
 
 data class InitialCommunityResult(
     val posts: List<FeedPost>,
+    val approvedPets: List<ApprovedPet>,
     val walletBalance: Int,
     val message: String,
     val usedFallback: Boolean
@@ -24,8 +26,13 @@ class CommunityRepository(
     suspend fun loadInitialCommunity(): InitialCommunityResult {
         val feedResult = client.getFeed()
         val walletResult = client.getWallet()
+        val approvedPetsResult = client.getApprovedPets()
         val remotePosts = when (feedResult) {
             is ApiCallResult.Success -> feedResult.value.toFeedPosts()
+            is ApiCallResult.Failure -> emptyList()
+        }
+        val approvedPets = when (approvedPetsResult) {
+            is ApiCallResult.Success -> approvedPetsResult.value.toApprovedPets()
             is ApiCallResult.Failure -> emptyList()
         }
         val walletBalance = when (walletResult) {
@@ -38,6 +45,7 @@ class CommunityRepository(
         return if (hasRemotePosts && hasRemoteWallet) {
                 InitialCommunityResult(
                     posts = remotePosts,
+                    approvedPets = approvedPets,
                     walletBalance = walletBalance,
                     message = "Community ready.",
                     usedFallback = false
@@ -45,6 +53,7 @@ class CommunityRepository(
         } else {
                 InitialCommunityResult(
                     posts = remotePosts.ifEmpty { fixtureFeedPosts },
+                    approvedPets = approvedPets,
                     walletBalance = walletBalance,
                     message = "Local fallback active.",
                     usedFallback = true

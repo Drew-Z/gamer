@@ -9,6 +9,7 @@ object PetShellController {
             feedIndex = 0,
             walletBalance = 90,
             checkInClaimed = false,
+            approvedPets = emptyList(),
             posts = fixtureFeedPosts
         )
 
@@ -60,6 +61,7 @@ object PetShellController {
     fun applyCommunityLoad(
         state: PetShellState,
         posts: List<FeedPost>,
+        approvedPets: List<ApprovedPet>,
         walletBalance: Int,
         usedFallback: Boolean,
         message: String
@@ -70,6 +72,7 @@ object PetShellController {
             speechBubble = message,
             feedIndex = 0,
             walletBalance = walletBalance,
+            approvedPets = approvedPets,
             posts = nextPosts
         )
     }

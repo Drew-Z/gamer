@@ -57,6 +57,29 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesApprovedPetsJson() {
+        val json = """
+            {
+              "items": [
+                {
+                  "petId": "pet-stardust-001",
+                  "displayName": "Stardust Dragon",
+                  "ownerUserId": "user-demo-001",
+                  "source": {"kind": "fantasy-pet-rule"},
+                  "assets": {"previewPath": "previews/overall-showcase.png", "motionSheetCount": 2},
+                  "totalScore": 86
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val response = HttpCommunityApiClient.decodeApprovedPets(json)
+
+        assertEquals("Stardust Dragon", response.items[0].displayName)
+        assertEquals(2, response.items[0].assets.motionSheetCount)
+    }
+
+    @Test
     fun invalidJsonBecomesFailure() {
         val result = HttpCommunityApiClient.decodeCatching("not-json") {
             HttpCommunityApiClient.decodeFeed(it)

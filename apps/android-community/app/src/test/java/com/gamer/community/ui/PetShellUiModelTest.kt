@@ -1,6 +1,7 @@
 package com.gamer.community.ui
 
 import com.gamer.community.petshell.FeedPost
+import com.gamer.community.petshell.ApprovedPet
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -71,5 +72,25 @@ class PetShellUiModelTest {
         )
 
         assertEquals(emptyList<String>(), feedPostAuditLabels(post))
+    }
+
+    @Test
+    fun approvedPetRegistrySummaryShowsEmptyState() {
+        assertEquals("No approved pets yet", approvedPetRegistrySummary(emptyList()))
+    }
+
+    @Test
+    fun approvedPetRegistrySummaryShowsCount() {
+        val pet = ApprovedPet(
+            petId = "pet-stardust-001",
+            displayName = "Stardust Dragon",
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = 2,
+            totalScore = 86
+        )
+
+        assertEquals("1 approved pet", approvedPetRegistrySummary(listOf(pet)))
+        assertEquals("2 approved pets", approvedPetRegistrySummary(listOf(pet, pet)))
     }
 }

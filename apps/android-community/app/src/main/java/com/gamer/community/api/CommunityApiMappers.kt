@@ -1,5 +1,6 @@
 package com.gamer.community.api
 
+import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.FeedPost
 
 fun FeedResponseDto.toFeedPosts(): List<FeedPost> =
@@ -19,6 +20,18 @@ fun FeedResponseDto.toFeedPosts(): List<FeedPost> =
             importSourceLabel = item.metadata.importSourceLabel(),
             importPreviewLabel = item.metadata.importPreviewLabel(),
             motionSheetLabel = item.metadata.motionSheetLabel()
+        )
+    }
+
+fun ApprovedPetsResponseDto.toApprovedPets(): List<ApprovedPet> =
+    items.map { item ->
+        ApprovedPet(
+            petId = item.petId,
+            displayName = item.displayName,
+            sourceKind = item.source.kind,
+            previewPath = item.assets.previewPath,
+            motionSheetCount = item.assets.motionSheetCount,
+            totalScore = item.totalScore
         )
     }
 

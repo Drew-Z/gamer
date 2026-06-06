@@ -20,6 +20,9 @@ class HttpCommunityApiClient(
     override suspend fun getWallet(): ApiCallResult<WalletDto> =
         get("/v1/wallet/me", Companion::decodeWallet)
 
+    override suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto> =
+        get("/v1/pets/approved", Companion::decodeApprovedPets)
+
     override suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto> =
         post("/v1/check-in", "{}", Companion::decodeCheckIn)
 
@@ -76,6 +79,9 @@ class HttpCommunityApiClient(
         fun decodeFeed(text: String): FeedResponseDto = json.decodeFromString<FeedResponseDto>(text)
 
         fun decodeWallet(text: String): WalletDto = json.decodeFromString<WalletDto>(text)
+
+        fun decodeApprovedPets(text: String): ApprovedPetsResponseDto =
+            json.decodeFromString<ApprovedPetsResponseDto>(text)
 
         fun decodeCheckIn(text: String): CheckInResponseDto = json.decodeFromString<CheckInResponseDto>(text)
 

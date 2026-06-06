@@ -33,6 +33,32 @@ data class FeedPostMetadataDto(
 )
 
 @Serializable
+data class ApprovedPetsResponseDto(
+    val items: List<ApprovedPetDto> = emptyList()
+)
+
+@Serializable
+data class ApprovedPetDto(
+    val petId: String,
+    val displayName: String,
+    val ownerUserId: String,
+    val source: ApprovedPetSourceDto = ApprovedPetSourceDto(),
+    val assets: ApprovedPetAssetsDto = ApprovedPetAssetsDto(),
+    val totalScore: Int = 0
+)
+
+@Serializable
+data class ApprovedPetSourceDto(
+    val kind: String = ""
+)
+
+@Serializable
+data class ApprovedPetAssetsDto(
+    val previewPath: String = "",
+    val motionSheetCount: Int = 0
+)
+
+@Serializable
 data class WalletDto(
     val userId: String,
     val balance: Int,

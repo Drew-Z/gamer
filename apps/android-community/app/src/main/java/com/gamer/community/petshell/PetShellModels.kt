@@ -39,6 +39,15 @@ data class FeedPost(
     val motionSheetLabel: String? = null
 )
 
+data class ApprovedPet(
+    val petId: String,
+    val displayName: String,
+    val sourceKind: String,
+    val previewPath: String,
+    val motionSheetCount: Int,
+    val totalScore: Int
+)
+
 data class PetShellState(
     val phase: ShellPhase,
     val petAction: PetAction,
@@ -46,6 +55,7 @@ data class PetShellState(
     val feedIndex: Int,
     val walletBalance: Int,
     val checkInClaimed: Boolean,
+    val approvedPets: List<ApprovedPet>,
     val posts: List<FeedPost>
 ) {
     val currentPost: FeedPost

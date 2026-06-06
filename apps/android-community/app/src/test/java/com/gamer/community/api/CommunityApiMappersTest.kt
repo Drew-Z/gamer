@@ -90,4 +90,33 @@ class CommunityApiMappersTest {
         assertEquals("Preview previews/overall-showcase.png", posts[0].importPreviewLabel)
         assertEquals("2 motion sheets", posts[0].motionSheetLabel)
     }
+
+    @Test
+    fun mapsApprovedPetRegistryToShellModels() {
+        val response = ApprovedPetsResponseDto(
+            items = listOf(
+                ApprovedPetDto(
+                    petId = "pet-stardust-001",
+                    displayName = "Stardust Dragon",
+                    ownerUserId = "user-demo-001",
+                    source = ApprovedPetSourceDto(kind = "fantasy-pet-rule"),
+                    assets = ApprovedPetAssetsDto(
+                        previewPath = "previews/overall-showcase.png",
+                        motionSheetCount = 2
+                    ),
+                    totalScore = 86
+                )
+            )
+        )
+
+        val pets = response.toApprovedPets()
+
+        assertEquals(1, pets.size)
+        assertEquals("pet-stardust-001", pets[0].petId)
+        assertEquals("Stardust Dragon", pets[0].displayName)
+        assertEquals("fantasy-pet-rule", pets[0].sourceKind)
+        assertEquals("previews/overall-showcase.png", pets[0].previewPath)
+        assertEquals(2, pets[0].motionSheetCount)
+        assertEquals(86, pets[0].totalScore)
+    }
 }

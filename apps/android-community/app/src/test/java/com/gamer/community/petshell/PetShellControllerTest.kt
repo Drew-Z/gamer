@@ -64,10 +64,19 @@ class PetShellControllerTest {
             authorName = "Demo Keeper",
             reactionCount = 18
         )
+        val approvedPet = ApprovedPet(
+            petId = "pet-stardust-001",
+            displayName = "Stardust Dragon",
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = 2,
+            totalScore = 86
+        )
 
         val loaded = PetShellController.applyCommunityLoad(
             state = state,
             posts = listOf(remotePost),
+            approvedPets = listOf(approvedPet),
             walletBalance = 123,
             usedFallback = false,
             message = "Community ready."
@@ -75,6 +84,8 @@ class PetShellControllerTest {
 
         assertEquals(0, loaded.feedIndex)
         assertEquals(123, loaded.walletBalance)
+        assertEquals(1, loaded.approvedPets.size)
+        assertEquals("Stardust Dragon", loaded.approvedPets[0].displayName)
         assertEquals("Live feed", loaded.currentPost.title)
         assertEquals(PetAction.Idle, loaded.petAction)
         assertEquals("Community ready.", loaded.speechBubble)
@@ -87,6 +98,7 @@ class PetShellControllerTest {
         val loaded = PetShellController.applyCommunityLoad(
             state = state,
             posts = emptyList(),
+            approvedPets = emptyList(),
             walletBalance = 90,
             usedFallback = true,
             message = "Local fallback active."

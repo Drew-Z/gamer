@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.HttpCommunityApiClient
+import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.FeedDirection
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.PetAction
@@ -55,6 +56,7 @@ fun PetShellApp(repository: CommunityRepository) {
         state = PetShellController.applyCommunityLoad(
             state = state,
             posts = result.posts,
+            approvedPets = result.approvedPets,
             walletBalance = result.walletBalance,
             usedFallback = result.usedFallback,
             message = result.message
@@ -169,6 +171,12 @@ private fun CommunityScreen(
             }
             WalletPill(balance = state.walletBalance)
         }
+
+        Text(
+            text = approvedPetRegistrySummary(state.approvedPets),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF667085)
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -359,3 +367,10 @@ internal fun feedPostAuditLabels(post: FeedPost): List<String> =
         post.importPreviewLabel,
         post.motionSheetLabel
     )
+
+internal fun approvedPetRegistrySummary(pets: List<ApprovedPet>): String =
+    if (pets.isEmpty()) {
+        "No approved pets yet"
+    } else {
+        "${pets.size} approved pet${if (pets.size == 1) "" else "s"}"
+    }
