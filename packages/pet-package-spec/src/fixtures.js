@@ -49,6 +49,12 @@ export const validScoreReport = {
   risks: []
 };
 
+export const validPetPackageBundle = {
+  manifest: validPetPackageManifest,
+  ownershipClaim: validOwnershipClaim,
+  scoreReport: validScoreReport
+};
+
 export const validCurrencyLedgerEntry = {
   schema: "gamer.currency-ledger-entry.v1",
   entryId: "ledger-submission-001",

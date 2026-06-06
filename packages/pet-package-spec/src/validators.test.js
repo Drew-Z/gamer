@@ -3,10 +3,12 @@ import test from "node:test";
 import {
   validCurrencyLedgerEntry,
   validOwnershipClaim,
+  validPetPackageBundle,
   validPetPackageManifest,
   validScoreReport,
   validateCurrencyLedgerEntry,
   validateOwnershipClaim,
+  validatePetPackageBundle,
   validatePetPackageManifest,
   validateScoreReport
 } from "./index.js";
@@ -49,6 +51,41 @@ test("manifest rejects unsupported source kind and invalid motion sheets", () =>
   assert.ok(
     validation.errors.includes("assets.motionSheets[2] must be a non-empty string")
   );
+});
+
+test("valid pet package bundle passes", () => {
+  const validation = validatePetPackageBundle(validPetPackageBundle);
+
+  assert.deepEqual(validation, {
+    ok: true,
+    errors: []
+  });
+});
+
+test("pet package bundle rejects mismatched pet and owner identities", () => {
+  const bundle = {
+    ...validPetPackageBundle,
+    ownershipClaim: {
+      ...validPetPackageBundle.ownershipClaim,
+      userId: "user-other-001",
+      petId: "pet-other-001"
+    },
+    scoreReport: {
+      ...validPetPackageBundle.scoreReport,
+      petId: "pet-score-other-001"
+    }
+  };
+
+  const validation = validatePetPackageBundle(bundle);
+
+  assert.equal(validation.ok, false);
+  assert.ok(
+    validation.errors.includes("manifest.petId must match ownershipClaim.petId")
+  );
+  assert.ok(
+    validation.errors.includes("manifest.ownerUserId must match ownershipClaim.userId")
+  );
+  assert.ok(validation.errors.includes("manifest.petId must match scoreReport.petId"));
 });
 
 test("valid ownership claim passes", () => {

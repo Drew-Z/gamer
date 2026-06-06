@@ -34,6 +34,8 @@ const ALLOWED_CLAIM_REVIEW_STATUSES = ["pending", "approved", "rejected", "revok
 const ALLOWED_MANIFEST_SOURCE_KINDS = ["fantasy-pet-rule"];
 
 const result = (errors) => ({ ok: errors.length === 0, errors });
+const prefixErrors = (prefix, validation) =>
+  validation.errors.map((error) => `${prefix}.${error}`);
 
 export function validatePetPackageManifest(manifest) {
   const errors = [];
@@ -74,6 +76,46 @@ export function validatePetPackageManifest(manifest) {
 
   requireString(errors, manifest.license, "license");
   requireString(errors, manifest.scoreReport, "scoreReport");
+
+  return result(errors);
+}
+
+export function validatePetPackageBundle(bundle) {
+  const errors = [];
+
+  if (!isObject(bundle)) {
+    return result(["bundle must be an object"]);
+  }
+
+  errors.push(...prefixErrors("manifest", validatePetPackageManifest(bundle.manifest)));
+  errors.push(
+    ...prefixErrors("ownershipClaim", validateOwnershipClaim(bundle.ownershipClaim))
+  );
+  errors.push(...prefixErrors("scoreReport", validateScoreReport(bundle.scoreReport)));
+
+  if (
+    isObject(bundle.manifest) &&
+    isObject(bundle.ownershipClaim) &&
+    bundle.manifest.petId !== bundle.ownershipClaim.petId
+  ) {
+    errors.push("manifest.petId must match ownershipClaim.petId");
+  }
+
+  if (
+    isObject(bundle.manifest) &&
+    isObject(bundle.ownershipClaim) &&
+    bundle.manifest.ownerUserId !== bundle.ownershipClaim.userId
+  ) {
+    errors.push("manifest.ownerUserId must match ownershipClaim.userId");
+  }
+
+  if (
+    isObject(bundle.manifest) &&
+    isObject(bundle.scoreReport) &&
+    bundle.manifest.petId !== bundle.scoreReport.petId
+  ) {
+    errors.push("manifest.petId must match scoreReport.petId");
+  }
 
   return result(errors);
 }
