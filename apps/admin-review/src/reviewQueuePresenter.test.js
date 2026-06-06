@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   actionsForStatus,
+  createApprovedPetRegistryModel,
   createImportDraftListModel,
   createReviewDashboardModel,
   createFantasyPetImportPayload,
@@ -95,6 +96,39 @@ const queueFixture = {
         petId: "pet-moon-003"
       },
       outstandingReward: 74
+    }
+  ]
+};
+
+const approvedPetsFixture = {
+  items: [
+    {
+      petId: "pet-stardust-001",
+      displayName: "Stardust Dragon",
+      ownerUserId: "user-demo-001",
+      source: {
+        kind: "fantasy-pet-rule"
+      },
+      assets: {
+        previewPath: "previews/overall-showcase.png",
+        motionSheetCount: 2
+      },
+      submissionId: "submission-local-002",
+      totalScore: 86
+    },
+    {
+      petId: "pet-moonfox-001",
+      displayName: "Moon Fox",
+      ownerUserId: "user-demo-001",
+      source: {
+        kind: "pet-package-bundle"
+      },
+      assets: {
+        previewPath: "previews/moonfox.png",
+        motionSheetCount: 3
+      },
+      submissionId: "submission-local-003",
+      totalScore: 91
     }
   ]
 };
@@ -233,4 +267,23 @@ test("createImportDraftListModel summarizes draft statuses and rows", () => {
   assert.equal(model.rows[2].scoreReportId, "");
   assert.equal(model.rows[2].canSubmit, false);
   assert.deepEqual(model.rows[2].actions, []);
+});
+
+test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
+  const model = createApprovedPetRegistryModel(approvedPetsFixture);
+
+  assert.equal(model.summary.total, 2);
+  assert.equal(model.rows[0].petId, "pet-stardust-001");
+  assert.equal(model.rows[0].displayName, "Stardust Dragon");
+  assert.equal(model.rows[0].ownerUserId, "user-demo-001");
+  assert.equal(
+    model.rows[0].assetLabel,
+    "fantasy-pet-rule / score 86 / 2 motion sheets"
+  );
+  assert.equal(model.rows[0].previewPath, "previews/overall-showcase.png");
+  assert.equal(model.rows[0].submissionLabel, "Submission submission-local-002");
+
+  const empty = createApprovedPetRegistryModel({});
+  assert.equal(empty.summary.total, 0);
+  assert.deepEqual(empty.rows, []);
 });

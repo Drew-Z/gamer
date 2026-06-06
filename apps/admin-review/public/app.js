@@ -1,4 +1,5 @@
 import {
+  createApprovedPetRegistryModel,
   createFantasyPetImportPayload,
   createImportDraftListModel,
   createReviewDashboardModel,
@@ -9,6 +10,7 @@ import {
 
 const state = {
   filter: "all",
+  approvedPetModel: createApprovedPetRegistryModel({ items: [] }),
   draftModel: createImportDraftListModel({ drafts: [] }),
   model: createReviewDashboardModel({ items: [] })
 };
@@ -24,6 +26,8 @@ const elements = {
   ownershipClaimInput: document.querySelector("#ownership-claim-input"),
   draftSummary: document.querySelector("#draft-summary"),
   draftList: document.querySelector("#draft-list"),
+  approvedPetSummary: document.querySelector("#approved-pet-summary"),
+  approvedPetList: document.querySelector("#approved-pet-list"),
   filters: [...document.querySelectorAll(".filter-button")],
   summary: {
     total: document.querySelector("#summary-total"),
@@ -117,6 +121,44 @@ function renderDraftList() {
     heading.append(title, status);
     node.append(heading, reason, meta, actions);
     elements.draftList.append(node);
+  }
+}
+
+function renderApprovedPetList() {
+  elements.approvedPetSummary.textContent =
+    `${state.approvedPetModel.summary.total} approved`;
+  elements.approvedPetList.replaceChildren();
+
+  if (state.approvedPetModel.rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "approved-pet-empty";
+    empty.textContent = "No approved pets yet.";
+    elements.approvedPetList.append(empty);
+    return;
+  }
+
+  for (const row of state.approvedPetModel.rows) {
+    const node = document.createElement("article");
+    node.className = "approved-pet-item";
+
+    const title = document.createElement("strong");
+    title.textContent = row.displayName;
+
+    const petMeta = document.createElement("small");
+    petMeta.textContent = `${row.petId} by ${row.ownerUserId}`;
+
+    const assetLabel = document.createElement("span");
+    assetLabel.className = "approved-pet-asset";
+    assetLabel.textContent = row.assetLabel;
+
+    const previewPath = document.createElement("code");
+    previewPath.textContent = row.previewPath || "No preview path";
+
+    const submission = document.createElement("small");
+    submission.textContent = row.submissionLabel;
+
+    node.append(title, petMeta, assetLabel, previewPath, submission);
+    elements.approvedPetList.append(node);
   }
 }
 
@@ -230,6 +272,7 @@ function renderList() {
 
 function render() {
   renderSummary();
+  renderApprovedPetList();
   renderDraftList();
   renderList();
 }
@@ -244,12 +287,14 @@ async function loadQueue() {
 
 async function loadDashboard() {
   elements.statusLine.textContent = "Loading review queue...";
-  const [drafts, queue] = await Promise.all([
+  const [drafts, queue, approvedPets] = await Promise.all([
     requestJson("/v1/import-drafts"),
-    requestJson("/v1/admin/review-queue")
+    requestJson("/v1/admin/review-queue"),
+    requestJson("/v1/pets/approved")
   ]);
   state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
+  state.approvedPetModel = createApprovedPetRegistryModel(approvedPets);
   elements.statusLine.textContent = `Loaded ${state.model.summary.total} submissions`;
   render();
 }

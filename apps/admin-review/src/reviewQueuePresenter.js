@@ -93,6 +93,37 @@ export function createImportDraftListModel(response = { drafts: [] }) {
   };
 }
 
+export function createApprovedPetRegistryModel(response = { items: [] }) {
+  const items = Array.isArray(response.items) ? response.items : [];
+
+  const rows = items.map((item) => {
+    const sourceKind = item.source?.kind ?? "unknown-source";
+    const totalScore = Number(item.totalScore ?? 0);
+    const motionSheetCount = Number(item.assets?.motionSheetCount ?? 0);
+    const submissionId = item.submissionId ?? "";
+
+    return {
+      petId: item.petId ?? "",
+      displayName: item.displayName ?? item.petId ?? "Unnamed pet",
+      ownerUserId: item.ownerUserId ?? "",
+      sourceKind,
+      totalScore,
+      motionSheetCount,
+      previewPath: item.assets?.previewPath ?? "",
+      submissionId,
+      submissionLabel: submissionId ? `Submission ${submissionId}` : "No submission",
+      assetLabel: `${sourceKind} / score ${totalScore} / ${motionSheetCount} motion sheets`
+    };
+  });
+
+  return {
+    summary: {
+      total: rows.length
+    },
+    rows
+  };
+}
+
 export function createReviewDashboardModel(queue = { items: [] }) {
   const items = Array.isArray(queue.items) ? queue.items : [];
   const counts = Object.fromEntries(STATUS_ORDER.map((status) => [status, 0]));
