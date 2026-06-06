@@ -178,6 +178,31 @@ private fun CommunityScreen(
             color = Color(0xFF667085)
         )
 
+        Surface(
+            color = Color.White,
+            shape = RoundedCornerShape(8.dp),
+            tonalElevation = 1.dp,
+            shadowElevation = 1.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = approvedPetShowcaseTitle(state.approvedPets),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = approvedPetShowcaseDetail(state.approvedPets),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF667085)
+                )
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -374,3 +399,11 @@ internal fun approvedPetRegistrySummary(pets: List<ApprovedPet>): String =
     } else {
         "${pets.size} approved pet${if (pets.size == 1) "" else "s"}"
     }
+
+internal fun approvedPetShowcaseTitle(pets: List<ApprovedPet>): String =
+    pets.firstOrNull()?.displayName ?: "Awaiting approved pet"
+
+internal fun approvedPetShowcaseDetail(pets: List<ApprovedPet>): String {
+    val pet = pets.firstOrNull() ?: return "Approved imports will appear here."
+    return "${pet.sourceKind} / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
+}

@@ -93,4 +93,40 @@ class PetShellUiModelTest {
         assertEquals("1 approved pet", approvedPetRegistrySummary(listOf(pet)))
         assertEquals("2 approved pets", approvedPetRegistrySummary(listOf(pet, pet)))
     }
+
+    @Test
+    fun approvedPetShowcaseTitleUsesFirstApprovedPet() {
+        val pet = ApprovedPet(
+            petId = "pet-stardust-001",
+            displayName = "Stardust Dragon",
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = 2,
+            totalScore = 86
+        )
+
+        assertEquals("Stardust Dragon", approvedPetShowcaseTitle(listOf(pet)))
+        assertEquals("Awaiting approved pet", approvedPetShowcaseTitle(emptyList()))
+    }
+
+    @Test
+    fun approvedPetShowcaseDetailSummarizesScoreAndMotionSheets() {
+        val pet = ApprovedPet(
+            petId = "pet-stardust-001",
+            displayName = "Stardust Dragon",
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = 2,
+            totalScore = 86
+        )
+
+        assertEquals(
+            "fantasy-pet-rule / score 86 / 2 motion sheets",
+            approvedPetShowcaseDetail(listOf(pet))
+        )
+        assertEquals(
+            "Approved imports will appear here.",
+            approvedPetShowcaseDetail(emptyList())
+        )
+    }
 }
