@@ -210,6 +210,22 @@ private fun CommunityScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF667085)
                 )
+                Text(
+                    text = approvedPetShowcasePosition(
+                        pets = state.approvedPets,
+                        selectedIndex = state.approvedPetIndex
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF475467)
+                )
+                Text(
+                    text = approvedPetShowcaseAsset(
+                        pets = state.approvedPets,
+                        selectedIndex = state.approvedPetIndex
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085)
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -441,6 +457,23 @@ internal fun approvedPetShowcaseDetail(
 ): String {
     val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Approved imports will appear here."
     return "${pet.sourceKind} / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
+}
+
+internal fun approvedPetShowcasePosition(
+    pets: List<ApprovedPet>,
+    selectedIndex: Int
+): String {
+    if (pets.isEmpty()) return "No showcase selection"
+    val displayIndex = if (selectedIndex in pets.indices) selectedIndex else 0
+    return "Pet ${displayIndex + 1} of ${pets.size}"
+}
+
+internal fun approvedPetShowcaseAsset(
+    pets: List<ApprovedPet>,
+    selectedIndex: Int
+): String {
+    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Preview asset pending"
+    return "Preview ${pet.previewPath}"
 }
 
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {

@@ -133,17 +133,46 @@ class PetShellUiModelTest {
         )
     }
 
+    @Test
+    fun approvedPetShowcasePositionShowsSelectedPetPosition() {
+        val pets = listOf(
+            approvedPet("pet-stardust-001", "Stardust Dragon"),
+            approvedPet("pet-moonfox-001", "Moon Fox"),
+            approvedPet("pet-sunbird-001", "Sun Bird")
+        )
+
+        assertEquals("Pet 2 of 3", approvedPetShowcasePosition(pets, selectedIndex = 1))
+        assertEquals("Pet 1 of 3", approvedPetShowcasePosition(pets, selectedIndex = 99))
+        assertEquals("No showcase selection", approvedPetShowcasePosition(emptyList(), selectedIndex = 1))
+    }
+
+    @Test
+    fun approvedPetShowcaseAssetShowsSelectedPreviewPath() {
+        val pets = listOf(
+            approvedPet("pet-stardust-001", "Stardust Dragon"),
+            approvedPet(
+                petId = "pet-moonfox-001",
+                displayName = "Moon Fox",
+                previewPath = "previews/moonfox.png"
+            )
+        )
+
+        assertEquals("Preview previews/moonfox.png", approvedPetShowcaseAsset(pets, selectedIndex = 1))
+        assertEquals("Preview asset pending", approvedPetShowcaseAsset(emptyList(), selectedIndex = 1))
+    }
+
     private fun approvedPet(
         petId: String,
         displayName: String,
         totalScore: Int = 86,
-        motionSheetCount: Int = 2
+        motionSheetCount: Int = 2,
+        previewPath: String = "previews/overall-showcase.png"
     ): ApprovedPet =
         ApprovedPet(
             petId = petId,
             displayName = displayName,
             sourceKind = "fantasy-pet-rule",
-            previewPath = "previews/overall-showcase.png",
+            previewPath = previewPath,
             motionSheetCount = motionSheetCount,
             totalScore = totalScore
         )
