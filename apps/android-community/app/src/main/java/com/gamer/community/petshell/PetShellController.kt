@@ -10,6 +10,7 @@ object PetShellController {
             walletBalance = 90,
             checkInClaimed = false,
             approvedPets = emptyList(),
+            approvedPetIndex = 0,
             posts = fixtureFeedPosts
         )
 
@@ -58,6 +59,33 @@ object PetShellController {
         )
     }
 
+    fun navigateApprovedPet(state: PetShellState, direction: FeedDirection): PetShellState {
+        if (state.approvedPets.isEmpty()) {
+            return state.copy(
+                approvedPetIndex = 0,
+                petAction = PetAction.Idle,
+                speechBubble = "No approved pets ready yet."
+            )
+        }
+
+        val nextIndex = when (direction) {
+            FeedDirection.Next,
+            FeedDirection.Skip -> state.approvedPetIndex + 1
+            FeedDirection.Previous -> state.approvedPetIndex - 1
+        }.floorMod(state.approvedPets.size)
+        val nextPet = state.approvedPets[nextIndex]
+
+        return state.copy(
+            approvedPetIndex = nextIndex,
+            petAction = when (direction) {
+                FeedDirection.Previous -> PetAction.ShowcasePrevious
+                FeedDirection.Next,
+                FeedDirection.Skip -> PetAction.ShowcaseNext
+            },
+            speechBubble = "Showing approved pet ${nextPet.displayName}."
+        )
+    }
+
     fun applyCommunityLoad(
         state: PetShellState,
         posts: List<FeedPost>,
@@ -73,6 +101,7 @@ object PetShellController {
             feedIndex = 0,
             walletBalance = walletBalance,
             approvedPets = approvedPets,
+            approvedPetIndex = 0,
             posts = nextPosts
         )
     }

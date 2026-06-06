@@ -78,6 +78,9 @@ fun PetShellApp(repository: CommunityRepository) {
                     onNavigate = { direction ->
                         state = PetShellController.navigateFeed(state, direction)
                     },
+                    onShowcaseNavigate = { direction ->
+                        state = PetShellController.navigateApprovedPet(state, direction)
+                    },
                     onCheckIn = {
                         scope.launch {
                             val result = repository.claimDailyCheckIn()
@@ -144,6 +147,7 @@ private fun LaunchBubbleScreen(
 private fun CommunityScreen(
     state: PetShellState,
     onNavigate: (FeedDirection) -> Unit,
+    onShowcaseNavigate: (FeedDirection) -> Unit,
     onCheckIn: () -> Unit
 ) {
     Column(
@@ -191,15 +195,40 @@ private fun CommunityScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = approvedPetShowcaseTitle(state.approvedPets),
+                    text = approvedPetShowcaseTitle(
+                        pets = state.approvedPets,
+                        selectedIndex = state.approvedPetIndex
+                    ),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = approvedPetShowcaseDetail(state.approvedPets),
+                    text = approvedPetShowcaseDetail(
+                        pets = state.approvedPets,
+                        selectedIndex = state.approvedPetIndex
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF667085)
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onShowcaseNavigate(FeedDirection.Previous) },
+                        modifier = Modifier.weight(1f),
+                        enabled = state.approvedPets.isNotEmpty()
+                    ) {
+                        Text("Pet Prev")
+                    }
+                    Button(
+                        onClick = { onShowcaseNavigate(FeedDirection.Next) },
+                        modifier = Modifier.weight(1f),
+                        enabled = state.approvedPets.isNotEmpty()
+                    ) {
+                        Text("Pet Next")
+                    }
+                }
             }
         }
 
@@ -400,10 +429,21 @@ internal fun approvedPetRegistrySummary(pets: List<ApprovedPet>): String =
         "${pets.size} approved pet${if (pets.size == 1) "" else "s"}"
     }
 
-internal fun approvedPetShowcaseTitle(pets: List<ApprovedPet>): String =
-    pets.firstOrNull()?.displayName ?: "Awaiting approved pet"
+internal fun approvedPetShowcaseTitle(
+    pets: List<ApprovedPet>,
+    selectedIndex: Int
+): String =
+    pets.selectedApprovedPet(selectedIndex)?.displayName ?: "Awaiting approved pet"
 
-internal fun approvedPetShowcaseDetail(pets: List<ApprovedPet>): String {
-    val pet = pets.firstOrNull() ?: return "Approved imports will appear here."
+internal fun approvedPetShowcaseDetail(
+    pets: List<ApprovedPet>,
+    selectedIndex: Int
+): String {
+    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Approved imports will appear here."
     return "${pet.sourceKind} / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
+}
+
+private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
+    if (isEmpty()) return null
+    return this[if (selectedIndex in indices) selectedIndex else 0]
 }

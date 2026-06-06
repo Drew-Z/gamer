@@ -95,38 +95,56 @@ class PetShellUiModelTest {
     }
 
     @Test
-    fun approvedPetShowcaseTitleUsesFirstApprovedPet() {
-        val pet = ApprovedPet(
-            petId = "pet-stardust-001",
-            displayName = "Stardust Dragon",
-            sourceKind = "fantasy-pet-rule",
-            previewPath = "previews/overall-showcase.png",
-            motionSheetCount = 2,
-            totalScore = 86
+    fun approvedPetShowcaseTitleUsesSelectedApprovedPet() {
+        val pets = listOf(
+            approvedPet("pet-stardust-001", "Stardust Dragon"),
+            approvedPet("pet-moonfox-001", "Moon Fox")
         )
 
-        assertEquals("Stardust Dragon", approvedPetShowcaseTitle(listOf(pet)))
-        assertEquals("Awaiting approved pet", approvedPetShowcaseTitle(emptyList()))
+        assertEquals("Moon Fox", approvedPetShowcaseTitle(pets, selectedIndex = 1))
+        assertEquals("Stardust Dragon", approvedPetShowcaseTitle(pets, selectedIndex = 99))
+        assertEquals("Awaiting approved pet", approvedPetShowcaseTitle(emptyList(), selectedIndex = 1))
     }
 
     @Test
-    fun approvedPetShowcaseDetailSummarizesScoreAndMotionSheets() {
-        val pet = ApprovedPet(
-            petId = "pet-stardust-001",
-            displayName = "Stardust Dragon",
-            sourceKind = "fantasy-pet-rule",
-            previewPath = "previews/overall-showcase.png",
-            motionSheetCount = 2,
-            totalScore = 86
+    fun approvedPetShowcaseDetailSummarizesSelectedPetScoreAndMotionSheets() {
+        val pets = listOf(
+            approvedPet(
+                petId = "pet-stardust-001",
+                displayName = "Stardust Dragon",
+                totalScore = 86,
+                motionSheetCount = 2
+            ),
+            approvedPet(
+                petId = "pet-moonfox-001",
+                displayName = "Moon Fox",
+                totalScore = 91,
+                motionSheetCount = 3
+            )
         )
 
         assertEquals(
-            "fantasy-pet-rule / score 86 / 2 motion sheets",
-            approvedPetShowcaseDetail(listOf(pet))
+            "fantasy-pet-rule / score 91 / 3 motion sheets",
+            approvedPetShowcaseDetail(pets, selectedIndex = 1)
         )
         assertEquals(
             "Approved imports will appear here.",
-            approvedPetShowcaseDetail(emptyList())
+            approvedPetShowcaseDetail(emptyList(), selectedIndex = 1)
         )
     }
+
+    private fun approvedPet(
+        petId: String,
+        displayName: String,
+        totalScore: Int = 86,
+        motionSheetCount: Int = 2
+    ): ApprovedPet =
+        ApprovedPet(
+            petId = petId,
+            displayName = displayName,
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = motionSheetCount,
+            totalScore = totalScore
+        )
 }

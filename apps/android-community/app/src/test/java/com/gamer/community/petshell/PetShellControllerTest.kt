@@ -14,6 +14,7 @@ class PetShellControllerTest {
         assertEquals(PetAction.AppLoading, state.petAction)
         assertEquals("Loading community...", state.speechBubble)
         assertEquals(0, state.feedIndex)
+        assertEquals(0, state.approvedPetIndex)
     }
 
     @Test
@@ -110,6 +111,64 @@ class PetShellControllerTest {
     }
 
     @Test
+    fun approvedPetNavigationUpdatesSelectedPetAndAction() {
+        val state = PetShellController.initialState().copy(
+            approvedPets = listOf(
+                approvedPet("pet-stardust-001", "Stardust Dragon"),
+                approvedPet("pet-moonfox-001", "Moon Fox")
+            )
+        )
+
+        val next = PetShellController.navigateApprovedPet(state, FeedDirection.Next)
+        val previous = PetShellController.navigateApprovedPet(state, FeedDirection.Previous)
+
+        assertEquals(1, next.approvedPetIndex)
+        assertEquals(PetAction.ShowcaseNext, next.petAction)
+        assertEquals("Showing approved pet Moon Fox.", next.speechBubble)
+        assertEquals(1, previous.approvedPetIndex)
+        assertEquals(PetAction.ShowcasePrevious, previous.petAction)
+        assertEquals("Showing approved pet Moon Fox.", previous.speechBubble)
+    }
+
+    @Test
+    fun approvedPetNavigationHandlesEmptyRegistry() {
+        val state = PetShellController.initialState()
+
+        val next = PetShellController.navigateApprovedPet(state, FeedDirection.Next)
+
+        assertEquals(0, next.approvedPetIndex)
+        assertEquals(PetAction.Idle, next.petAction)
+        assertEquals("No approved pets ready yet.", next.speechBubble)
+    }
+
+    @Test
+    fun applyingRemoteCommunityLoadResetsApprovedPetSelection() {
+        val state = PetShellController.initialState().copy(
+            approvedPetIndex = 3,
+            approvedPets = listOf(approvedPet("pet-old-001", "Old Pet"))
+        )
+        val remotePost = FeedPost(
+            id = "post-live-001",
+            petId = "pet-live-001",
+            title = "Live feed",
+            body = "Remote body",
+            authorName = "Demo Keeper",
+            reactionCount = 18
+        )
+
+        val loaded = PetShellController.applyCommunityLoad(
+            state = state,
+            posts = listOf(remotePost),
+            approvedPets = listOf(approvedPet("pet-stardust-001", "Stardust Dragon")),
+            walletBalance = 123,
+            usedFallback = false,
+            message = "Community ready."
+        )
+
+        assertEquals(0, loaded.approvedPetIndex)
+    }
+
+    @Test
     fun applyingRemoteCheckInUsesRemoteWalletBalance() {
         val open = PetShellController.onBubbleTapped(PetShellController.initialState())
 
@@ -146,4 +205,17 @@ class PetShellControllerTest {
         assertEquals(PetAction.Reward, checkedIn.petAction)
         assertEquals("Local check-in fallback active.", checkedIn.speechBubble)
     }
+
+    private fun approvedPet(
+        petId: String,
+        displayName: String
+    ): ApprovedPet =
+        ApprovedPet(
+            petId = petId,
+            displayName = displayName,
+            sourceKind = "fantasy-pet-rule",
+            previewPath = "previews/overall-showcase.png",
+            motionSheetCount = 2,
+            totalScore = 86
+        )
 }

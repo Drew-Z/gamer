@@ -12,6 +12,8 @@ enum class PetAction {
     FeedNext,
     FeedPrevious,
     FeedSkip,
+    ShowcaseNext,
+    ShowcasePrevious,
     Reward,
     Review
 }
@@ -56,6 +58,7 @@ data class PetShellState(
     val walletBalance: Int,
     val checkInClaimed: Boolean,
     val approvedPets: List<ApprovedPet>,
+    val approvedPetIndex: Int,
     val posts: List<FeedPost>
 ) {
     val currentPost: FeedPost
