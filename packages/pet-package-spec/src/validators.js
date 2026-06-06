@@ -31,6 +31,7 @@ const ALLOWED_CLAIM_TYPES = [
   "derivative-permitted"
 ];
 const ALLOWED_CLAIM_REVIEW_STATUSES = ["pending", "approved", "rejected", "revoked"];
+const ALLOWED_MANIFEST_SOURCE_KINDS = ["fantasy-pet-rule"];
 
 const result = (errors) => ({ ok: errors.length === 0, errors });
 
@@ -50,6 +51,9 @@ export function validatePetPackageManifest(manifest) {
     errors.push("source must be an object");
   } else {
     requireString(errors, manifest.source.kind, "source.kind");
+    if (!ALLOWED_MANIFEST_SOURCE_KINDS.includes(manifest.source.kind)) {
+      errors.push("source.kind must be one of fantasy-pet-rule");
+    }
     requireString(errors, manifest.source.runId, "source.runId");
     requireString(errors, manifest.source.statePath, "source.statePath");
   }
@@ -61,6 +65,10 @@ export function validatePetPackageManifest(manifest) {
     requireString(errors, manifest.assets.previewImage, "assets.previewImage");
     if (!Array.isArray(manifest.assets.motionSheets)) {
       errors.push("assets.motionSheets must be an array");
+    } else {
+      manifest.assets.motionSheets.forEach((sheet, index) => {
+        requireString(errors, sheet, `assets.motionSheets[${index}]`);
+      });
     }
   }
 

@@ -26,6 +26,31 @@ test("manifest without petId fails", () => {
   assert.ok(validation.errors.includes("petId must be a non-empty string"));
 });
 
+test("manifest rejects unsupported source kind and invalid motion sheets", () => {
+  const manifest = {
+    ...validPetPackageManifest,
+    source: {
+      ...validPetPackageManifest.source,
+      kind: "manual-upload"
+    },
+    assets: {
+      ...validPetPackageManifest.assets,
+      motionSheets: ["motion/sheets/idle.png", "", 42]
+    }
+  };
+
+  const validation = validatePetPackageManifest(manifest);
+
+  assert.equal(validation.ok, false);
+  assert.ok(validation.errors.includes("source.kind must be one of fantasy-pet-rule"));
+  assert.ok(
+    validation.errors.includes("assets.motionSheets[1] must be a non-empty string")
+  );
+  assert.ok(
+    validation.errors.includes("assets.motionSheets[2] must be a non-empty string")
+  );
+});
+
 test("valid ownership claim passes", () => {
   assert.equal(validateOwnershipClaim(validOwnershipClaim).ok, true);
 });
