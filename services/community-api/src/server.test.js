@@ -563,3 +563,45 @@ test("HTTP admin review queue returns aggregated submission evidence", async () 
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP server returns approved imported pet registry", async () => {
+  const store = createCommunityStore();
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/from-pet-package-bundle",
+      {
+        bundle: validPetPackageBundle
+      }
+    );
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      }
+    );
+    await requestJson(server, "POST", "/v1/admin/reviews", {
+      submissionId: submitResponse.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    });
+
+    const response = await requestJson(server, "GET", "/v1/pets/approved");
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.items[0].petId, "pet-stardust-001");
+    assert.equal(response.body.items[0].assets.motionSheetCount, 2);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

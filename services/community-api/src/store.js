@@ -18,7 +18,8 @@ const defaultSeed = {
   submissions,
   reviewQueue,
   importDrafts: [],
-  scoreReports: []
+  scoreReports: [],
+  approvedPets: []
 };
 
 const nowIso = () => new Date().toISOString();
@@ -62,6 +63,7 @@ const draftStatusFromReadiness = (readiness) => {
 const createImportSummaryFromPetPackageBundle = (bundle) => ({
   source: {
     petId: bundle.manifest.petId,
+    displayName: bundle.manifest.displayName,
     schema: bundle.manifest.schema,
     kind: bundle.manifest.source.kind,
     runId: bundle.manifest.source.runId,
@@ -106,6 +108,28 @@ const createFeedPostFromApprovedImport = (submission, draft, scoreReport, reward
   }
 });
 
+const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
+  petId: submission.petId,
+  displayName: draft?.importSummary?.source?.displayName ?? submission.petId,
+  ownerUserId: submission.userId,
+  source: {
+    kind: draft?.importSummary?.source?.kind ?? "",
+    runId: draft?.importSummary?.source?.runId ?? "",
+    statePath: draft?.importSummary?.source?.statePath ?? ""
+  },
+  assets: {
+    previewPath: draft?.importSummary?.assets?.previewPath ?? "",
+    motionSheetCount: Array.isArray(draft?.importSummary?.assets?.motionSheets)
+      ? draft.importSummary.assets.motionSheets.length
+      : 0
+  },
+  submissionId: submission.id,
+  importDraftId: submission.importDraftId,
+  scoreReportId: submission.scoreReportId,
+  totalScore: Number(scoreReport?.totalScore ?? 0),
+  approvedAt: nowIso()
+});
+
 export function createCommunityStore(seed = defaultSeed) {
   const state = clone(seed);
 
@@ -121,6 +145,12 @@ export function createCommunityStore(seed = defaultSeed) {
       return {
         items: clone(state.feedPosts),
         nextCursor: "fixture-page-2"
+      };
+    },
+
+    listApprovedPets() {
+      return {
+        items: clone(state.approvedPets)
       };
     },
 
@@ -424,6 +454,18 @@ export function createCommunityStore(seed = defaultSeed) {
             createFeedPostFromApprovedImport(submission, draft, scoreReport, rewardEntry)
           );
         }
+
+        const alreadyRegistered = state.approvedPets.some(
+          (pet) => pet.petId === submission.petId
+        );
+        if (!alreadyRegistered) {
+          const draft = state.importDrafts.find(
+            (item) => item.id === submission.importDraftId
+          );
+          state.approvedPets.unshift(
+            createApprovedPetFromImport(submission, draft, scoreReport)
+          );
+        }
       }
 
       if (input.status === "revoked") {
@@ -449,6 +491,9 @@ export function createCommunityStore(seed = defaultSeed) {
         if (submission.importDraftId) {
           const feedPostId = `post-${submission.id}`;
           state.feedPosts = state.feedPosts.filter((post) => post.id !== feedPostId);
+          state.approvedPets = state.approvedPets.filter(
+            (pet) => pet.submissionId !== submission.id
+          );
         }
       }
 

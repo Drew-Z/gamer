@@ -29,6 +29,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.getFeed());
   }
 
+  if (method === "GET" && url.pathname === "/v1/pets/approved") {
+    return json(200, store.listApprovedPets());
+  }
+
   if (method === "GET" && url.pathname === "/v1/wallet/me") {
     return json(200, store.getWallet(currentUserId));
   }

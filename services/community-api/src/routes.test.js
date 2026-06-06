@@ -398,6 +398,41 @@ test("approved import draft appears in feed through route flow", () => {
   assert.equal(published.title, "Approved pet import: pet-route-feed-001");
 });
 
+test("approved pets route returns registered imported pet assets", () => {
+  const store = createCommunityStore();
+  const draft = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+  const submitted = handleCommunityRequest("POST", "/v1/import-drafts/submit", {
+    store,
+    body: {
+      draftId: draft.body.id
+    }
+  });
+  handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: submitted.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    }
+  });
+
+  const response = handleCommunityRequest("GET", "/v1/pets/approved", { store });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.items.length, 1);
+  assert.equal(response.body.items[0].petId, "pet-stardust-001");
+  assert.equal(response.body.items[0].displayName, "Stardust Dragon");
+});
+
 test("fantasy pet rule bridge creates import draft from inline state", async () => {
   const store = createCommunityStore();
   const response = await handleCommunityRequest(

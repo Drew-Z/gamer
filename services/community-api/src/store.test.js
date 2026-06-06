@@ -576,6 +576,35 @@ test("approved import feed post includes import metadata", () => {
   assert.equal(published.metadata.motionSheetCount, 2);
 });
 
+test("approved imported submission registers approved pet asset", () => {
+  const store = createCommunityStore();
+  const draft = store.createImportDraftFromPetPackageBundle({
+    userId: "user-demo-001",
+    bundle: validPetPackageBundle
+  });
+  const submitted = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+
+  store.reviewSubmission({
+    submissionId: submitted.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const registry = store.listApprovedPets();
+  const pet = registry.items.find((item) => item.petId === "pet-stardust-001");
+
+  assert.equal(pet.displayName, "Stardust Dragon");
+  assert.equal(pet.ownerUserId, "user-demo-001");
+  assert.equal(pet.source.kind, "fantasy-pet-rule");
+  assert.equal(pet.assets.previewPath, "previews/overall-showcase.png");
+  assert.equal(pet.assets.motionSheetCount, 2);
+  assert.equal(pet.submissionId, submitted.submission.id);
+  assert.equal(pet.importDraftId, draft.id);
+});
+
 test("approving imported submission twice does not duplicate feed post", () => {
   const store = createCommunityStore();
   const draft = store.createImportDraft({
