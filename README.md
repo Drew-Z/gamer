@@ -17,12 +17,28 @@ gamer/
   docs/
 ```
 
+## Docs
+
+- Community API contract: `docs/api/community-api.md`
+- Ecosystem design spec: `docs/superpowers/specs/2026-06-04-gamer-pet-community-ecosystem-design.md`
+
 ## Local
 
 Run tests:
 
 ```powershell
 npm.cmd test
+```
+
+## Verification
+
+Run the standard verification set before committing a phase:
+
+```powershell
+npm.cmd test
+D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
+docker compose config
+git diff --check
 ```
 
 Run services:
