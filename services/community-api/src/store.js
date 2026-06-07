@@ -157,6 +157,34 @@ export function createCommunityStore(seed = defaultSeed) {
       };
     },
 
+    getApprovedPetPackage(petId) {
+      const pet = state.approvedPets.find((item) => item.petId === petId);
+
+      if (!pet) {
+        return null;
+      }
+
+      const exportArtifactPath = pet.assets?.exportArtifactPath ?? "";
+
+      return {
+        petId: pet.petId,
+        displayName: pet.displayName,
+        ownerUserId: pet.ownerUserId,
+        package: {
+          exportArtifactPath,
+          status: exportArtifactPath ? "available" : "missing"
+        },
+        assets: {
+          previewPath: pet.assets?.previewPath ?? "",
+          motionSheetCount: Number(pet.assets?.motionSheetCount ?? 0)
+        },
+        source: clone(pet.source ?? {}),
+        submissionId: pet.submissionId,
+        importDraftId: pet.importDraftId,
+        scoreReportId: pet.scoreReportId
+      };
+    },
+
     getWallet(userId) {
       const userLedger = state.ledgerEntries.filter((entry) => entry.userId === userId);
       return {

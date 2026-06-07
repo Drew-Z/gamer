@@ -33,6 +33,26 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.listApprovedPets());
   }
 
+  if (
+    method === "GET" &&
+    url.pathname.startsWith("/v1/pets/approved/") &&
+    url.pathname.endsWith("/package")
+  ) {
+    const petId = decodeURIComponent(
+      url.pathname.slice("/v1/pets/approved/".length, -"/package".length)
+    );
+    const descriptor = store.getApprovedPetPackage(petId);
+
+    if (!descriptor) {
+      return json(404, {
+        error: "approved_pet_package_not_found",
+        petId
+      });
+    }
+
+    return json(200, descriptor);
+  }
+
   if (method === "GET" && url.pathname === "/v1/wallet/me") {
     return json(200, store.getWallet(currentUserId));
   }

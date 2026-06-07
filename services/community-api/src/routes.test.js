@@ -433,6 +433,61 @@ test("approved pets route returns registered imported pet assets", () => {
   assert.equal(response.body.items[0].displayName, "Stardust Dragon");
 });
 
+test("approved pet package route returns export artifact descriptor", () => {
+  const store = createCommunityStore();
+  const draft = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-pet-package-bundle",
+    {
+      store,
+      body: {
+        bundle: validPetPackageBundle
+      }
+    }
+  );
+  const submitted = handleCommunityRequest("POST", "/v1/import-drafts/submit", {
+    store,
+    body: {
+      draftId: draft.body.id
+    }
+  });
+  handleCommunityRequest("POST", "/v1/admin/reviews", {
+    store,
+    body: {
+      submissionId: submitted.body.submission.id,
+      status: "approved",
+      reviewer: "admin-demo"
+    }
+  });
+
+  const response = handleCommunityRequest(
+    "GET",
+    "/v1/pets/approved/pet-stardust-001/package",
+    { store }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.petId, "pet-stardust-001");
+  assert.equal(response.body.displayName, "Stardust Dragon");
+  assert.equal(response.body.package.exportArtifactPath, "exports/stardust-package.zip");
+  assert.equal(response.body.package.status, "available");
+  assert.equal(response.body.submissionId, submitted.body.submission.id);
+});
+
+test("approved pet package route returns 404 for unknown pet", () => {
+  const response = handleCommunityRequest(
+    "GET",
+    "/v1/pets/approved/pet-missing-001/package",
+    {
+      store: createCommunityStore()
+    }
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(response.body.error, "approved_pet_package_not_found");
+  assert.equal(response.body.petId, "pet-missing-001");
+});
+
 test("fantasy pet rule bridge creates import draft from inline state", async () => {
   const store = createCommunityStore();
   const response = await handleCommunityRequest(

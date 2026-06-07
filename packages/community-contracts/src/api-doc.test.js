@@ -14,4 +14,7 @@ test("community API docs include export artifact response examples", () => {
   assert.ok(doc.includes("GET /v1/pets/approved"));
   assert.ok(doc.includes("approvedPets.items[].assets.exportArtifactPath"));
   assert.ok(doc.includes('"assets": {'));
+  assert.ok(doc.includes("GET /v1/pets/approved/:petId/package"));
+  assert.ok(doc.includes("approvedPetPackage.package.exportArtifactPath"));
+  assert.ok(doc.includes("approved_pet_package_not_found"));
 });

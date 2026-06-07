@@ -80,3 +80,47 @@ Example response:
   ]
 }
 ```
+
+## GET /v1/pets/approved/:petId/package
+
+Returns the package descriptor for one approved pet. This endpoint does not
+stream or copy the package archive yet; it exposes the approved export artifact
+path and trace IDs that future download or import flows can use.
+
+`approvedPetPackage.package.exportArtifactPath` is the package archive path
+registered during review approval.
+
+Example response:
+
+```json
+{
+  "petId": "pet-stardust-001",
+  "displayName": "Stardust Dragon",
+  "ownerUserId": "user-demo-001",
+  "package": {
+    "exportArtifactPath": "exports/stardust-package.zip",
+    "status": "available"
+  },
+  "assets": {
+    "previewPath": "previews/overall-showcase.png",
+    "motionSheetCount": 2
+  },
+  "source": {
+    "kind": "fantasy-pet-rule",
+    "runId": "stardust-chinese-dragon-codex-02",
+    "statePath": "D:/workspace4Codex/fantasy-pet-rule/runs/stardust-chinese-dragon-codex-02/state.json"
+  },
+  "submissionId": "submission-local-001",
+  "importDraftId": "import-draft-local-001",
+  "scoreReportId": "score-import-draft-local-001"
+}
+```
+
+Unknown approved pets return:
+
+```json
+{
+  "error": "approved_pet_package_not_found",
+  "petId": "pet-missing-001"
+}
+```
