@@ -5,6 +5,7 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,6 +23,12 @@ class HttpCommunityApiClient(
 
     override suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto> =
         get("/v1/pets/approved", Companion::decodeApprovedPets)
+
+    override suspend fun getApprovedPetPackage(petId: String): ApiCallResult<ApprovedPetPackageDto> =
+        get(
+            "/v1/pets/approved/${petId.pathSegment()}/package",
+            Companion::decodeApprovedPetPackage
+        )
 
     override suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto> =
         post("/v1/check-in", "{}", Companion::decodeCheckIn)
@@ -70,6 +77,9 @@ class HttpCommunityApiClient(
         }
     }
 
+    private fun String.pathSegment(): String =
+        URLEncoder.encode(this, Charsets.UTF_8.name()).replace("+", "%20")
+
     private fun InputStream.readUtf8Text(): String =
         BufferedReader(InputStreamReader(this, Charsets.UTF_8)).use { it.readText() }
 
@@ -82,6 +92,9 @@ class HttpCommunityApiClient(
 
         fun decodeApprovedPets(text: String): ApprovedPetsResponseDto =
             json.decodeFromString<ApprovedPetsResponseDto>(text)
+
+        fun decodeApprovedPetPackage(text: String): ApprovedPetPackageDto =
+            json.decodeFromString<ApprovedPetPackageDto>(text)
 
         fun decodeCheckIn(text: String): CheckInResponseDto = json.decodeFromString<CheckInResponseDto>(text)
 

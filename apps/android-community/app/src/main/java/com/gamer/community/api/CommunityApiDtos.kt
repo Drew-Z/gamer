@@ -61,6 +61,38 @@ data class ApprovedPetAssetsDto(
 )
 
 @Serializable
+data class ApprovedPetPackageDto(
+    val petId: String,
+    val displayName: String,
+    val ownerUserId: String,
+    val `package`: ApprovedPetPackageArtifactDto = ApprovedPetPackageArtifactDto(),
+    val assets: ApprovedPetPackageAssetsDto = ApprovedPetPackageAssetsDto(),
+    val source: ApprovedPetPackageSourceDto = ApprovedPetPackageSourceDto(),
+    val submissionId: String = "",
+    val importDraftId: String = "",
+    val scoreReportId: String = ""
+)
+
+@Serializable
+data class ApprovedPetPackageArtifactDto(
+    val exportArtifactPath: String = "",
+    val status: String = ""
+)
+
+@Serializable
+data class ApprovedPetPackageAssetsDto(
+    val previewPath: String = "",
+    val motionSheetCount: Int = 0
+)
+
+@Serializable
+data class ApprovedPetPackageSourceDto(
+    val kind: String = "",
+    val runId: String = "",
+    val statePath: String = ""
+)
+
+@Serializable
 data class WalletDto(
     val userId: String,
     val balance: Int,

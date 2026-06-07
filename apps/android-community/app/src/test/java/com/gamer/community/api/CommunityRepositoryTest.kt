@@ -223,5 +223,8 @@ private class FakeCommunityApiClient(
     override suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto> =
         approvedPetsResponse
 
+    override suspend fun getApprovedPetPackage(petId: String): ApiCallResult<ApprovedPetPackageDto> =
+        ApiCallResult.Failure("not_configured")
+
     override suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto> = checkInResponse
 }

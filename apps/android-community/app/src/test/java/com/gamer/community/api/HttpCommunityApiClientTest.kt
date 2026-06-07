@@ -85,6 +85,42 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesApprovedPetPackageJson() {
+        val json = """
+            {
+              "petId": "pet-stardust-001",
+              "displayName": "Stardust Dragon",
+              "ownerUserId": "user-demo-001",
+              "package": {
+                "exportArtifactPath": "exports/stardust-package.zip",
+                "status": "available"
+              },
+              "assets": {
+                "previewPath": "previews/overall-showcase.png",
+                "motionSheetCount": 2
+              },
+              "source": {
+                "kind": "fantasy-pet-rule",
+                "runId": "stardust-run-001",
+                "statePath": "D:/workspace4Codex/fantasy-pet-rule/runs/stardust/state.json"
+              },
+              "submissionId": "submission-local-001",
+              "importDraftId": "import-draft-local-001",
+              "scoreReportId": "score-import-draft-local-001"
+            }
+        """.trimIndent()
+
+        val descriptor = HttpCommunityApiClient.decodeApprovedPetPackage(json)
+
+        assertEquals("pet-stardust-001", descriptor.petId)
+        assertEquals("Stardust Dragon", descriptor.displayName)
+        assertEquals("exports/stardust-package.zip", descriptor.`package`.exportArtifactPath)
+        assertEquals("available", descriptor.`package`.status)
+        assertEquals("stardust-run-001", descriptor.source.runId)
+        assertEquals("submission-local-001", descriptor.submissionId)
+    }
+
+    @Test
     fun invalidJsonBecomesFailure() {
         val result = HttpCommunityApiClient.decodeCatching("not-json") {
             HttpCommunityApiClient.decodeFeed(it)
@@ -111,6 +147,47 @@ class HttpCommunityApiClientTest {
             val result = HttpCommunityApiClient(server.baseUrl).getFeed()
 
             assertEquals(ApiCallResult.Failure("http_500"), result)
+        }
+    }
+
+    @Test
+    fun getApprovedPetPackageRequestsEncodedPetPackagePath() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "petId": "pet stardust/001",
+              "displayName": "Stardust Dragon",
+              "ownerUserId": "user-demo-001",
+              "package": {
+                "exportArtifactPath": "exports/stardust-package.zip",
+                "status": "available"
+              },
+              "assets": {
+                "previewPath": "previews/overall-showcase.png",
+                "motionSheetCount": 2
+              },
+              "source": {
+                "kind": "fantasy-pet-rule"
+              },
+              "submissionId": "submission-local-001",
+              "importDraftId": "import-draft-local-001",
+              "scoreReportId": "score-import-draft-local-001"
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl)
+                .getApprovedPetPackage("pet stardust/001")
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("GET", recordedRequest.get()?.method)
+            assertEquals(
+                "/v1/pets/approved/pet%20stardust%2F001/package",
+                recordedRequest.get()?.path
+            )
         }
     }
 
@@ -163,7 +240,7 @@ private class TestServer(
     init {
         server.createContext("/") { exchange ->
             val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            handler?.invoke(RecordedRequest(exchange.requestMethod, exchange.requestURI.path, body))
+            handler?.invoke(RecordedRequest(exchange.requestMethod, exchange.requestURI.rawPath, body))
             val bytes = responseBody.toByteArray(Charsets.UTF_8)
             exchange.sendResponseHeaders(status, bytes.size.toLong())
             exchange.responseBody.use { it.write(bytes) }
