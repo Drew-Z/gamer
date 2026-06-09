@@ -21,6 +21,7 @@ gamer/
 
 - Community API contract: `docs/api/community-api.md`
 - Ecosystem design spec: `docs/superpowers/specs/2026-06-04-gamer-pet-community-ecosystem-design.md`
+- Boxd / Cloudflare / Aiven deployment skeleton: `docs/deployment/boxd-cloudflare-aiven.md`
 
 ## Local
 
@@ -39,6 +40,7 @@ npm.cmd test
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
+docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 git diff --check
 ```
 
@@ -62,6 +64,12 @@ Run the community services plus the public `fantasy-pet-rule` app API:
 
 ```powershell
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
+```
+
+Render the production-shaped Boxd / Cloudflare Tunnel / Aiven / R2 skeleton:
+
+```powershell
+docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 ```
 
 The default ports are:
