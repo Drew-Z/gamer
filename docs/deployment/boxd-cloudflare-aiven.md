@@ -129,6 +129,22 @@ by itself switch persistence yet.
 For the API container, prefer a pooled PgBouncer URI when concurrent mobile
 traffic starts increasing.
 
+Dry-run pending migrations before applying them:
+
+```bash
+docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production run --rm community-api npm run migrate:community-db:dry-run
+```
+
+Apply migrations after reviewing the dry-run result:
+
+```bash
+docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production run --rm community-api npm run migrate:community-db
+```
+
+Both commands use `DATABASE_URL` from `deploy/boxd/.env.production`. They
+initialize or update the database schema only; they do not switch the running
+community API from memory-backed state to PostgreSQL-backed state.
+
 ## Fantasy-Pet Boundary
 
 The fantasy-pet generation server remains separate. The app and `community-api`
@@ -164,6 +180,7 @@ Run local contract checks before deploying:
 ```powershell
 npm.cmd test
 node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
+node --test services/community-api/src/database/*.test.js
 docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 git diff --check
 ```

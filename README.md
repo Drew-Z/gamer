@@ -32,6 +32,14 @@ Run tests:
 npm.cmd test
 ```
 
+Preview or apply community database migrations when `DATABASE_URL` points at
+Aiven/PostgreSQL:
+
+```powershell
+npm.cmd run migrate:community-db:dry-run
+npm.cmd run migrate:community-db
+```
+
 ## Verification
 
 Run the standard verification set before committing a phase:
@@ -39,6 +47,7 @@ Run the standard verification set before committing a phase:
 ```powershell
 npm.cmd test
 node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
+node --test services/community-api/src/database/*.test.js
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
