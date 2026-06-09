@@ -241,6 +241,20 @@ class PetShellUiModelTest {
         val zh = petShellStrings(PetShellLanguage.Chinese)
         val en = petShellStrings(PetShellLanguage.English)
 
+        assertEquals("\u684C\u5BA0\u5BFC\u822A\u53F0", zh.communityPetCommandTitle)
+        assertEquals(
+            "\u4ECA\u65E5\u793E\u533A\u7531\u684C\u5BA0\u5E26\u8DEF\uFF1A\u7B7E\u5230\u3001\u751F\u6210\u3001\u5BA1\u6838\u548C\u5C55\u793A\u90FD\u4ECE\u8FD9\u91CC\u51FA\u53D1\u3002",
+            zh.communityPetCommandDetail
+        )
+        assertEquals("\u770B\u4E0B\u4E00\u6761", zh.communityPetCommandNextPost)
+        assertEquals("\u53BB\u5C55\u793A", zh.communityPetCommandShowcase)
+        assertEquals("Pet navigator", en.communityPetCommandTitle)
+        assertEquals(
+            "Your desktop pet leads today's check-in, creation, review, and showcase loop.",
+            en.communityPetCommandDetail
+        )
+        assertEquals("Next post", en.communityPetCommandNextPost)
+        assertEquals("Showcase", en.communityPetCommandShowcase)
         assertEquals("\u684C\u5BA0\u89C6\u89D2", zh.communityFeedSignalTitle)
         assertEquals("\u4E92\u52A8", zh.feedReactionLabel)
         assertEquals("\u751F\u6210", zh.showcasePathGenerate)
@@ -690,4 +704,5 @@ class PetShellUiModelTest {
             motionSheetCount = motionSheetCount,
             totalScore = totalScore
         )
+
 }

@@ -1038,6 +1038,12 @@ private fun CommunityHome(
         },
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        PetCompanionStrip(
+            state = state,
+            strings = strings,
+            onNextPost = { onNavigate(FeedDirection.Next) },
+            onShowcase = { onShowcaseNavigate(FeedDirection.Next) }
+        )
         CommunityChannelRail(strings = strings)
         CommunityQuickActions(
             state = state,
@@ -1047,7 +1053,6 @@ private fun CommunityHome(
             onReview = { onNavigate(FeedDirection.Next) },
             onShowcase = { onShowcaseNavigate(FeedDirection.Next) }
         )
-        PetCompanionStrip(state = state, strings = strings)
         ApprovedPetShowcaseBlock(
             state = state,
             strings = strings,
@@ -1750,7 +1755,9 @@ private fun ProfileActionDock(
 @Composable
 private fun PetCompanionStrip(
     state: PetShellState,
-    strings: PetShellStrings
+    strings: PetShellStrings,
+    onNextPost: () -> Unit,
+    onShowcase: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -1770,30 +1777,149 @@ private fun PetCompanionStrip(
             }
             .padding(14.dp)
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Surface(
-                color = Color.White.copy(alpha = 0.92f),
-                shape = RoundedCornerShape(8.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.padding(8.dp)) {
-                    PetAvatar(action = state.petAction, strings = strings)
+                Surface(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Box(modifier = Modifier.padding(8.dp)) {
+                        PetAvatar(action = state.petAction, strings = strings)
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = strings.communityPetCommandTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = strings.communityPetCommandDetail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFE8FFFA),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    SpeechBubble(text = strings.speechBubble(state.speechBubble))
                 }
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = strings.communityHomeTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                CommunityCommandMetric(
+                    label = strings.profileWalletSummaryTitle,
+                    value = strings.walletBalance(state.walletBalance),
+                    accent = Color(0xFFFFB86B),
+                    modifier = Modifier.weight(1f)
                 )
-                SpeechBubble(text = strings.speechBubble(state.speechBubble))
+                CommunityCommandMetric(
+                    label = strings.dailyCheckIn,
+                    value = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckInDetail,
+                    accent = Color(0xFFACE4D9),
+                    modifier = Modifier.weight(1f)
+                )
+                CommunityCommandMetric(
+                    label = strings.profileApprovedPetsMetric,
+                    value = state.approvedPets.size.toString(),
+                    accent = Color(0xFF60A5FA),
+                    modifier = Modifier.weight(1f)
+                )
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CommunityCommandButton(
+                    label = strings.communityPetCommandNextPost,
+                    container = Color.White,
+                    content = Color(0xFF0D3430),
+                    onClick = onNextPost,
+                    modifier = Modifier.weight(1f)
+                )
+                CommunityCommandButton(
+                    label = strings.communityPetCommandShowcase,
+                    container = Color(0xFFFFE2C7),
+                    content = Color(0xFF6F2F00),
+                    onClick = onShowcase,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityCommandMetric(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(48.dp),
+        color = Color.White.copy(alpha = 0.13f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.44f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFFE8FFFA),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommunityCommandButton(
+    label: String,
+    container: Color,
+    content: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .height(42.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
+        color = container,
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = content,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

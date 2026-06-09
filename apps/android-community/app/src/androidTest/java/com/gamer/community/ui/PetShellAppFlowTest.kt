@@ -158,6 +158,8 @@ class PetShellAppFlowTest {
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("community-pet-companion-strip")
             .assertIsDisplayed()
+        composeRule.onNodeWithText("\u684C\u5BA0\u5BFC\u822A\u53F0")
+            .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("community-showcase-panel")
             .performScrollTo()
             .assertIsDisplayed()

@@ -154,6 +154,16 @@ Project-local takeaway:
 - Keep the backdrop at a compact minimum height with layered depth: top light, dark floor, soft horizon platform, motion trail, and small accent panels.
 - The header should feel like a pet-eye view into the selected surface while keeping the title, wallet, and language controls readable.
 
+2026-06-09 market community UI scan:
+
+- Sources checked: HoYoLAB Google Play listing (`https://play.google.com/store/apps/details?id=com.mihoyo.hoyolab`), TapTap Lite Google Play listing (`https://play.google.com/store/apps/details?id=com.taptap.global.lite`), Discord Google Play listing (`https://play.google.com/store/apps/details?id=com.discord`), Reddit Google Play listing (`https://play.google.com/store/apps/details?id=com.reddit.frontpage`).
+- HoYoLAB points to the most relevant game-community stack for us: recommended posts, fan art sharing, official event information, and practical game tools should sit near the user's daily return path.
+- TapTap reinforces a game-library/community mix: discovery, guides, reviews, creator content, and developer feedback work best when the app has a clear game/object context before the feed.
+- Discord and Reddit are useful as structure references: spaces/channels/topics make dense communities navigable, while voting/reputation mechanics explain why a post matters.
+- Product translation for Gamer: the first community viewport should not be only a post list. It needs a pet-led command center that summarizes wallet/check-in/showcase status and gives quick next actions, then channels, tools, showcase, and feed.
+- The community home now starts with a pet navigator module before the channel rail. Keep it compact, status-rich, and action-oriented; avoid turning it into a marketing hero.
+- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-community-market-ui-final.png`.
+
 ## Product Direction
 
 The app should feel like a pet-first game community, closer to a lightweight game companion app than a generic admin dashboard.
