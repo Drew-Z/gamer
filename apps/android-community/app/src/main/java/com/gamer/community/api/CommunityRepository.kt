@@ -9,7 +9,9 @@ data class InitialCommunityResult(
     val approvedPets: List<ApprovedPet>,
     val walletBalance: Int,
     val message: String,
-    val usedFallback: Boolean
+    val usedFallback: Boolean,
+    val checkInClaimed: Boolean = false,
+    val pendingSubmissionCount: Int = 0
 )
 
 data class CheckInResult(
@@ -24,6 +26,13 @@ class CommunityRepository(
     private val client: CommunityApiClient
 ) {
     suspend fun loadInitialCommunity(): InitialCommunityResult {
+        when (val homeResult = client.getCommunityHome()) {
+            is ApiCallResult.Success -> {
+                return homeResult.value.toInitialCommunityResult()
+            }
+            is ApiCallResult.Failure -> Unit
+        }
+
         val feedResult = client.getFeed()
         val walletResult = client.getWallet()
         val approvedPetsResult = client.getApprovedPets()
@@ -114,6 +123,32 @@ class CommunityRepository(
     private companion object {
         const val FALLBACK_WALLET_BALANCE = 90
         const val FALLBACK_CHECK_IN_REWARD = 10
+    }
+}
+
+private fun CommunityHomeResponseDto.toInitialCommunityResult(): InitialCommunityResult {
+    val remotePosts = feed.toFeedPosts()
+    val hasRemotePosts = remotePosts.isNotEmpty()
+    return if (hasRemotePosts) {
+        InitialCommunityResult(
+            posts = remotePosts,
+            approvedPets = approvedPets.toApprovedPets(),
+            walletBalance = wallet.balance,
+            message = "Community home ready.",
+            usedFallback = false,
+            checkInClaimed = dailyCheckIn.claimed,
+            pendingSubmissionCount = submissionsSummary.pendingCount
+        )
+    } else {
+        InitialCommunityResult(
+            posts = fixtureFeedPosts,
+            approvedPets = approvedPets.toApprovedPets(),
+            walletBalance = wallet.balance,
+            message = "Local fallback active.",
+            usedFallback = true,
+            checkInClaimed = dailyCheckIn.claimed,
+            pendingSubmissionCount = submissionsSummary.pendingCount
+        )
     }
 }
 

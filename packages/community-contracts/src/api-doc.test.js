@@ -9,6 +9,10 @@ test("community API docs include export artifact response examples", () => {
   const doc = readFileSync(apiDocPath, "utf8");
 
   assert.ok(doc.includes("GET /v1/feed"));
+  assert.ok(doc.includes("GET /v1/community-home"));
+  assert.ok(doc.includes("gamer.community-home.v1"));
+  assert.ok(doc.includes("dailyCheckIn"));
+  assert.ok(doc.includes("submissionsSummary.pendingCount"));
   assert.ok(doc.includes("feed.items[].metadata.exportArtifactPath"));
   assert.ok(doc.includes('"exportArtifactPath": "exports/stardust-package.zip"'));
   assert.ok(doc.includes("GET /v1/pets/approved"));

@@ -29,6 +29,11 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.getFeed());
   }
 
+  if (method === "GET" && url.pathname === "/v1/community-home") {
+    const date = url.searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
+    return json(200, store.getCommunityHome(currentUserId, date));
+  }
+
   if (method === "GET" && url.pathname === "/v1/pets/approved") {
     return json(200, store.listApprovedPets());
   }

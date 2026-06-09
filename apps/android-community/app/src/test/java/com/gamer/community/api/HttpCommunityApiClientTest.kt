@@ -121,6 +121,64 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesCommunityHomeJson() {
+        val json = """
+            {
+              "schema": "gamer.community-home.v1",
+              "userId": "user-demo-001",
+              "feed": {
+                "items": [
+                  {
+                    "id": "post-live-001",
+                    "authorId": "user-demo-001",
+                    "petId": "pet-live-001",
+                    "title": "Live feed",
+                    "body": "Remote body",
+                    "reactionCount": 18,
+                    "createdAt": "2026-06-09T00:00:00.000Z"
+                  }
+                ]
+              },
+              "wallet": {
+                "userId": "user-demo-001",
+                "balance": 140,
+                "currencyCode": "petcoin",
+                "ledgerEntries": []
+              },
+              "approvedPets": {"items": []},
+              "dailyCheckIn": {
+                "date": "2026-06-09",
+                "claimed": true,
+                "rewardAmount": 10,
+                "ledgerEntryId": "ledger-checkin-2026-06-09"
+              },
+              "submissionsSummary": {
+                "pendingCount": 2,
+                "approvedCount": 1,
+                "heldCount": 0,
+                "rejectedCount": 0,
+                "revokedCount": 0,
+                "latest": {
+                  "id": "submission-local-010",
+                  "petId": "pet-live-001",
+                  "userId": "user-demo-001",
+                  "status": "pending"
+                }
+              }
+            }
+        """.trimIndent()
+
+        val home = HttpCommunityApiClient.decodeCommunityHome(json)
+
+        assertEquals("gamer.community-home.v1", home.schema)
+        assertEquals("Live feed", home.feed.items[0].title)
+        assertEquals(140, home.wallet.balance)
+        assertEquals(true, home.dailyCheckIn.claimed)
+        assertEquals(2, home.submissionsSummary.pendingCount)
+        assertEquals("submission-local-010", home.submissionsSummary.latest?.id)
+    }
+
+    @Test
     fun decodesImportDraftJson() {
         val json = """
             {
@@ -217,6 +275,50 @@ class HttpCommunityApiClientTest {
             val result = HttpCommunityApiClient(server.baseUrl).getFeed()
 
             assertEquals(ApiCallResult.Failure("http_500"), result)
+        }
+    }
+
+    @Test
+    fun getCommunityHomeRequestsPublicHomePath() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "schema": "gamer.community-home.v1",
+              "userId": "user-demo-001",
+              "feed": {"items": []},
+              "wallet": {
+                "userId": "user-demo-001",
+                "balance": 90,
+                "currencyCode": "petcoin",
+                "ledgerEntries": []
+              },
+              "approvedPets": {"items": []},
+              "dailyCheckIn": {
+                "date": "2026-06-09",
+                "claimed": false,
+                "rewardAmount": 10,
+                "ledgerEntryId": ""
+              },
+              "submissionsSummary": {
+                "pendingCount": 0,
+                "approvedCount": 0,
+                "heldCount": 0,
+                "rejectedCount": 0,
+                "revokedCount": 0,
+                "latest": null
+              }
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl).getCommunityHome()
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("GET", recordedRequest.get()?.method)
+            assertEquals("/v1/community-home", recordedRequest.get()?.path)
         }
     }
 

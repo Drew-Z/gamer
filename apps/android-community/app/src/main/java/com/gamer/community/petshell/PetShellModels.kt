@@ -59,6 +59,7 @@ data class PetShellState(
     val feedIndex: Int,
     val walletBalance: Int,
     val checkInClaimed: Boolean,
+    val pendingSubmissionCount: Int = 0,
     val approvedPets: List<ApprovedPet>,
     val approvedPetIndex: Int,
     val posts: List<FeedPost>

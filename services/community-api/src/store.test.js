@@ -28,6 +28,34 @@ test("fresh store exposes initial wallet balance", () => {
   assert.equal(store.getWallet("user-demo-001").balance, 90);
 });
 
+test("community home summary combines feed wallet check-in and submission counts", () => {
+  const store = createCommunityStore();
+  const submission = store.createSubmission({
+    petId: "pet-home-pending-001",
+    userId: "user-demo-001",
+    ownershipClaimId: "claim-home-pending-001",
+    scoreReportId: "score-home-pending-001"
+  });
+  store.claimDailyCheckIn("user-demo-001", "2026-06-09");
+
+  const home = store.getCommunityHome("user-demo-001", "2026-06-09");
+
+  assert.equal(home.schema, "gamer.community-home.v1");
+  assert.equal(home.userId, "user-demo-001");
+  assert.ok(home.feed.items.length >= 2);
+  assert.equal(home.wallet.balance, 100);
+  assert.deepEqual(home.dailyCheckIn, {
+    date: "2026-06-09",
+    claimed: true,
+    rewardAmount: 10,
+    ledgerEntryId: "ledger-checkin-2026-06-09"
+  });
+  assert.equal(home.approvedPets.items.length, 0);
+  assert.equal(home.submissionsSummary.pendingCount, 1);
+  assert.ok(home.submissionsSummary.approvedCount >= 1);
+  assert.equal(home.submissionsSummary.latest.id, submission.id);
+});
+
 test("first daily check-in posts ledger entry and increases balance", () => {
   const store = createCommunityStore();
   const result = store.claimDailyCheckIn("user-demo-001", "2026-06-05");

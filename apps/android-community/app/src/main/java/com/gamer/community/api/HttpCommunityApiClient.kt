@@ -16,6 +16,9 @@ import kotlinx.serialization.json.Json
 class HttpCommunityApiClient(
     private val baseUrl: String
 ) : CommunityApiClient {
+    override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
+        get("/v1/community-home", Companion::decodeCommunityHome)
+
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         get("/v1/feed", Companion::decodeFeed)
 
@@ -116,6 +119,9 @@ class HttpCommunityApiClient(
         }
 
         fun decodeFeed(text: String): FeedResponseDto = json.decodeFromString<FeedResponseDto>(text)
+
+        fun decodeCommunityHome(text: String): CommunityHomeResponseDto =
+            json.decodeFromString<CommunityHomeResponseDto>(text)
 
         fun decodeWallet(text: String): WalletDto = json.decodeFromString<WalletDto>(text)
 

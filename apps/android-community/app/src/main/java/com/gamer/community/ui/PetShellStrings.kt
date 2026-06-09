@@ -146,6 +146,12 @@ class PetShellStrings internal constructor(
     val quickActionGenerateDetail: String get() = text("新桌宠", "New pet")
     val quickActionReview: String get() = text("审核", "Review")
     val quickActionReviewDetail: String get() = text("候选图", "Candidates")
+    fun quickActionReviewStatus(pendingSubmissionCount: Int): String =
+        if (pendingSubmissionCount > 0) {
+            text("待审 $pendingSubmissionCount", "$pendingSubmissionCount pending")
+        } else {
+            quickActionReviewDetail
+        }
     val quickActionShowcase: String get() = text("展示", "Showcase")
     val quickActionShowcaseDetail: String get() = text("广场", "Gallery")
     val launchEnterHint: String get() = text("点击气泡进入", "Tap the bubble to enter")

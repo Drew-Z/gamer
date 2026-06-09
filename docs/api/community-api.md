@@ -4,6 +4,67 @@ The community API currently runs on local in-memory state and exposes stable JSO
 contracts for the Android community shell, admin review console, and pet package
 integration services.
 
+## GET /v1/community-home
+
+Returns the public home summary used by the Android community shell. This is a
+read-only aggregation endpoint so the app can load the first community screen
+without separately requesting feed, wallet, approved pet shelf, daily check-in
+state, and submission counters.
+
+Optional query parameters:
+
+- `date`: `YYYY-MM-DD`, used to resolve the daily check-in state. If omitted,
+  the service uses the current server date.
+
+The response schema is `gamer.community-home.v1`. `dailyCheckIn` tells the app
+whether the current day has already been claimed. `submissionsSummary.pendingCount`
+drives the compact review shortcut in the community home UI.
+
+Example response:
+
+```json
+{
+  "schema": "gamer.community-home.v1",
+  "userId": "user-demo-001",
+  "feed": {
+    "items": [],
+    "nextCursor": "fixture-page-2"
+  },
+  "wallet": {
+    "userId": "user-demo-001",
+    "balance": 100,
+    "currencyCode": "petcoin",
+    "ledgerEntries": []
+  },
+  "approvedPets": {
+    "items": []
+  },
+  "dailyCheckIn": {
+    "date": "2026-06-09",
+    "claimed": true,
+    "rewardAmount": 10,
+    "ledgerEntryId": "ledger-checkin-2026-06-09"
+  },
+  "submissionsSummary": {
+    "pendingCount": 1,
+    "approvedCount": 1,
+    "heldCount": 0,
+    "rejectedCount": 0,
+    "revokedCount": 0,
+    "latest": {
+      "id": "submission-local-002",
+      "petId": "pet-home-pending-001",
+      "userId": "user-demo-001",
+      "status": "pending",
+      "scoreReportId": "score-home-pending-001",
+      "ownershipClaimId": "claim-home-pending-001",
+      "importDraftId": "",
+      "submittedAt": "2026-06-09T00:00:00.000Z"
+    }
+  }
+}
+```
+
 ## GET /v1/feed
 
 Returns community feed posts. Approved pet imports include audit metadata that

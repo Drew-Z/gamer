@@ -348,9 +348,11 @@ fun PetShellApp(
             posts = result.posts,
             approvedPets = result.approvedPets,
             walletBalance = result.walletBalance,
+            checkInClaimed = result.checkInClaimed,
+            pendingSubmissionCount = result.pendingSubmissionCount,
             usedFallback = result.usedFallback,
             message = result.message
-            )
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -689,6 +691,9 @@ fun PetShellApp(
                                                     posts = refreshedCommunity.posts,
                                                     approvedPets = refreshedCommunity.approvedPets,
                                                     walletBalance = refreshedCommunity.walletBalance,
+                                                    checkInClaimed = refreshedCommunity.checkInClaimed,
+                                                    pendingSubmissionCount =
+                                                        refreshedCommunity.pendingSubmissionCount,
                                                     usedFallback = refreshedCommunity.usedFallback,
                                                     message = refreshedCommunity.message
                                                 )
@@ -731,6 +736,9 @@ fun PetShellApp(
                                                     posts = refreshedCommunity.posts,
                                                     approvedPets = refreshedCommunity.approvedPets,
                                                     walletBalance = refreshedCommunity.walletBalance,
+                                                    checkInClaimed = refreshedCommunity.checkInClaimed,
+                                                    pendingSubmissionCount =
+                                                        refreshedCommunity.pendingSubmissionCount,
                                                     usedFallback = refreshedCommunity.usedFallback,
                                                     message = refreshedCommunity.message
                                                 )
@@ -1155,7 +1163,7 @@ private fun CommunityQuickActions(
         CommunityQuickActionTile(
             icon = CommunityQuickActionIcon.Review,
             title = strings.quickActionReview,
-            detail = strings.quickActionReviewDetail,
+            detail = strings.quickActionReviewStatus(state.pendingSubmissionCount),
             container = Color(0xFFE7F0FF),
             content = Color(0xFF173B73),
             onClick = onReview,

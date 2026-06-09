@@ -9,6 +9,7 @@ object PetShellController {
             feedIndex = 0,
             walletBalance = 90,
             checkInClaimed = false,
+            pendingSubmissionCount = 0,
             approvedPets = emptyList(),
             approvedPetIndex = 0,
             posts = fixtureFeedPosts
@@ -91,6 +92,8 @@ object PetShellController {
         posts: List<FeedPost>,
         approvedPets: List<ApprovedPet>,
         walletBalance: Int,
+        checkInClaimed: Boolean = false,
+        pendingSubmissionCount: Int = 0,
         usedFallback: Boolean,
         message: String
     ): PetShellState {
@@ -100,6 +103,8 @@ object PetShellController {
             speechBubble = message,
             feedIndex = 0,
             walletBalance = walletBalance,
+            checkInClaimed = checkInClaimed,
+            pendingSubmissionCount = pendingSubmissionCount,
             approvedPets = approvedPets,
             approvedPetIndex = 0,
             posts = nextPosts

@@ -19,6 +19,7 @@ import com.gamer.community.api.ApprovedPetsResponseDto
 import com.gamer.community.api.CheckInDto
 import com.gamer.community.api.CheckInResponseDto
 import com.gamer.community.api.CommunityApiClient
+import com.gamer.community.api.CommunityHomeResponseDto
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.FantasyPetPackageImportDraftRequestDto
 import com.gamer.community.api.FeedResponseDto
@@ -493,6 +494,9 @@ class PetShellAppFlowTest {
 }
 
 private class FakeCommunityApiClient : CommunityApiClient {
+    override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
+        ApiCallResult.Failure("not_configured")
+
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         ApiCallResult.Success(FeedResponseDto())
 
@@ -583,6 +587,9 @@ private class RecordingCommunityApiClient : CommunityApiClient {
         importDraftId = "import-draft-ui-001",
         submittedAt = "2026-06-08T00:00:00Z"
     )
+
+    override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
+        ApiCallResult.Failure("not_configured")
 
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         ApiCallResult.Success(FeedResponseDto())

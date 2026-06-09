@@ -170,6 +170,25 @@ class PetShellControllerTest {
     }
 
     @Test
+    fun applyingRemoteCommunityLoadSetsHomeSummaryState() {
+        val loaded = PetShellController.applyCommunityLoad(
+            state = PetShellController.initialState(),
+            posts = fixtureFeedPosts,
+            approvedPets = emptyList(),
+            walletBalance = 144,
+            checkInClaimed = true,
+            pendingSubmissionCount = 2,
+            usedFallback = false,
+            message = "Community home ready."
+        )
+
+        assertEquals(144, loaded.walletBalance)
+        assertTrue(loaded.checkInClaimed)
+        assertEquals(2, loaded.pendingSubmissionCount)
+        assertEquals("Community home ready.", loaded.speechBubble)
+    }
+
+    @Test
     fun applyingRemoteCheckInUsesRemoteWalletBalance() {
         val open = PetShellController.onBubbleTapped(PetShellController.initialState())
 

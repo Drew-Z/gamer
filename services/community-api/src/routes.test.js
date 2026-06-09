@@ -37,6 +37,30 @@ test("feed route returns fixture posts", () => {
   assert.ok(response.body.items.every((post) => post.petId));
 });
 
+test("community home route returns public home summary", () => {
+  const store = createCommunityStore();
+  store.createSubmission({
+    petId: "pet-home-pending-001",
+    userId: "user-demo-001",
+    ownershipClaimId: "claim-home-pending-001",
+    scoreReportId: "score-home-pending-001"
+  });
+  store.claimDailyCheckIn("user-demo-001", "2026-06-09");
+
+  const response = handleCommunityRequest("GET", "/v1/community-home?date=2026-06-09", {
+    store
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.schema, "gamer.community-home.v1");
+  assert.ok(response.body.feed.items.length >= 2);
+  assert.equal(response.body.wallet.balance, 100);
+  assert.equal(response.body.dailyCheckIn.claimed, true);
+  assert.equal(response.body.submissionsSummary.pendingCount, 1);
+  assert.equal(response.body.approvedPets.items.length, 0);
+  assert.equal(response.body.submissionsSummary.latest.petId, "pet-home-pending-001");
+});
+
 test("check-in route accepts date body and updates wallet", () => {
   const store = createCommunityStore();
   const response = handleCommunityRequest("POST", "/v1/check-in", {

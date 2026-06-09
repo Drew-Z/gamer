@@ -9,6 +9,78 @@ import org.junit.Test
 
 class CommunityRepositoryTest {
     @Test
+    fun loadInitialCommunityPrefersCommunityHomeSummary() = runTest {
+        val fakeClient = FakeCommunityApiClient(
+            communityHomeResponse = ApiCallResult.Success(
+                CommunityHomeResponseDto(
+                    schema = "gamer.community-home.v1",
+                    userId = "user-demo-001",
+                    feed = FeedResponseDto(
+                        items = listOf(
+                            FeedPostDto(
+                                id = "post-home-001",
+                                authorId = "user-demo-001",
+                                petId = "pet-home-001",
+                                title = "Home feed",
+                                body = "Loaded from community home.",
+                                reactionCount = 22,
+                                createdAt = "2026-06-09T00:00:00.000Z"
+                            )
+                        )
+                    ),
+                    wallet = WalletDto(
+                        userId = "user-demo-001",
+                        balance = 144,
+                        currencyCode = "petcoin"
+                    ),
+                    approvedPets = ApprovedPetsResponseDto(
+                        items = listOf(
+                            ApprovedPetDto(
+                                petId = "pet-home-approved-001",
+                                displayName = "Home Pet",
+                                ownerUserId = "user-demo-001",
+                                source = ApprovedPetSourceDto(kind = "fantasy-pet-rule"),
+                                assets = ApprovedPetAssetsDto(previewPath = "previews/home.png"),
+                                totalScore = 88
+                            )
+                        )
+                    ),
+                    dailyCheckIn = CommunityHomeDailyCheckInDto(
+                        date = "2026-06-09",
+                        claimed = true,
+                        rewardAmount = 10,
+                        ledgerEntryId = "ledger-checkin-2026-06-09"
+                    ),
+                    submissionsSummary = CommunityHomeSubmissionsSummaryDto(
+                        pendingCount = 2,
+                        approvedCount = 1,
+                        latest = SubmissionDto(
+                            id = "submission-home-001",
+                            petId = "pet-home-001",
+                            userId = "user-demo-001",
+                            status = "pending"
+                        )
+                    )
+                )
+            )
+        )
+        val repository = CommunityRepository(client = fakeClient)
+
+        val result = repository.loadInitialCommunity()
+
+        assertFalse(result.usedFallback)
+        assertEquals("Community home ready.", result.message)
+        assertEquals("Home feed", result.posts[0].title)
+        assertEquals(144, result.walletBalance)
+        assertEquals(true, result.checkInClaimed)
+        assertEquals(2, result.pendingSubmissionCount)
+        assertEquals("Home Pet", result.approvedPets[0].displayName)
+        assertFalse(fakeClient.feedRequested)
+        assertFalse(fakeClient.walletRequested)
+        assertFalse(fakeClient.approvedPetsRequested)
+    }
+
+    @Test
     fun loadInitialCommunityReturnsRemoteFeedAndWallet() = runTest {
         val repository = CommunityRepository(
             client = FakeCommunityApiClient(
@@ -338,6 +410,8 @@ class CommunityRepositoryTest {
 }
 
 private class FakeCommunityApiClient(
+    private val communityHomeResponse: ApiCallResult<CommunityHomeResponseDto> =
+        ApiCallResult.Failure("not_configured"),
     private val feedResponse: ApiCallResult<FeedResponseDto> = ApiCallResult.Failure("not_configured"),
     private val walletResponse: ApiCallResult<WalletDto> = ApiCallResult.Failure("not_configured"),
     private val approvedPetsResponse: ApiCallResult<ApprovedPetsResponseDto> = ApiCallResult.Failure("not_configured"),
@@ -354,13 +428,27 @@ private class FakeCommunityApiClient(
     var submittedImportDraftId: String? = null
     var requestedSubmissionId: String? = null
     var submissionsRequested: Boolean = false
+    var feedRequested: Boolean = false
+    var walletRequested: Boolean = false
+    var approvedPetsRequested: Boolean = false
 
-    override suspend fun getFeed(): ApiCallResult<FeedResponseDto> = feedResponse
+    override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
+        communityHomeResponse
 
-    override suspend fun getWallet(): ApiCallResult<WalletDto> = walletResponse
+    override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
+        feedResponse.also {
+            feedRequested = true
+        }
+
+    override suspend fun getWallet(): ApiCallResult<WalletDto> =
+        walletResponse.also {
+            walletRequested = true
+        }
 
     override suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto> =
-        approvedPetsResponse
+        approvedPetsResponse.also {
+            approvedPetsRequested = true
+        }
 
     override suspend fun getApprovedPetPackage(petId: String): ApiCallResult<ApprovedPetPackageDto> =
         ApiCallResult.Failure("not_configured")

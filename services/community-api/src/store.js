@@ -374,6 +374,20 @@ const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   approvedAt: nowIso()
 });
 
+const createPublicSubmissionsSummary = (submissionsForUser) => {
+  const countStatus = (status) =>
+    submissionsForUser.filter((submission) => submission.status === status).length;
+
+  return {
+    pendingCount: countStatus("pending"),
+    approvedCount: countStatus("approved"),
+    heldCount: countStatus("held"),
+    rejectedCount: countStatus("rejected"),
+    revokedCount: countStatus("revoked"),
+    latest: clone(submissionsForUser.at(-1) ?? null)
+  };
+};
+
 export function createCommunityStore(seed = defaultSeed) {
   const state = clone(seed);
 
@@ -433,6 +447,30 @@ export function createCommunityStore(seed = defaultSeed) {
         balance: sumPostedLedger(state.ledgerEntries, userId),
         currencyCode: "petcoin",
         ledgerEntries: clone(userLedger)
+      };
+    },
+
+    getCommunityHome(userId, date = new Date().toISOString().slice(0, 10)) {
+      const existingCheckIn = state.checkIns.find(
+        (checkIn) => checkIn.userId === userId && checkIn.date === date
+      );
+      const submissionsForUser = state.submissions.filter(
+        (submission) => submission.userId === userId
+      );
+
+      return {
+        schema: "gamer.community-home.v1",
+        userId,
+        feed: this.getFeed(),
+        wallet: this.getWallet(userId),
+        approvedPets: this.listApprovedPets(),
+        dailyCheckIn: {
+          date,
+          claimed: Boolean(existingCheckIn?.claimed),
+          rewardAmount: Number(existingCheckIn?.rewardAmount ?? 10),
+          ledgerEntryId: existingCheckIn?.ledgerEntryId ?? ""
+        },
+        submissionsSummary: createPublicSubmissionsSummary(submissionsForUser)
       };
     },
 

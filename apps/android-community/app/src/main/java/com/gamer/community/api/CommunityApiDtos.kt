@@ -9,6 +9,36 @@ data class FeedResponseDto(
 )
 
 @Serializable
+data class CommunityHomeResponseDto(
+    val schema: String = "",
+    val userId: String = "",
+    val feed: FeedResponseDto = FeedResponseDto(),
+    val wallet: WalletDto = WalletDto(userId = "", balance = 0, currencyCode = "petcoin"),
+    val approvedPets: ApprovedPetsResponseDto = ApprovedPetsResponseDto(),
+    val dailyCheckIn: CommunityHomeDailyCheckInDto = CommunityHomeDailyCheckInDto(),
+    val submissionsSummary: CommunityHomeSubmissionsSummaryDto =
+        CommunityHomeSubmissionsSummaryDto()
+)
+
+@Serializable
+data class CommunityHomeDailyCheckInDto(
+    val date: String = "",
+    val claimed: Boolean = false,
+    val rewardAmount: Int = 10,
+    val ledgerEntryId: String = ""
+)
+
+@Serializable
+data class CommunityHomeSubmissionsSummaryDto(
+    val pendingCount: Int = 0,
+    val approvedCount: Int = 0,
+    val heldCount: Int = 0,
+    val rejectedCount: Int = 0,
+    val revokedCount: Int = 0,
+    val latest: SubmissionDto? = null
+)
+
+@Serializable
 data class FeedPostDto(
     val id: String,
     val authorId: String,
