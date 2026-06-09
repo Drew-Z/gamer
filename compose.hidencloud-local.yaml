@@ -1,0 +1,4 @@
+services:
+  community-api:
+    environment:
+      FANTASY_PET_API_BASE_URL: "http://120.48.67.110:8765"

@@ -49,6 +49,7 @@ node --test services/community-api/src/database/migrations.test.js services/comm
 node --test services/community-api/src/database/*.test.js
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
+docker compose -f compose.yaml -f compose.hidencloud-local.yaml config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
 git diff --check
 ```
@@ -70,7 +71,17 @@ Run the service skeletons with Docker Compose:
 docker compose up --build
 ```
 
-Run the community services plus the public `fantasy-pet-rule` app API:
+Run a local Docker simulation of the HidenCloud role: the community API runs
+locally, and it proxies the public `fantasy-pet-rule` app API on the Baidu
+server:
+
+```powershell
+docker compose -f compose.yaml -f compose.hidencloud-local.yaml up --build community-api
+```
+
+Run the community services plus a local public `fantasy-pet-rule` app API
+container only when you intentionally want to simulate the Baidu generation API
+locally too:
 
 ```powershell
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
@@ -81,7 +92,13 @@ The default ports are:
 - Community API: `http://localhost:4000`
 - Pet Generator Adapter: `http://localhost:4100`
 - Admin Review Prototype: `http://localhost:4200`
-- Fantasy Pet Public API: `http://127.0.0.1:8765`
+- Local Fantasy Pet Public API, only with `compose.fantasy-pet.yaml`:
+  `http://127.0.0.1:8765`
+
+Use the HidenCloud local overlay for app integration while the generation
+worker stays on the Baidu host. The local fantasy-pet overlay is useful for
+contract and API shape checks, but it needs local Codex/GenericAgent adapter
+configuration before it can report live worker readiness.
 
 ## Community API
 
