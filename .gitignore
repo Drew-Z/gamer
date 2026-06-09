@@ -9,6 +9,7 @@ __pycache__/
 *.log
 *.tmp
 local.properties
+deploy/boxd/.env.production
 tmp-anr-*.txt
 tmp-gamer-*.png
 tmp-gamer-*.xml

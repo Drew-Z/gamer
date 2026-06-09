@@ -22,6 +22,7 @@ gamer/
 - Community API contract: `docs/api/community-api.md`
 - Ecosystem design spec: `docs/superpowers/specs/2026-06-04-gamer-pet-community-ecosystem-design.md`
 - Boxd / Cloudflare / Aiven deployment skeleton: `docs/deployment/boxd-cloudflare-aiven.md`
+- Boxd direct deployment runbook: `deploy/boxd/README.md`
 - Community PostgreSQL migrations: `services/community-api/db/migrations`
 
 ## Local
@@ -81,6 +82,13 @@ Render the production-shaped Boxd / Cloudflare Tunnel / Aiven / R2 skeleton:
 
 ```powershell
 docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
+```
+
+Deploy directly from inside a Boxd VM after filling
+`deploy/boxd/.env.production`:
+
+```bash
+deploy/boxd/deploy.sh
 ```
 
 The default ports are:

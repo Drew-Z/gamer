@@ -163,6 +163,12 @@ Keep these rules:
 
 ## Commands
 
+For direct VM setup, follow the Boxd runbook:
+
+```text
+deploy/boxd/README.md
+```
+
 Render the production-shaped compose config locally:
 
 ```powershell
@@ -170,6 +176,13 @@ docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.examp
 ```
 
 Run on the Boxd VM after filling `deploy/boxd/.env.production`:
+
+```bash
+deploy/boxd/deploy.sh
+```
+
+The helper validates Compose, runs migration dry-run by default, optionally
+applies migrations when `RUN_MIGRATIONS=1`, then starts services:
 
 ```bash
 docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production up -d --build
