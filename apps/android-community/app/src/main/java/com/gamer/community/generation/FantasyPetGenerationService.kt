@@ -1014,7 +1014,16 @@ fun packageImportSubmissionFailureMessage(reason: String): String {
 }
 
 fun canRefreshPackageImportSubmission(submissionId: String): Boolean =
-    submissionId.trim().isSafePackageDownloadDisplayText()
+    packageImportSubmissionIdForResume(submissionId) != null
+
+fun packageImportSubmissionIdForResume(submissionId: String): String? =
+    submissionId.trim().takeIf { it.isPublicSubmissionId() }
+
+fun packageImportSubmissionResumeMessage(submissionId: String): String {
+    val safeSubmissionId = packageImportSubmissionIdForResume(submissionId)
+        ?: return ""
+    return "Community submission $safeSubmissionId is ready to refresh."
+}
 
 fun packageImportSubmissionStatusMessage(submission: SubmissionDto): String {
     val safeSubmissionId = submission.id.trim()
@@ -1362,6 +1371,9 @@ private fun String.isOptionalPublicAppJobId(): Boolean {
 
 private fun String.isPublicAppJobId(): Boolean =
     trim().matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))
+
+private fun String.isPublicSubmissionId(): Boolean =
+    trim().matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,119}"))
 
 private fun String.containsUnsafeReviewNoteDetail(): Boolean {
     val lower = lowercase()

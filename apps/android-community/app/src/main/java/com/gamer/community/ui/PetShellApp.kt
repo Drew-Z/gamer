@@ -108,8 +108,10 @@ import com.gamer.community.generation.packageImportDraftFailureCandidate
 import com.gamer.community.generation.packageImportDraftSuccessCandidate
 import com.gamer.community.generation.packageImportCandidateMessage
 import com.gamer.community.generation.packageImportInProgressCandidate
+import com.gamer.community.generation.packageImportSubmissionIdForResume
 import com.gamer.community.generation.packageImportSubmissionFailureMessage
 import com.gamer.community.generation.packageImportSubmissionCommunityRefreshMessage
+import com.gamer.community.generation.packageImportSubmissionResumeMessage
 import com.gamer.community.generation.packageImportSubmissionStartedMessage
 import com.gamer.community.generation.packageImportSubmissionSuccessMessage
 import com.gamer.community.generation.pollGenerationJobValidationMessage
@@ -221,8 +223,16 @@ fun PetShellApp(
     var packageDownloadMessage by remember { mutableStateOf("") }
     var packageImportCandidate by remember { mutableStateOf<PetGenerationPackageImportCandidate?>(null) }
     var readyPackageImportDraft by remember { mutableStateOf<ImportDraftDto?>(null) }
-    var packageImportSubmissionId by remember { mutableStateOf("") }
-    var packageImportSubmissionMessage by remember { mutableStateOf("") }
+    var packageImportSubmissionId by remember {
+        mutableStateOf(
+            packageImportSubmissionIdForResume(
+                generationPrefs.getString("packageImportSubmissionId", "").orEmpty()
+            ).orEmpty()
+        )
+    }
+    var packageImportSubmissionMessage by remember {
+        mutableStateOf(packageImportSubmissionResumeMessage(packageImportSubmissionId))
+    }
     var workerReadinessMessageText by remember { mutableStateOf("") }
     val packageImportRequestBuilder = remember { FantasyPetPackageImportRequestBuilder() }
     val scope = rememberCoroutineScope()
@@ -231,6 +241,29 @@ fun PetShellApp(
         language = nextLanguage
         uiPrefs.edit()
             .putString("language", nextLanguage.preferenceValue)
+            .apply()
+    }
+
+    fun clearPackageImportSubmissionTracking(clearMessage: Boolean = true) {
+        packageImportSubmissionId = ""
+        if (clearMessage) {
+            packageImportSubmissionMessage = ""
+        }
+        generationPrefs.edit()
+            .remove("packageImportSubmissionId")
+            .apply()
+    }
+
+    fun persistPackageImportSubmissionTracking(submissionId: String) {
+        val safeSubmissionId = packageImportSubmissionIdForResume(submissionId)
+        if (safeSubmissionId == null) {
+            clearPackageImportSubmissionTracking()
+            return
+        }
+
+        packageImportSubmissionId = safeSubmissionId
+        generationPrefs.edit()
+            .putString("packageImportSubmissionId", safeSubmissionId)
             .apply()
     }
 
@@ -248,8 +281,7 @@ fun PetShellApp(
         if (!canShowPackageDownload(displayJob)) {
             packageImportCandidate = null
             readyPackageImportDraft = null
-            packageImportSubmissionId = ""
-            packageImportSubmissionMessage = ""
+            clearPackageImportSubmissionTracking()
         }
     }
 
@@ -293,8 +325,7 @@ fun PetShellApp(
             packageDownloadMessage = ""
             packageImportCandidate = null
             readyPackageImportDraft = null
-            packageImportSubmissionId = ""
-            packageImportSubmissionMessage = ""
+            clearPackageImportSubmissionTracking()
             when (val result = generationService.pollJob(trimmedAppJobId)) {
                 is ApiCallResult.Success -> {
                     applyGenerationJobUpdate(result.value)
@@ -467,8 +498,7 @@ fun PetShellApp(
                                     packageDownloadMessage = ""
                                     packageImportCandidate = null
                                     readyPackageImportDraft = null
-                                    packageImportSubmissionId = ""
-                                    packageImportSubmissionMessage = ""
+                                    clearPackageImportSubmissionTracking()
                                     when (val result = generationService.createJob(
                                         description = generationDescription,
                                         appJobId = generationAppJobId,
@@ -498,8 +528,7 @@ fun PetShellApp(
                                 packageDownloadMessage = ""
                                 packageImportCandidate = null
                                 readyPackageImportDraft = null
-                                packageImportSubmissionId = ""
-                                packageImportSubmissionMessage = ""
+                                clearPackageImportSubmissionTracking()
                                 generationPrefs.edit()
                                     .remove("appJobId")
                                     .apply()
@@ -521,8 +550,7 @@ fun PetShellApp(
                                         packageDownloadMessage = ""
                                         packageImportCandidate = null
                                         readyPackageImportDraft = null
-                                        packageImportSubmissionId = ""
-                                        packageImportSubmissionMessage = ""
+                                        clearPackageImportSubmissionTracking()
                                         when (val result = generationService.submitReviewDecisionForJob(
                                             job = job,
                                             targetDownloadId = selectedCandidateDownloadId,
@@ -556,8 +584,7 @@ fun PetShellApp(
                                         generationMessage = downloadingMessage
                                         packageDownloadMessage = downloadingMessage
                                         readyPackageImportDraft = null
-                                        packageImportSubmissionId = ""
-                                        packageImportSubmissionMessage = ""
+                                        clearPackageImportSubmissionTracking()
                                         val outputDirectory = context.getExternalFilesDir(
                                             Environment.DIRECTORY_DOWNLOADS
                                         ) ?: context.filesDir
@@ -595,7 +622,7 @@ fun PetShellApp(
                                                             ) {
                                                                 is ApiCallResult.Success -> {
                                                                     readyPackageImportDraft = importResult.value
-                                                                    packageImportSubmissionId = ""
+                                                                    clearPackageImportSubmissionTracking()
                                                                     packageImportCandidate =
                                                                         packageImportDraftSuccessCandidate(
                                                                             pendingImportCandidate,
@@ -604,7 +631,7 @@ fun PetShellApp(
                                                                 }
                                                                 is ApiCallResult.Failure -> {
                                                                     readyPackageImportDraft = null
-                                                                    packageImportSubmissionId = ""
+                                                                    clearPackageImportSubmissionTracking()
                                                                     packageImportCandidate =
                                                                         packageImportDraftFailureCandidate(
                                                                             pendingImportCandidate,
@@ -615,7 +642,7 @@ fun PetShellApp(
                                                         }
                                                         is ApiCallResult.Failure -> {
                                                             readyPackageImportDraft = null
-                                                            packageImportSubmissionId = ""
+                                                            clearPackageImportSubmissionTracking()
                                                             packageImportCandidate = packageImportDraftFailureCandidate(
                                                                 pendingImportCandidate,
                                                                 requestResult.reason
@@ -628,8 +655,7 @@ fun PetShellApp(
                                                 val failureMessage = packageDownloadFailureMessage(result.reason)
                                                 packageImportCandidate = null
                                                 readyPackageImportDraft = null
-                                                packageImportSubmissionId = ""
-                                                packageImportSubmissionMessage = ""
+                                                clearPackageImportSubmissionTracking()
                                                 generationMessage = failureMessage
                                                 packageDownloadMessage = failureMessage
                                             }
@@ -652,7 +678,9 @@ fun PetShellApp(
                                         ) {
                                             is ApiCallResult.Success -> {
                                                 readyPackageImportDraft = submitResult.value.draft
-                                                packageImportSubmissionId = submitResult.value.submission.id
+                                                persistPackageImportSubmissionTracking(
+                                                    submitResult.value.submission.id
+                                                )
                                                 packageImportSubmissionMessage =
                                                     packageImportSubmissionSuccessMessage(submitResult.value)
                                                 val refreshedCommunity = repository.loadInitialCommunity()
@@ -682,17 +710,25 @@ fun PetShellApp(
                                 } else {
                                     scope.launch {
                                         packageImportSubmissionMessage = "Refreshing community submission..."
-                                    when (val statusResult = repository.getSubmissionStatus(submissionId)) {
-                                        is ApiCallResult.Success -> {
-                                            val refreshedCommunity = repository.loadInitialCommunity()
-                                            packageImportSubmissionMessage =
-                                                packageImportSubmissionCommunityRefreshMessage(
-                                                    statusResult.value,
-                                                    refreshedCommunity
-                                                )
-                                            state = PetShellController.applyCommunityLoad(
-                                                state = state,
-                                                posts = refreshedCommunity.posts,
+                                        when (val statusResult = repository.getSubmissionStatus(submissionId)) {
+                                            is ApiCallResult.Success -> {
+                                                val refreshedCommunity = repository.loadInitialCommunity()
+                                                packageImportSubmissionMessage =
+                                                    packageImportSubmissionCommunityRefreshMessage(
+                                                        statusResult.value,
+                                                        refreshedCommunity
+                                                    )
+                                                if (statusResult.value.status.trim() in setOf(
+                                                        "approved",
+                                                        "rejected",
+                                                        "revoked"
+                                                    )
+                                                ) {
+                                                    clearPackageImportSubmissionTracking(clearMessage = false)
+                                                }
+                                                state = PetShellController.applyCommunityLoad(
+                                                    state = state,
+                                                    posts = refreshedCommunity.posts,
                                                     approvedPets = refreshedCommunity.approvedPets,
                                                     walletBalance = refreshedCommunity.walletBalance,
                                                     usedFallback = refreshedCommunity.usedFallback,

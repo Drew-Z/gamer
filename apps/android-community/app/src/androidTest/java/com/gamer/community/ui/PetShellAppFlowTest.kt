@@ -400,6 +400,12 @@ class PetShellAppFlowTest {
             communityClient.submittedDraftId != null
         }
         assertEquals("import-draft-ui-001", communityClient.submittedDraftId)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        assertEquals(
+            "submission-ui-001",
+            context.getSharedPreferences("fantasy-pet-generation", 0)
+                .getString("packageImportSubmissionId", "")
+        )
         composeRule.onNodeWithContentDescription("generation-refresh-community-submission-button")
             .performScrollTo()
             .assertIsDisplayed()

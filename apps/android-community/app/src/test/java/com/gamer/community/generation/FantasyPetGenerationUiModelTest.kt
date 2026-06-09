@@ -382,6 +382,7 @@ class FantasyPetGenerationUiModelTest {
 
         assertTrue(canRefreshPackageImportSubmission("submission-local-001"))
         assertFalse(canRefreshPackageImportSubmission("D:/secret/runs/submission.json"))
+        assertFalse(canRefreshPackageImportSubmission("submission local 001"))
         assertEquals(
             "Community submission submission-local-001 is pending review for public-lifecycle-smoke.",
             packageImportSubmissionStatusMessage(pendingSubmission)
@@ -398,6 +399,28 @@ class FantasyPetGenerationUiModelTest {
                 )
             )
         )
+    }
+
+    @Test
+    fun packageImportSubmissionResumeKeepsOnlyPublicSubmissionIds() {
+        assertEquals(
+            "submission-local-001",
+            packageImportSubmissionIdForResume(" submission-local-001 ")
+        )
+        assertEquals(null, packageImportSubmissionIdForResume(""))
+        assertEquals(null, packageImportSubmissionIdForResume("submission local 001"))
+        assertEquals(null, packageImportSubmissionIdForResume("D:/secret/runs/submission.json"))
+        assertEquals(null, packageImportSubmissionIdForResume("https://example.com/submission-local-001"))
+    }
+
+    @Test
+    fun packageImportSubmissionResumeMessageHidesUnsafeIds() {
+        assertEquals(
+            "Community submission submission-local-001 is ready to refresh.",
+            packageImportSubmissionResumeMessage("submission-local-001")
+        )
+        assertEquals("", packageImportSubmissionResumeMessage("D:/secret/runs/submission.json"))
+        assertEquals("", packageImportSubmissionResumeMessage("submission local 001"))
     }
 
     @Test
