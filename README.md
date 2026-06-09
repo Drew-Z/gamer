@@ -187,8 +187,11 @@ D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\
 
 ### Fantasy Pet Generation API
 
-The Android app can connect to the public `fantasy-pet-rule` app API for the
-desktop-pet generation loop. The service lives beside this workspace:
+The Android app should normally use the community API as its single backend
+entry point. When `FANTASY_PET_API_BASE_URL` is set on the community API, the
+community API proxies only the public `fantasy-pet-rule` app endpoints for the
+desktop-pet generation loop. The `fantasy-pet-rule` service lives beside this
+workspace:
 
 ```text
 D:\workspace4Codex\fantasy-pet-rule
@@ -201,30 +204,33 @@ Set-Location D:\workspace4Codex\fantasy-pet-rule
 uv run --with-requirements requirements-server.txt python tools\app_server.py --run-root runs --host 127.0.0.1 --port 8765
 ```
 
-The Android build reads `FANTASY_PET_API_BASE_URL` and defaults to:
-
-```text
-http://127.0.0.1:8765
-```
-
-Override it before building when needed:
+To run the community API as the local app gateway, point it at the public
+fantasy-pet API before starting it:
 
 ```powershell
-$env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+$env:FANTASY_PET_API_BASE_URL = "http://127.0.0.1:8765"
+npm.cmd run start:community-api
 ```
 
-Use `http://10.0.2.2:8765` for the Android emulator to reach the host machine's
-`fantasy-pet-rule` server. Use `http://127.0.0.1:8765` only when the app process
-and the server share the same network namespace.
-
-The Android build also reads `COMMUNITY_API_BASE_URL` and defaults to:
+The Android build reads `COMMUNITY_API_BASE_URL` and defaults to:
 
 ```text
 http://10.0.2.2:4000
 ```
 
-Override both local API targets before building when needed:
+The Android build also reads `FANTASY_PET_API_BASE_URL`. If it is not set, it
+defaults to `COMMUNITY_API_BASE_URL`, so create, poll, review, and package
+download calls go through the community API proxy.
+
+Use this default single-backend setup for emulator builds:
+
+```powershell
+$env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
+D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+```
+
+Override both local API targets only when you intentionally want Android to
+connect directly to the public `fantasy-pet-rule` server:
 
 ```powershell
 $env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
@@ -232,11 +238,18 @@ $env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
 ```
 
+Use `http://10.0.2.2:8765` for the Android emulator to reach the host machine's
+`fantasy-pet-rule` server directly. Use `http://127.0.0.1:8765` only when the
+app process and the server share the same network namespace.
+
 Keep `npm.cmd run start:community-api` running when testing the generated
 `pet.zip` import, community review submission, and submission status refresh.
 The Android app uses public community endpoints such as
 `/v1/import-drafts/submit` and `/v1/submissions/{submissionId}`; admin review
 or approval remains a separate protected surface and is not called by the app.
+The community API proxy also does not expose `/admin/*`, `server-worker-cycle`,
+worker command routes, Codex routes, GenericAgent routes, or direct
+image-generation controls to the app.
 
 Public contract and smoke checks:
 
@@ -248,6 +261,13 @@ With the Docker overlay running, the same public contract is available at:
 
 ```powershell
 Invoke-RestMethod -Uri http://127.0.0.1:8765/app-api-contract
+```
+
+The Docker overlay also configures the community API proxy, so the app gateway
+contract is available at:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:4000/app-api-contract
 ```
 
 Run the app-side public lifecycle smoke from this repo:

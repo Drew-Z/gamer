@@ -8,7 +8,7 @@ android {
     namespace = 'com.gamer.community'
     compileSdk = libs.versions.android.compile.sdk.get().toInteger()
     def communityApiBaseUrl = System.getenv('COMMUNITY_API_BASE_URL') ?: 'http://10.0.2.2:4000'
-    def fantasyPetApiBaseUrl = System.getenv('FANTASY_PET_API_BASE_URL') ?: 'http://127.0.0.1:8765'
+    def fantasyPetApiBaseUrl = System.getenv('FANTASY_PET_API_BASE_URL') ?: communityApiBaseUrl
 
     defaultConfig {
         applicationId = 'com.gamer.community'

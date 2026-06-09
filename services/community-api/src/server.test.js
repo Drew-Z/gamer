@@ -37,6 +37,65 @@ const requestJson = (server, method, path, body) =>
     request.end(payload);
   });
 
+const requestRaw = (server, method, path, body = "") =>
+  new Promise((resolve, reject) => {
+    const address = server.address();
+    const payload = Buffer.isBuffer(body) ? body : Buffer.from(body);
+    const request = http.request(
+      {
+        hostname: "127.0.0.1",
+        port: address.port,
+        path,
+        method,
+        headers: {
+          "Content-Length": payload.byteLength
+        }
+      },
+      (response) => {
+        const chunks = [];
+        response.on("data", (chunk) => {
+          chunks.push(chunk);
+        });
+        response.on("end", () => {
+          resolve({
+            status: response.statusCode,
+            headers: response.headers,
+            body: Buffer.concat(chunks)
+          });
+        });
+      }
+    );
+    request.on("error", reject);
+    request.end(payload);
+  });
+
+const createFantasyPetUpstream = async (handler) => {
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    let body = "";
+    request.on("data", (chunk) => {
+      body += chunk;
+    });
+    request.on("end", () => {
+      const entry = {
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body
+      };
+      requests.push(entry);
+      handler(entry, response);
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  return {
+    baseUrl: `http://127.0.0.1:${server.address().port}`,
+    requests,
+    server
+  };
+};
+
 test("community API port prefers PORT then SERVER_PORT then default", () => {
   assert.equal(resolveCommunityApiPort({ PORT: "5123", SERVER_PORT: "6123" }), 5123);
   assert.equal(resolveCommunityApiPort({ SERVER_PORT: "6123" }), 6123);
@@ -102,6 +161,135 @@ test("HTTP server rejects invalid JSON body", async () => {
     assert.equal(response.body.error, "invalid_json");
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server reports unconfigured fantasy pet public proxy", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {}
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "POST", "/pet-generation-jobs", {
+      schema: "fantasy-pet.app-job-create-request.v1",
+      description: "tiny dragon"
+    });
+
+    assert.equal(response.status, 503);
+    assert.equal(response.body.error, "fantasy_pet_api_unconfigured");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server proxies fantasy pet public job creation", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(201, {
+      "Content-Type": "application/json"
+    });
+    response.end(
+      JSON.stringify({
+        schema: "fantasy-pet.app-job-response.v1",
+        appJobId: "job-123",
+        status: "queued",
+        progressStatus: "queued",
+        nextAction: "wait"
+      })
+    );
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "POST", "/pet-generation-jobs", {
+      schema: "fantasy-pet.app-job-create-request.v1",
+      description: "tiny dragon"
+    });
+
+    assert.equal(response.status, 201);
+    assert.equal(response.body.appJobId, "job-123");
+    assert.equal(upstream.requests.length, 1);
+    assert.equal(upstream.requests[0].method, "POST");
+    assert.equal(upstream.requests[0].url, "/pet-generation-jobs");
+    assert.ok(
+      upstream.requests[0].body.includes(
+        "\"schema\":\"fantasy-pet.app-job-create-request.v1\""
+      )
+    );
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
+  }
+});
+
+test("HTTP server proxies fantasy pet package bytes without JSON wrapping", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(200, {
+      "Content-Type": "application/zip"
+    });
+    response.end(Buffer.from("PK fantasy pet"));
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestRaw(
+      server,
+      "GET",
+      "/pet-generation-jobs/job-123/package"
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers["content-type"], "application/zip");
+    assert.equal(response.body.toString("utf8"), "PK fantasy pet");
+    assert.equal(upstream.requests[0].method, "GET");
+    assert.equal(upstream.requests[0].url, "/pet-generation-jobs/job-123/package");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
+  }
+});
+
+test("HTTP server does not proxy fantasy pet admin worker routes", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(500, {
+      "Content-Type": "application/json"
+    });
+    response.end(JSON.stringify({ error: "admin_route_should_not_be_proxied" }));
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "POST", "/admin/server-worker-cycle", {});
+
+    assert.equal(response.status, 404);
+    assert.equal(response.body.error, "not_found");
+    assert.equal(upstream.requests.length, 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
   }
 });
 

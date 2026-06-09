@@ -4,6 +4,33 @@ The community API currently runs on local in-memory state and exposes stable JSO
 contracts for the Android community shell, admin review console, and pet package
 integration services.
 
+## Proxied fantasy-pet public app endpoints
+
+When `FANTASY_PET_API_BASE_URL` is configured, the community API can also act as
+the Android app's single backend entry point for the `fantasy-pet-rule` public
+app lifecycle. These routes are proxied to the upstream public app API:
+
+- `POST /pet-generation-jobs`
+- `GET /pet-generation-jobs/{appJobId}`
+- `GET /pet-generation-jobs/{appJobId}/artifacts`
+- `GET /pet-generation-jobs/{appJobId}/artifacts/{downloadId}`
+- `POST /pet-generation-jobs/{appJobId}/review-decisions`
+- `GET /pet-generation-jobs/{appJobId}/package`
+- `GET /worker-readiness`
+- `GET /app-api-contract`
+
+`GET /pet-generation-jobs/{appJobId}/package` streams the upstream zip response
+without JSON wrapping. The proxy allowlist does not include `/admin/*`,
+`server-worker-cycle`, worker command routes, Codex routes, GenericAgent routes,
+or direct image-generation controls. If the upstream is not configured, public
+generation proxy calls return:
+
+```json
+{
+  "error": "fantasy_pet_api_unconfigured"
+}
+```
+
 ## GET /v1/community-home
 
 Returns the public home summary used by the Android community shell. This is a

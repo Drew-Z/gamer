@@ -21,6 +21,8 @@ test("fantasy pet public API has a Docker Compose overlay", () => {
   const compose = readRepoFile("compose.fantasy-pet.yaml");
 
   assert.match(compose, /fantasy-pet-api:/);
+  assert.match(compose, /community-api:/);
+  assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"http:\/\/fantasy-pet-api:8765"/);
   assert.match(compose, /8765:8765/);
   assert.match(compose, /tools\/app_server\.py|tools\\app_server\.py/);
   assert.doesNotMatch(compose, /enable-admin|\/admin|server-worker-cycle|agent-outputs/);
@@ -44,6 +46,10 @@ test("Android build supports configurable local API base URLs", () => {
   const buildGradle = readRepoFile("apps/android-community/app/build.gradle");
   const readme = readRepoFile("README.md");
 
+  assert.match(
+    buildGradle,
+    /System\.getenv\('FANTASY_PET_API_BASE_URL'\)\s*\?:\s*communityApiBaseUrl/,
+  );
   assert.match(buildGradle, /System\.getenv\('FANTASY_PET_API_BASE_URL'\)/);
   assert.match(buildGradle, /System\.getenv\('COMMUNITY_API_BASE_URL'\)/);
   assert.match(readme, /FANTASY_PET_API_BASE_URL/);

@@ -1,6 +1,10 @@
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  isFantasyPetPublicProxyRequest,
+  proxyFantasyPetPublicRequest
+} from "./fantasy-pet-proxy.js";
 import { handleCommunityRequest } from "./routes.js";
 
 export function resolveCommunityApiPort(env = process.env) {
@@ -24,10 +28,30 @@ const writeJson = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
+const writeRaw = (response, result) => {
+  response.writeHead(result.status, result.headers);
+  response.end(result.body);
+};
+
 export function createCommunityHttpHandler(options = {}) {
   return async (request, response) => {
     try {
       const rawBody = await readBody(request);
+      const method = request.method ?? "GET";
+      const requestUrl = request.url ?? "/";
+
+      if (isFantasyPetPublicProxyRequest(method, requestUrl)) {
+        const result = await proxyFantasyPetPublicRequest(method, requestUrl, {
+          env: options.env,
+          fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
+          fetch: options.fetch,
+          headers: request.headers,
+          rawBody
+        });
+        writeRaw(response, result);
+        return;
+      }
+
       let body = {};
 
       if (rawBody.trim() !== "") {
@@ -42,8 +66,8 @@ export function createCommunityHttpHandler(options = {}) {
       }
 
       const result = await handleCommunityRequest(
-        request.method ?? "GET",
-        request.url ?? "/",
+        method,
+        requestUrl,
         {
           ...options,
           body
@@ -64,6 +88,8 @@ export function startCommunityApiServer(options = {}) {
   const port = resolveCommunityApiPort(options.env);
   const server = http.createServer(
     createCommunityHttpHandler({
+      env: options.env,
+      fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
       store: options.store
     })
   );

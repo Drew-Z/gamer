@@ -10,6 +10,10 @@ test("community API docs include export artifact response examples", () => {
 
   assert.ok(doc.includes("GET /v1/feed"));
   assert.ok(doc.includes("GET /v1/community-home"));
+  assert.ok(doc.includes("Proxied fantasy-pet public app endpoints"));
+  assert.ok(doc.includes("POST /pet-generation-jobs"));
+  assert.ok(doc.includes("GET /pet-generation-jobs/{appJobId}/package"));
+  assert.ok(doc.includes("fantasy_pet_api_unconfigured"));
   assert.ok(doc.includes("gamer.community-home.v1"));
   assert.ok(doc.includes("dailyCheckIn"));
   assert.ok(doc.includes("submissionsSummary.pendingCount"));

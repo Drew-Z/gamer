@@ -1,4 +1,10 @@
 services:
+  community-api:
+    environment:
+      FANTASY_PET_API_BASE_URL: "http://fantasy-pet-api:8765"
+    depends_on:
+      - fantasy-pet-api
+
   fantasy-pet-api:
     image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
     profiles:
