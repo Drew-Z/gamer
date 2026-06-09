@@ -176,6 +176,15 @@ try {
     Assert-SmokeCondition ($submitResult.submission.importDraftId -eq $draft.id) "community submission draft mismatch"
     Assert-SmokeCondition ($submitResult.draft.status -eq "submitted") "community import draft was not submitted"
 
+    $submissionId = [string]$submitResult.submission.id
+    $submissionStatus = Invoke-RestMethod `
+        -Method Get `
+        -Uri ($communityBaseUrl + "/v1/submissions/" + [uri]::EscapeDataString($submissionId)) `
+        -TimeoutSec 10
+    Assert-SmokeCondition ($submissionStatus.id -eq $submissionId) "community submission status id mismatch"
+    Assert-SmokeCondition ($submissionStatus.status -eq "pending") "community submission status was not pending"
+    Assert-SmokeCondition ($submissionStatus.importDraftId -eq $draft.id) "community submission status draft mismatch"
+
     [pscustomobject]@{
         schema = "gamer.fantasy-pet-community-import-smoke.v1"
         status = "passed"
@@ -189,6 +198,7 @@ try {
         importTargetDownloadId = $draft.importSummary.review.targetDownloadId
         submissionId = $submitResult.submission.id
         submissionStatus = $submitResult.submission.status
+        refreshedSubmissionStatus = $submissionStatus.status
         submittedDraftStatus = $submitResult.draft.status
         runRoot = if ($KeepRunRoot) { [string]$lifecycle.runRoot } else { "" }
     } | ConvertTo-Json -Depth 8

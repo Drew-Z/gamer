@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -909,6 +910,7 @@ private fun CommunityHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 104.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(
                 Brush.linearGradient(
@@ -920,6 +922,9 @@ private fun CommunityHeader(
                     end = Offset(900f, 520f)
                 )
             )
+            .semantics {
+                contentDescription = "gamer-immersive-header-backdrop"
+            }
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
             drawImmersiveHeaderPattern(backgroundSpec)
@@ -2444,6 +2449,15 @@ private fun PetArtworkBadge(
 }
 
 private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundSpec) {
+    drawRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.08f),
+                Color.Transparent,
+                Color.Black.copy(alpha = 0.16f)
+            )
+        )
+    )
     drawCircle(
         color = spec.accentColor.copy(alpha = 0.24f),
         radius = size.minDimension * 0.64f,
@@ -2453,6 +2467,21 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
         color = Color.White.copy(alpha = 0.10f),
         radius = size.minDimension * 0.42f,
         center = Offset(size.width * 0.08f, size.height * 0.92f)
+    )
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.13f),
+        topLeft = Offset(size.width * 0.06f, size.height * 0.70f),
+        size = Size(size.width * 0.88f, size.height * 0.16f),
+        cornerRadius = CornerRadius(size.height * 0.08f, size.height * 0.08f)
+    )
+    drawPath(
+        path = Path().apply {
+            moveTo(size.width * 0.18f, size.height * 1.02f)
+            lineTo(size.width * 0.56f, size.height * 0.46f)
+            lineTo(size.width * 0.78f, size.height * 1.02f)
+            close()
+        },
+        color = Color.White.copy(alpha = 0.08f)
     )
     drawPath(
         path = Path().apply {
@@ -2468,6 +2497,33 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
         },
         color = Color.White.copy(alpha = 0.28f),
         style = Stroke(width = size.height * 0.04f, cap = StrokeCap.Round)
+    )
+    drawPath(
+        path = Path().apply {
+            moveTo(size.width * 0.54f, size.height * 0.18f)
+            cubicTo(
+                size.width * 0.64f,
+                size.height * 0.46f,
+                size.width * 0.86f,
+                size.height * 0.38f,
+                size.width,
+                size.height * 0.66f
+            )
+        },
+        color = spec.accentColor.copy(alpha = 0.26f),
+        style = Stroke(width = size.height * 0.022f, cap = StrokeCap.Round)
+    )
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.18f),
+        topLeft = Offset(size.width * 0.78f, size.height * 0.30f),
+        size = Size(size.width * 0.10f, size.height * 0.10f),
+        cornerRadius = CornerRadius(size.height * 0.025f, size.height * 0.025f)
+    )
+    drawRoundRect(
+        color = spec.accentColor.copy(alpha = 0.42f),
+        topLeft = Offset(size.width * 0.83f, size.height * 0.47f),
+        size = Size(size.width * 0.07f, size.height * 0.07f),
+        cornerRadius = CornerRadius(size.height * 0.02f, size.height * 0.02f)
     )
     drawCircle(
         color = spec.accentColor.copy(alpha = 0.72f),

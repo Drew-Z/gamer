@@ -169,6 +169,28 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesSubmissionJson() {
+        val json = """
+            {
+              "id": "submission-local-001",
+              "petId": "public-lifecycle-smoke",
+              "userId": "user-demo-001",
+              "status": "pending",
+              "scoreReportId": "score-import-draft-local-001",
+              "ownershipClaimId": "claim-public-lifecycle-smoke",
+              "importDraftId": "import-draft-local-001",
+              "submittedAt": "2026-06-08T00:00:00.000Z"
+            }
+        """.trimIndent()
+
+        val response = HttpCommunityApiClient.decodeSubmission(json)
+
+        assertEquals("submission-local-001", response.id)
+        assertEquals("public-lifecycle-smoke", response.petId)
+        assertEquals("pending", response.status)
+    }
+
+    @Test
     fun invalidJsonBecomesFailure() {
         val result = HttpCommunityApiClient.decodeCatching("not-json") {
             HttpCommunityApiClient.decodeFeed(it)
@@ -265,6 +287,34 @@ class HttpCommunityApiClientTest {
             assertTrue(result is ApiCallResult.Success)
             assertEquals("GET", recordedRequest.get()?.method)
             assertEquals("/v1/submissions", recordedRequest.get()?.path)
+        }
+    }
+
+    @Test
+    fun getSubmissionRequestsEncodedPublicSubmissionPath() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "id": "submission local/001",
+              "petId": "public-lifecycle-smoke",
+              "userId": "user-demo-001",
+              "status": "pending"
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl)
+                .getSubmission("submission local/001")
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("GET", recordedRequest.get()?.method)
+            assertEquals(
+                "/v1/submissions/submission%20local%2F001",
+                recordedRequest.get()?.path
+            )
         }
     }
 

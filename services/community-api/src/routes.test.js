@@ -67,6 +67,42 @@ test("submission route creates pending submission", () => {
   assert.equal(response.body.petId, "pet-new-001");
 });
 
+test("submission detail route returns a single public submission", () => {
+  const store = createCommunityStore();
+  const created = handleCommunityRequest("POST", "/v1/submissions", {
+    store,
+    body: {
+      petId: "pet-new-001",
+      ownershipClaimId: "claim-pet-new-001",
+      scoreReportId: "score-pet-new-001"
+    }
+  });
+
+  const response = handleCommunityRequest(
+    "GET",
+    `/v1/submissions/${encodeURIComponent(created.body.id)}`,
+    { store }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.id, created.body.id);
+  assert.equal(response.body.petId, "pet-new-001");
+  assert.equal(response.body.status, "pending");
+});
+
+test("submission detail route returns 404 for unknown submissions", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "GET",
+    "/v1/submissions/submission-missing-001",
+    { store }
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(response.body.error, "submission_not_found");
+  assert.equal(response.body.submissionId, "submission-missing-001");
+});
+
 test("pet package bundle validation route accepts valid bundle", () => {
   const response = handleCommunityRequest(
     "POST",

@@ -100,6 +100,12 @@ Create a pet submission:
 Invoke-RestMethod -Method Post -Uri http://localhost:4000/v1/submissions -ContentType application/json -Body '{"petId":"pet-new-001","ownershipClaimId":"claim-pet-new-001","scoreReportId":"score-pet-new-001"}'
 ```
 
+Read one submission status:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:4000/v1/submissions/submission-local-002
+```
+
 Approve a submission and post a reward:
 
 ```powershell
@@ -217,8 +223,8 @@ D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\
 Keep `npm.cmd run start:community-api` running when testing the generated
 `pet.zip` import, community review submission, and submission status refresh.
 The Android app uses public community endpoints such as
-`/v1/import-drafts/submit`; admin review or approval remains a separate
-protected surface and is not called by the app.
+`/v1/import-drafts/submit` and `/v1/submissions/{submissionId}`; admin review
+or approval remains a separate protected surface and is not called by the app.
 
 Public contract and smoke checks:
 

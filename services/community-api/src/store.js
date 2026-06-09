@@ -487,6 +487,11 @@ export function createCommunityStore(seed = defaultSeed) {
       };
     },
 
+    getSubmission(submissionId) {
+      const submission = state.submissions.find((item) => item.id === submissionId);
+      return clone(submission ?? null);
+    },
+
     listAdminReviewQueue() {
       return {
         items: state.submissions.map((submission) => {

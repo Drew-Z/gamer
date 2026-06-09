@@ -108,19 +108,7 @@ class CommunityRepository(
             return ApiCallResult.Failure("submission_id_required")
         }
 
-        return when (val result = client.getSubmissions()) {
-            is ApiCallResult.Success -> {
-                val submission = result.value.submissions.firstOrNull { item ->
-                    item.id == safeSubmissionId
-                }
-                if (submission == null) {
-                    ApiCallResult.Failure("submission_not_found")
-                } else {
-                    ApiCallResult.Success(submission)
-                }
-            }
-            is ApiCallResult.Failure -> result
-        }
+        return client.getSubmission(safeSubmissionId)
     }
 
     private companion object {

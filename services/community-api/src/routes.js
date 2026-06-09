@@ -66,6 +66,22 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(200, store.listSubmissions());
   }
 
+  if (method === "GET" && url.pathname.startsWith("/v1/submissions/")) {
+    const submissionId = decodeURIComponent(
+      url.pathname.slice("/v1/submissions/".length)
+    );
+    const submission = store.getSubmission(submissionId);
+
+    if (!submission) {
+      return json(404, {
+        error: "submission_not_found",
+        submissionId
+      });
+    }
+
+    return json(200, submission);
+  }
+
   if (method === "POST" && url.pathname === "/v1/pet-package-bundles/validate") {
     const validation = validatePetPackageBundle(body.bundle);
 

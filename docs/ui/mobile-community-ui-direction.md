@@ -148,6 +148,12 @@ Project-local takeaway:
 - Keep the header compact: 8dp radius, dark multi-hue gradient, subtle Canvas pattern, white title text, and a tab-specific accent.
 - The wallet and language controls remain inside the header utility dock so app chrome stays grouped and testable.
 
+2026-06-09 immersive header depth pass:
+
+- The shared header backdrop now has a stable `gamer-immersive-header-backdrop` UI anchor for emulator regression checks.
+- Keep the backdrop at a compact minimum height with layered depth: top light, dark floor, soft horizon platform, motion trail, and small accent panels.
+- The header should feel like a pet-eye view into the selected surface while keeping the title, wallet, and language controls readable.
+
 ## Product Direction
 
 The app should feel like a pet-first game community, closer to a lightweight game companion app than a generic admin dashboard.

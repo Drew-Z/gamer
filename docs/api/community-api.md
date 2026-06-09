@@ -125,6 +125,36 @@ Unknown approved pets return:
 }
 ```
 
+## GET /v1/submissions/:submissionId
+
+Returns one public submission status for Android's generated-pet handoff and
+community review tracking. This endpoint does not expose admin review queue
+details; it only returns the public submission record.
+
+Example response:
+
+```json
+{
+  "id": "submission-local-001",
+  "petId": "public-lifecycle-smoke",
+  "userId": "user-demo-001",
+  "status": "pending",
+  "scoreReportId": "score-import-draft-local-001",
+  "ownershipClaimId": "claim-public-lifecycle-smoke",
+  "importDraftId": "import-draft-local-001",
+  "submittedAt": "2026-06-08T00:00:00.000Z"
+}
+```
+
+Unknown submissions return:
+
+```json
+{
+  "error": "submission_not_found",
+  "submissionId": "submission-missing-001"
+}
+```
+
 ## POST /v1/import-drafts/from-fantasy-pet-package
 
 Creates a community import draft from the public package manifest inside a

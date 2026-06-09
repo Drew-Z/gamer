@@ -17,6 +17,9 @@ test("community API docs include export artifact response examples", () => {
   assert.ok(doc.includes("GET /v1/pets/approved/:petId/package"));
   assert.ok(doc.includes("approvedPetPackage.package.exportArtifactPath"));
   assert.ok(doc.includes("approved_pet_package_not_found"));
+  assert.ok(doc.includes("GET /v1/submissions/:submissionId"));
+  assert.ok(doc.includes("submission_not_found"));
+  assert.ok(doc.includes('"status": "pending"'));
   assert.ok(doc.includes("POST /v1/import-drafts/from-fantasy-pet-package"));
   assert.ok(doc.includes("fantasy-pet.package-manifest.v1"));
   assert.ok(doc.includes("invalid_fantasy_pet_package"));

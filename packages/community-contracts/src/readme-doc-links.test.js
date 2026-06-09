@@ -74,6 +74,8 @@ test("README exposes contract docs and phase verification commands", () => {
   assert.ok(readme.includes("http://10.0.2.2:4000"));
   assert.ok(readme.includes("tools\\app_server.py --run-root runs --host 127.0.0.1 --port 8765"));
   assert.ok(readme.includes("/v1/import-drafts/submit"));
+  assert.ok(readme.includes("/v1/submissions/{submissionId}"));
+  assert.ok(readme.includes("http://localhost:4000/v1/submissions/submission-local-002"));
   assert.ok(readme.includes("fantasy-pet-public-api-coverage.test.js"));
   assert.ok(readme.includes("fantasy-pet-community-api-safety-coverage.test.js"));
   assert.ok(readme.includes("tools\\smoke-fantasy-pet-public-lifecycle.cmd"));

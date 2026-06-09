@@ -303,7 +303,7 @@ class CommunityRepositoryTest {
     }
 
     @Test
-    fun getSubmissionStatusFindsSubmissionFromPublicList() = runTest {
+    fun getSubmissionStatusFetchesSinglePublicSubmission() = runTest {
         val submission = SubmissionDto(
             id = "submission-local-001",
             petId = "public-lifecycle-smoke",
@@ -313,16 +313,15 @@ class CommunityRepositoryTest {
             importDraftId = "import-draft-local-001"
         )
         val fakeClient = FakeCommunityApiClient(
-            submissionsResponse = ApiCallResult.Success(
-                SubmissionsResponseDto(submissions = listOf(submission))
-            )
+            submissionResponse = ApiCallResult.Success(submission)
         )
         val repository = CommunityRepository(client = fakeClient)
 
         val result = repository.getSubmissionStatus("submission-local-001")
 
         assertEquals(ApiCallResult.Success(submission), result)
-        assertTrue(fakeClient.submissionsRequested)
+        assertEquals("submission-local-001", fakeClient.requestedSubmissionId)
+        assertFalse(fakeClient.submissionsRequested)
     }
 
     @Test
@@ -333,6 +332,7 @@ class CommunityRepositoryTest {
         val result = repository.getSubmissionStatus("D:/secret/runs/submission.json")
 
         assertEquals(ApiCallResult.Failure("submission_id_required"), result)
+        assertNull(fakeClient.requestedSubmissionId)
         assertFalse(fakeClient.submissionsRequested)
     }
 }
@@ -345,11 +345,14 @@ private class FakeCommunityApiClient(
     private val importDraftResponse: ApiCallResult<ImportDraftDto> = ApiCallResult.Failure("not_configured"),
     private val submitImportDraftResponse: ApiCallResult<ImportDraftSubmissionResponseDto> =
         ApiCallResult.Failure("not_configured"),
+    private val submissionResponse: ApiCallResult<SubmissionDto> =
+        ApiCallResult.Failure("not_configured"),
     private val submissionsResponse: ApiCallResult<SubmissionsResponseDto> =
         ApiCallResult.Failure("not_configured")
 ) : CommunityApiClient {
     var importDraftRequest: FantasyPetPackageImportDraftRequestDto? = null
     var submittedImportDraftId: String? = null
+    var requestedSubmissionId: String? = null
     var submissionsRequested: Boolean = false
 
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> = feedResponse
@@ -374,6 +377,11 @@ private class FakeCommunityApiClient(
     ): ApiCallResult<ImportDraftSubmissionResponseDto> =
         submitImportDraftResponse.also {
             submittedImportDraftId = draftId
+        }
+
+    override suspend fun getSubmission(submissionId: String): ApiCallResult<SubmissionDto> =
+        submissionResponse.also {
+            requestedSubmissionId = submissionId
         }
 
     override suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto> =

@@ -34,6 +34,12 @@ class HttpCommunityApiClient(
     override suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto> =
         get("/v1/submissions", Companion::decodeSubmissions)
 
+    override suspend fun getSubmission(submissionId: String): ApiCallResult<SubmissionDto> =
+        get(
+            "/v1/submissions/${submissionId.pathSegment()}",
+            Companion::decodeSubmission
+        )
+
     override suspend fun createImportDraftFromFantasyPetPackage(
         request: FantasyPetPackageImportDraftRequestDto
     ): ApiCallResult<ImportDraftDto> =
@@ -127,6 +133,9 @@ class HttpCommunityApiClient(
 
         fun decodeSubmissions(text: String): SubmissionsResponseDto =
             json.decodeFromString<SubmissionsResponseDto>(text)
+
+        fun decodeSubmission(text: String): SubmissionDto =
+            json.decodeFromString<SubmissionDto>(text)
 
         fun decodeCheckIn(text: String): CheckInResponseDto = json.decodeFromString<CheckInResponseDto>(text)
 

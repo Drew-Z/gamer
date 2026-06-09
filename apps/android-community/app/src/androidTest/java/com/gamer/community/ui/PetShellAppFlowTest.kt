@@ -118,6 +118,29 @@ class PetShellAppFlowTest {
     }
 
     @Test
+    fun communityHeaderExposesImmersiveBackdropAcrossShellTabs() {
+        composeRule.setContent {
+            PetShellApp(
+                repository = CommunityRepository(FakeCommunityApiClient()),
+                generationService = FantasyPetGenerationService(FakeFantasyPetGenerationClient())
+            )
+        }
+
+        composeRule.onNodeWithContentDescription("launch-bubble-enter")
+            .performClick()
+        composeRule.onNodeWithContentDescription("gamer-immersive-header-backdrop")
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("gamer-tab-generate")
+            .performClick()
+        composeRule.onNodeWithContentDescription("gamer-immersive-header-backdrop")
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("gamer-tab-profile")
+            .performClick()
+        composeRule.onNodeWithContentDescription("gamer-immersive-header-backdrop")
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun communityHomePresentsGameCommunityChrome() {
         composeRule.setContent {
             PetShellApp(
@@ -488,6 +511,9 @@ private class FakeCommunityApiClient : CommunityApiClient {
     override suspend fun submitImportDraft(draftId: String): ApiCallResult<ImportDraftSubmissionResponseDto> =
         ApiCallResult.Failure("not_supported")
 
+    override suspend fun getSubmission(submissionId: String): ApiCallResult<SubmissionDto> =
+        ApiCallResult.Failure("not_supported")
+
     override suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto> =
         ApiCallResult.Success(SubmissionsResponseDto())
 
@@ -584,6 +610,13 @@ private class RecordingCommunityApiClient : CommunityApiClient {
             )
         )
     }
+
+    override suspend fun getSubmission(submissionId: String): ApiCallResult<SubmissionDto> =
+        if (submissionId == pendingSubmission.id) {
+            ApiCallResult.Success(pendingSubmission)
+        } else {
+            ApiCallResult.Failure("not_found")
+        }
 
     override suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto> =
         ApiCallResult.Success(

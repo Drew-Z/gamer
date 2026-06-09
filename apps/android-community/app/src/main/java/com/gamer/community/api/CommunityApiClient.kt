@@ -14,6 +14,7 @@ interface CommunityApiClient {
         request: FantasyPetPackageImportDraftRequestDto
     ): ApiCallResult<ImportDraftDto>
     suspend fun submitImportDraft(draftId: String): ApiCallResult<ImportDraftSubmissionResponseDto>
+    suspend fun getSubmission(submissionId: String): ApiCallResult<SubmissionDto>
     suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto>
     suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto>
 }
