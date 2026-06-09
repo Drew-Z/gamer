@@ -114,9 +114,20 @@ Aiven PostgreSQL should become the source of truth for:
 - feed posts and reactions
 - R2 asset metadata
 
-Use migrations before switching `community-api` away from in-memory state. For
-the API container, prefer a pooled PgBouncer URI when concurrent mobile traffic
-starts increasing.
+The first production schema migration lives in:
+
+```text
+services/community-api/db/migrations/001_initial_community_schema.sql
+```
+
+It defines the data model for the public app, admin review flow, wallet ledger,
+approved pet registry, and R2 asset metadata. Runtime traffic still defaults to
+the in-memory store until a Postgres-backed store is implemented and explicitly
+enabled. Filling `DATABASE_URL` prepares the container environment; it does not
+by itself switch persistence yet.
+
+For the API container, prefer a pooled PgBouncer URI when concurrent mobile
+traffic starts increasing.
 
 ## Fantasy-Pet Boundary
 
@@ -152,6 +163,7 @@ Run local contract checks before deploying:
 
 ```powershell
 npm.cmd test
+node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
 docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 git diff --check
 ```

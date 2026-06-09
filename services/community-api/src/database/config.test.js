@@ -1,0 +1,39 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createDatabaseConfig } from "./config.js";
+
+test("database config stays in memory mode when DATABASE_URL is blank", () => {
+  assert.deepEqual(createDatabaseConfig({ DATABASE_URL: "" }), {
+    mode: "memory",
+    databaseUrl: "",
+    sslMode: "",
+    caCertPath: ""
+  });
+});
+
+test("database config accepts Aiven PostgreSQL URLs with SSL metadata", () => {
+  const config = createDatabaseConfig({
+    DATABASE_URL: "postgres://avnadmin:example@example.aivencloud.com:13040/pgbouncer?sslmode=require",
+    AIVEN_CA_CERT_PATH: "/run/secrets/aiven-ca.pem"
+  });
+
+  assert.equal(config.mode, "postgres");
+  assert.equal(config.sslMode, "require");
+  assert.equal(config.caCertPath, "/run/secrets/aiven-ca.pem");
+});
+
+test("database config accepts postgresql URL scheme", () => {
+  const config = createDatabaseConfig({
+    DATABASE_URL: "postgresql://avnadmin:example@example.aivencloud.com:13040/defaultdb?sslmode=verify-ca"
+  });
+
+  assert.equal(config.mode, "postgres");
+  assert.equal(config.sslMode, "verify-ca");
+});
+
+test("database config rejects non-PostgreSQL URLs", () => {
+  assert.throws(
+    () => createDatabaseConfig({ DATABASE_URL: "mysql://example" }),
+    /DATABASE_URL must use postgres/
+  );
+});
