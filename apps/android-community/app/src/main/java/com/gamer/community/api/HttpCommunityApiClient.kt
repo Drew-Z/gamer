@@ -78,8 +78,8 @@ class HttpCommunityApiClient(
         try {
             connection = URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
             connection.requestMethod = method
-            connection.connectTimeout = 2_000
-            connection.readTimeout = 2_000
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
             connection.setRequestProperty("Accept", "application/json")
 
             if (body != null) {

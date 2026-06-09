@@ -141,8 +141,8 @@ class HttpFantasyPetGenerationClient(
 
     private fun openConnection(path: String): HttpURLConnection =
         (URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 2_000
-            readTimeout = 2_000
+            connectTimeout = 10_000
+            readTimeout = 10_000
         }
 
     private fun String.pathSegment(): String =

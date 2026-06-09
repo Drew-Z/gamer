@@ -1,7 +1,9 @@
 package com.gamer.community.ui
 
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
+import com.gamer.community.BuildConfig
 import com.gamer.community.api.ApiCallResult
 import com.gamer.community.api.ApprovedPetPackageDto
 import com.gamer.community.api.ApprovedPetsResponseDto
@@ -23,6 +26,7 @@ import com.gamer.community.api.CommunityHomeResponseDto
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.FantasyPetPackageImportDraftRequestDto
 import com.gamer.community.api.FeedResponseDto
+import com.gamer.community.api.HttpCommunityApiClient
 import com.gamer.community.api.ImportDraftDto
 import com.gamer.community.api.ImportDraftSubmissionResponseDto
 import com.gamer.community.api.LedgerEntryDto
@@ -31,6 +35,7 @@ import com.gamer.community.api.SubmissionsResponseDto
 import com.gamer.community.api.WalletDto
 import com.gamer.community.generation.FantasyPetGenerationClient
 import com.gamer.community.generation.FantasyPetGenerationService
+import com.gamer.community.generation.HttpFantasyPetGenerationClient
 import com.gamer.community.generation.PetGenerationAppApiContractDto
 import com.gamer.community.generation.PetGenerationArtifactDto
 import com.gamer.community.generation.PetGenerationArtifactIndexResponseDto
@@ -41,6 +46,7 @@ import com.gamer.community.generation.WorkerReadinessResponseDto
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -490,6 +496,102 @@ class PetShellAppFlowTest {
         composeRule.onNodeWithTag("package-download")
             .performScrollTo()
             .assertIsNotEnabled()
+    }
+
+    @Test
+    fun liveHidenCloudGenerationCreateFromProductionAppWhenEnabled() {
+        val args = InstrumentationRegistry.getArguments()
+        if (args.getString("liveFantasyPetFlow") != "true") return
+
+        val appJobId = args.getString("liveAppJobId")
+            ?: "formal-flow-${System.currentTimeMillis()}"
+        val description = args.getString("liveDescription")
+            ?: "crystal fox mage pet standing cheerful blue scarf"
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val realGenerationClient = HttpFantasyPetGenerationClient(BuildConfig.FANTASY_PET_API_BASE_URL)
+        var createResult: ApiCallResult<PetGenerationJobResponseDto>? = null
+        val generationClient = object : FantasyPetGenerationClient {
+            override suspend fun createJob(
+                request: PetGenerationJobCreateRequestDto
+            ): ApiCallResult<PetGenerationJobResponseDto> {
+                Log.i("PetShellLiveTest", "createJob appJobId=${request.appJobId.orEmpty()}")
+                val result = realGenerationClient.createJob(request)
+                createResult = result
+                Log.i("PetShellLiveTest", "createJob result=${result::class.java.simpleName}")
+                return result
+            }
+
+            override suspend fun getJob(appJobId: String): ApiCallResult<PetGenerationJobResponseDto> =
+                realGenerationClient.getJob(appJobId)
+
+            override suspend fun getArtifacts(
+                appJobId: String
+            ): ApiCallResult<PetGenerationArtifactIndexResponseDto> =
+                realGenerationClient.getArtifacts(appJobId)
+
+            override suspend fun submitReviewDecision(
+                appJobId: String,
+                request: ReviewDecisionRequestDto
+            ): ApiCallResult<PetGenerationJobResponseDto> =
+                realGenerationClient.submitReviewDecision(appJobId, request)
+
+            override suspend fun downloadPackage(appJobId: String): ApiCallResult<ByteArray> =
+                realGenerationClient.downloadPackage(appJobId)
+
+            override suspend fun getWorkerReadiness(): ApiCallResult<WorkerReadinessResponseDto> =
+                realGenerationClient.getWorkerReadiness()
+
+            override suspend fun getAppApiContract(): ApiCallResult<PetGenerationAppApiContractDto> =
+                realGenerationClient.getAppApiContract()
+        }
+
+        context.getSharedPreferences("pet-shell-ui", 0)
+            .edit()
+            .putString("language", "en")
+            .commit()
+        context.getSharedPreferences("fantasy-pet-generation", 0)
+            .edit()
+            .clear()
+            .putString("appJobId", appJobId)
+            .commit()
+
+        composeRule.setContent {
+            PetShellApp(
+                repository = CommunityRepository(
+                    HttpCommunityApiClient(BuildConfig.COMMUNITY_API_BASE_URL)
+                ),
+                generationService = FantasyPetGenerationService(
+                    client = generationClient,
+                    apiBaseUrl = BuildConfig.FANTASY_PET_API_BASE_URL
+                ),
+                initialGenerationDescription = description
+            )
+        }
+
+        composeRule.onNodeWithContentDescription("launch-bubble-enter")
+            .performClick()
+        composeRule.onNodeWithContentDescription("gamer-tab-generate")
+            .performClick()
+        composeRule.onNodeWithTag("generation-create")
+            .performScrollTo()
+            .assertIsEnabled()
+            .performClick()
+
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            createResult != null
+        }
+        when (val result = createResult) {
+            is ApiCallResult.Failure -> throw AssertionError("live create failed: ${result.reason}")
+            is ApiCallResult.Success -> Unit
+            null -> throw AssertionError("live create was not called")
+        }
+
+        composeRule.waitUntil(timeoutMillis = 60_000) {
+            runBlocking {
+                realGenerationClient.getJob(appJobId) is ApiCallResult.Success
+            }
+        }
+        println("LIVE_FANTASY_PET_APP_JOB_ID=$appJobId")
     }
 }
 
