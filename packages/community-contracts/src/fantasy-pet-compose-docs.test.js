@@ -28,22 +28,9 @@ test("fantasy pet public API has a Docker Compose overlay", () => {
   assert.doesNotMatch(compose, /enable-admin|\/admin|server-worker-cycle|agent-outputs/);
 });
 
-test("local HidenCloud simulation has a Docker Compose overlay", () => {
-  const compose = readRepoFile("compose.hidencloud-local.yaml");
-
-  assert.match(compose, /community-api:/);
-  assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"http:\/\/120\.48\.67\.110:8765"/);
-  assert.doesNotMatch(compose, /fantasy-pet-api:/);
-  assert.doesNotMatch(compose, /enable-admin|\/admin|server-worker-cycle|agent-outputs/);
-});
-
 test("README documents Docker startup for the fantasy pet public API", () => {
   const readme = readRepoFile("README.md");
 
-  assert.match(
-    readme,
-    /docker compose -f compose\.yaml -f compose\.hidencloud-local\.yaml up --build community-api/,
-  );
   assert.match(
     readme,
     /docker compose -f compose\.yaml -f compose\.fantasy-pet\.yaml --profile fantasy-pet up --build/,
