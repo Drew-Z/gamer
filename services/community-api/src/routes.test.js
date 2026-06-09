@@ -4,6 +4,21 @@ import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/in
 import { handleCommunityRequest } from "./routes.js";
 import { createCommunityStore } from "./store.js";
 
+const validFantasyPetPackageManifest = {
+  schema: "fantasy-pet.package-manifest.v1",
+  runId: "run-public-lifecycle-smoke",
+  appJobId: "public-lifecycle-smoke",
+  acceptedBy: "human-review",
+  sourceDownloadId: "artifact-1",
+  sourceTaskId: "codex-worker-task",
+  files: [
+    {
+      kind: "candidate",
+      path: "artifacts/candidates/final-preview.png"
+    }
+  ]
+};
+
 test("health route reports service status", () => {
   const response = handleCommunityRequest("GET", "/health");
 
@@ -227,6 +242,142 @@ test("pet package bundle route rejects duplicate import after submission", () =>
   assert.equal(second.body.error, "duplicate_import_draft");
   assert.equal(second.body.existingDraftId, first.body.id);
   assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 1);
+});
+
+test("fantasy pet package route creates ready import draft from public package manifest", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-fantasy-pet-package",
+    {
+      store,
+      body: {
+        packageManifest: validFantasyPetPackageManifest,
+        packageFileName: "pet-public-lifecycle-smoke.zip",
+        packageByteCount: 664,
+        targetDownloadId: "artifact-1",
+        ownershipClaimId: "claim-public-lifecycle-smoke"
+      }
+    }
+  );
+  const report = store.getScoreReport(response.body.scoreReportId);
+
+  assert.equal(response.status, 201);
+  assert.equal(response.body.status, "ready");
+  assert.equal(response.body.petId, "public-lifecycle-smoke");
+  assert.equal(response.body.importSummary.source.kind, "fantasy-pet-rule");
+  assert.equal(response.body.importSummary.review.targetDownloadId, "artifact-1");
+  assert.equal(report.rewardRecommendation.amount, 80);
+});
+
+test("fantasy pet package route rejects internal paths from public package manifest", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-fantasy-pet-package",
+    {
+      store,
+      body: {
+        packageManifest: {
+          ...validFantasyPetPackageManifest,
+          files: [
+            {
+              kind: "candidate",
+              path: "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+            }
+          ]
+        },
+        packageFileName: "pet-public-lifecycle-smoke.zip",
+        packageByteCount: 664,
+        targetDownloadId: "artifact-1",
+        ownershipClaimId: "claim-public-lifecycle-smoke"
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_fantasy_pet_package");
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 0);
+});
+
+test("fantasy pet package route rejects internal ledger and route artifacts", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-fantasy-pet-package",
+    {
+      store,
+      body: {
+        packageManifest: {
+          ...validFantasyPetPackageManifest,
+          files: [
+            {
+              kind: "candidate",
+              path: "artifacts/candidates/final-preview.png"
+            },
+            {
+              kind: "metadata",
+              path: "learning-ledger.jsonl"
+            },
+            {
+              kind: "metadata",
+              path: "route-policy-decision.json"
+            },
+            {
+              kind: "metadata",
+              path: "ledger-suggestions/genericagent-ledger-import.json"
+            },
+            {
+              kind: "metadata",
+              path: "review/stage-gate-ledger-import.json"
+            }
+          ]
+        },
+        packageFileName: "pet-public-lifecycle-smoke.zip",
+        packageByteCount: 664,
+        targetDownloadId: "artifact-1",
+        ownershipClaimId: "claim-public-lifecycle-smoke"
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_fantasy_pet_package");
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 0);
+});
+
+test("fantasy pet package route rejects stage gate ledger import artifact", () => {
+  const store = createCommunityStore();
+  const response = handleCommunityRequest(
+    "POST",
+    "/v1/import-drafts/from-fantasy-pet-package",
+    {
+      store,
+      body: {
+        packageManifest: {
+          ...validFantasyPetPackageManifest,
+          files: [
+            {
+              kind: "candidate",
+              path: "artifacts/candidates/final-preview.png"
+            },
+            {
+              kind: "metadata",
+              path: "review/stage-gate-ledger-import.json"
+            }
+          ]
+        },
+        packageFileName: "pet-public-lifecycle-smoke.zip",
+        packageByteCount: 664,
+        targetDownloadId: "artifact-1",
+        ownershipClaimId: "claim-public-lifecycle-smoke"
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid_fantasy_pet_package");
+  assert.equal(store.listImportDrafts("user-demo-001").drafts.length, 0);
 });
 
 test("admin review route approves submission and updates wallet", () => {

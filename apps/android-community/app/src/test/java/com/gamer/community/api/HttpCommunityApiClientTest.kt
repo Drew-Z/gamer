@@ -121,6 +121,54 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesImportDraftJson() {
+        val json = """
+            {
+              "id": "import-draft-local-001",
+              "userId": "user-demo-001",
+              "status": "ready",
+              "petId": "public-lifecycle-smoke",
+              "ownershipClaimId": "claim-public-lifecycle-smoke",
+              "scoreReportId": "score-import-draft-local-001"
+            }
+        """.trimIndent()
+
+        val draft = HttpCommunityApiClient.decodeImportDraft(json)
+
+        assertEquals("import-draft-local-001", draft.id)
+        assertEquals("ready", draft.status)
+        assertEquals("public-lifecycle-smoke", draft.petId)
+        assertEquals("score-import-draft-local-001", draft.scoreReportId)
+    }
+
+    @Test
+    fun decodesSubmissionsJson() {
+        val json = """
+            {
+              "submissions": [
+                {
+                  "id": "submission-local-001",
+                  "petId": "public-lifecycle-smoke",
+                  "userId": "user-demo-001",
+                  "status": "pending",
+                  "scoreReportId": "score-import-draft-local-001",
+                  "ownershipClaimId": "claim-public-lifecycle-smoke",
+                  "importDraftId": "import-draft-local-001",
+                  "submittedAt": "2026-06-08T00:00:00.000Z"
+                }
+              ],
+              "reviewQueue": []
+            }
+        """.trimIndent()
+
+        val response = HttpCommunityApiClient.decodeSubmissions(json)
+
+        assertEquals(1, response.submissions.size)
+        assertEquals("submission-local-001", response.submissions[0].id)
+        assertEquals("pending", response.submissions[0].status)
+    }
+
+    @Test
     fun invalidJsonBecomesFailure() {
         val result = HttpCommunityApiClient.decodeCatching("not-json") {
             HttpCommunityApiClient.decodeFeed(it)
@@ -192,6 +240,35 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun getSubmissionsRequestsPublicSubmissionsPath() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "submissions": [
+                {
+                  "id": "submission-local-001",
+                  "petId": "public-lifecycle-smoke",
+                  "userId": "user-demo-001",
+                  "status": "pending"
+                }
+              ],
+              "reviewQueue": []
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl).getSubmissions()
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("GET", recordedRequest.get()?.method)
+            assertEquals("/v1/submissions", recordedRequest.get()?.path)
+        }
+    }
+
+    @Test
     fun claimDailyCheckInPostsJsonBody() = runTest {
         val recordedRequest = AtomicReference<RecordedRequest>()
         val responseBody = """
@@ -223,6 +300,112 @@ class HttpCommunityApiClientTest {
             assertEquals("POST", recordedRequest.get()?.method)
             assertEquals("/v1/check-in", recordedRequest.get()?.path)
             assertEquals("{}", recordedRequest.get()?.body)
+        }
+    }
+
+    @Test
+    fun createImportDraftFromFantasyPetPackagePostsPublicPackageManifest() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "id": "import-draft-local-001",
+              "userId": "user-demo-001",
+              "status": "ready",
+              "petId": "public-lifecycle-smoke",
+              "ownershipClaimId": "claim-public-lifecycle-smoke",
+              "scoreReportId": "score-import-draft-local-001"
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl)
+                .createImportDraftFromFantasyPetPackage(
+                    FantasyPetPackageImportDraftRequestDto(
+                        packageManifest = FantasyPetPackageManifestDto(
+                            runId = "run-public-lifecycle-smoke",
+                            appJobId = "public-lifecycle-smoke",
+                            acceptedBy = "human-review",
+                            sourceDownloadId = "artifact-1",
+                            sourceTaskId = "codex-worker-task",
+                            files = listOf(
+                                FantasyPetPackageFileDto(
+                                    kind = "candidate",
+                                    path = "artifacts/candidates/final-preview.png"
+                                )
+                            )
+                        ),
+                        packageFileName = "pet-public-lifecycle-smoke.zip",
+                        packageByteCount = 664L,
+                        targetDownloadId = "artifact-1",
+                        ownershipClaimId = "claim-public-lifecycle-smoke"
+                    )
+                )
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("POST", recordedRequest.get()?.method)
+            assertEquals(
+                "/v1/import-drafts/from-fantasy-pet-package",
+                recordedRequest.get()?.path
+            )
+            assertTrue(
+                recordedRequest.get()?.body.orEmpty()
+                    .contains("\"schema\":\"fantasy-pet.package-manifest.v1\"")
+            )
+            assertTrue(
+                recordedRequest.get()?.body.orEmpty()
+                    .contains("\"targetDownloadId\":\"artifact-1\"")
+            )
+        }
+    }
+
+    @Test
+    fun submitImportDraftPostsDraftIdToPublicSubmitEndpoint() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "draft": {
+                "id": "import-draft-local-001",
+                "userId": "user-demo-001",
+                "status": "submitted",
+                "petId": "public-lifecycle-smoke",
+                "ownershipClaimId": "claim-public-lifecycle-smoke",
+                "scoreReportId": "score-import-draft-local-001",
+                "submissionId": "submission-local-001"
+              },
+              "submission": {
+                "id": "submission-local-001",
+                "petId": "public-lifecycle-smoke",
+                "userId": "user-demo-001",
+                "status": "pending",
+                "scoreReportId": "score-import-draft-local-001",
+                "ownershipClaimId": "claim-public-lifecycle-smoke",
+                "importDraftId": "import-draft-local-001",
+                "submittedAt": "2026-06-08T00:00:00.000Z"
+              }
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl)
+                .submitImportDraft("import-draft-local-001")
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("POST", recordedRequest.get()?.method)
+            assertEquals("/v1/import-drafts/submit", recordedRequest.get()?.path)
+            assertTrue(
+                recordedRequest.get()?.body.orEmpty()
+                    .contains("\"draftId\":\"import-draft-local-001\"")
+            )
+            val response = (result as ApiCallResult.Success<ImportDraftSubmissionResponseDto>).value
+            assertEquals("submitted", response.draft.status)
+            assertEquals("submission-local-001", response.submission.id)
+            assertEquals("pending", response.submission.status)
         }
     }
 }

@@ -1,11 +1,415 @@
 package com.gamer.community.ui
 
+import com.gamer.community.generation.DEFAULT_GENERATION_MESSAGE
+import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.ApprovedPet
+import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PetShellUiModelTest {
+    @Test
+    fun petShellLanguageDefaultsToChineseAndParsesEnglish() {
+        assertEquals(PetShellLanguage.Chinese, parsePetShellLanguage(null))
+        assertEquals(PetShellLanguage.Chinese, parsePetShellLanguage(""))
+        assertEquals(PetShellLanguage.Chinese, parsePetShellLanguage("zh"))
+        assertEquals(PetShellLanguage.English, parsePetShellLanguage("en"))
+        assertEquals(PetShellLanguage.Chinese, parsePetShellLanguage("ja"))
+        assertEquals("zh", PetShellLanguage.Chinese.preferenceValue)
+        assertEquals("en", PetShellLanguage.English.preferenceValue)
+    }
+
+    @Test
+    fun petShellStringsExposeStableAppShellTabs() {
+        val zh = defaultPetShellStrings()
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("\u793E\u533A", zh.communityTabLabel)
+        assertEquals("\u751F\u6210", zh.generateTabLabel)
+        assertEquals("\u6211\u7684", zh.profileTabLabel)
+        assertEquals("Community", en.communityTabLabel)
+        assertEquals("Generate", en.generateTabLabel)
+        assertEquals("Mine", en.profileTabLabel)
+        assertEquals("gamer-tab-community", zh.communityTabContentDescription)
+        assertEquals("gamer-tab-generate", zh.generateTabContentDescription)
+        assertEquals("gamer-tab-profile", zh.profileTabContentDescription)
+        assertEquals("gamer-community-home", zh.communityHomeContentDescription)
+        assertEquals("gamer-generation-workspace", zh.generationWorkspaceContentDescription)
+        assertEquals("gamer-profile-workspace", zh.profileWorkspaceContentDescription)
+        assertEquals("header-utility-dock", zh.headerUtilityDockContentDescription)
+        assertEquals("gamer-pet-avatar", zh.petAvatarContentDescription)
+        assertEquals("community-channel-rail", zh.communityChannelRailContentDescription)
+        assertEquals("community-quick-actions", zh.communityQuickActionsContentDescription)
+        assertEquals(
+            "community-pet-companion-strip",
+            zh.communityPetCompanionStripContentDescription
+        )
+        assertEquals("community-showcase-panel", zh.communityShowcasePanelContentDescription)
+        assertEquals("community-post-card", zh.communityPostCardContentDescription)
+        assertEquals("community-feed-controls", zh.communityFeedControlsContentDescription)
+        assertEquals("generation-studio-hero", zh.generationStudioHeroContentDescription)
+        assertEquals("generation-studio-status-dock", zh.generationStudioStatusDockContentDescription)
+        assertEquals("generation-prompt-canvas", zh.generationPromptCanvasContentDescription)
+        assertEquals("generation-runtime-console", zh.generationRuntimeConsoleContentDescription)
+        assertEquals("generation-review-action-dock", zh.generationReviewActionDockContentDescription)
+        assertEquals("profile-keeper-hero", zh.profileKeeperHeroContentDescription)
+        assertEquals("profile-wallet-summary", zh.profileWalletSummaryContentDescription)
+        assertEquals("profile-pet-shelf", zh.profilePetShelfContentDescription)
+        assertEquals("profile-action-dock", zh.profileActionDockContentDescription)
+        assertEquals("generation-flow-rail", zh.generationFlowRailContentDescription)
+        assertEquals("generation-brief-panel", zh.generationBriefPanelContentDescription)
+        assertEquals("generation-review-desk", zh.generationReviewDeskContentDescription)
+        assertEquals(
+            "generation-review-waiting-candidate",
+            zh.generationReviewWaitingContentDescription
+        )
+        assertEquals("community", zh.communityTabIconLabel)
+        assertEquals("generate", zh.generateTabIconLabel)
+        assertEquals("profile", zh.profileTabIconLabel)
+    }
+
+    @Test
+    fun petShellTabHeaderCopyUsesSelectedProductSurface() {
+        val zh = defaultPetShellStrings()
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals(zh.communityTitle, petShellTabHeaderTitle(PetShellTab.Community, zh))
+        assertEquals(zh.communitySubtitle, petShellTabHeaderSubtitle(PetShellTab.Community, zh))
+        assertEquals(zh.generationWorkspaceTitle, petShellTabHeaderTitle(PetShellTab.Generate, zh))
+        assertEquals(zh.generationWorkspaceSubtitle, petShellTabHeaderSubtitle(PetShellTab.Generate, zh))
+        assertEquals(zh.profileWorkspaceTitle, petShellTabHeaderTitle(PetShellTab.Profile, zh))
+        assertEquals(zh.profileWorkspaceSubtitle, petShellTabHeaderSubtitle(PetShellTab.Profile, zh))
+
+        assertEquals("Generation Workspace", petShellTabHeaderTitle(PetShellTab.Generate, en))
+        assertEquals(
+            "Public API loop from prompt to human review and package download.",
+            petShellTabHeaderSubtitle(PetShellTab.Generate, en)
+        )
+        assertEquals("My Pets", petShellTabHeaderTitle(PetShellTab.Profile, en))
+        assertEquals(
+            "Wallet, check-in, and approved desktop pets.",
+            petShellTabHeaderSubtitle(PetShellTab.Profile, en)
+        )
+    }
+
+    @Test
+    fun petShellHeaderBackgroundUsesImmersiveTabSpecificPalette() {
+        val community = petShellHeaderBackgroundSpec(PetShellTab.Community)
+        val generate = petShellHeaderBackgroundSpec(PetShellTab.Generate)
+        val profile = petShellHeaderBackgroundSpec(PetShellTab.Profile)
+
+        assertEquals(Color.White, community.titleColor)
+        assertEquals(Color(0xFFD7F3EE), community.subtitleColor)
+        assertEquals(Color.White, generate.titleColor)
+        assertEquals(Color.White, profile.titleColor)
+        assertFalse(community.startColor == generate.startColor)
+        assertFalse(generate.startColor == profile.startColor)
+        assertFalse(profile.startColor == community.startColor)
+        assertEquals(Color(0xFFF97316), community.accentColor)
+        assertEquals(Color(0xFF60A5FA), generate.accentColor)
+        assertEquals(Color(0xFFFFB86B), profile.accentColor)
+    }
+
+    @Test
+    fun generationStudioHeroUsesSpecificWorkbenchCopy() {
+        val zh = defaultPetShellStrings()
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("\u5B89\u5168\u751F\u6210\u53F0", zh.generationStudioHeroTitle)
+        assertEquals(
+            "\u5019\u9009\u56FE\u3001\u4EBA\u5BA1\u548C pet.zip \u4EA4\u4ED8\u90FD\u5728\u8FD9\u91CC\u3002",
+            zh.generationStudioHeroSubtitle
+        )
+        assertEquals("Safe Generation Desk", en.generationStudioHeroTitle)
+        assertEquals(
+            "Candidates, human review, and pet.zip delivery stay together.",
+            en.generationStudioHeroSubtitle
+        )
+        assertFalse(zh.generationStudioHeroTitle == zh.generationWorkspaceTitle)
+        assertFalse(en.generationStudioHeroTitle == en.generationWorkspaceTitle)
+    }
+
+    @Test
+    fun petShellStringsUseChineseByDefaultAndExposeEnglishAlternative() {
+        val zh = defaultPetShellStrings()
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("玩家社区", zh.communityTitle)
+        assertEquals("以桌宠为主的动态原型", zh.communitySubtitle)
+        assertEquals("点击气泡进入", zh.launchEnterHint)
+        assertEquals("生成桌宠", zh.generatePanelTitle)
+        assertEquals(
+            "公共 API 只创建和轮询任务；真实生成 worker 需要在服务端单独启动。",
+            zh.generationPublicApiBoundaryNotice
+        )
+        assertEquals(
+            "generation-public-api-boundary-notice",
+            zh.generationPublicApiBoundaryContentDescription
+        )
+        assertEquals("创建生成任务", zh.createGenerationJob)
+        assertEquals("\uFF08\u5FC5\u586B\uFF09", zh.requiredFieldSuffix)
+        assertEquals("创作流程", zh.generationFlowRailTitle)
+        assertEquals("创作简报", zh.generationBriefPanelTitle)
+        assertEquals("桌宠提示", zh.generationPromptStageTitle)
+        assertEquals("\u7075\u611F", zh.generationPromptIdeaAction)
+        assertEquals(
+            "generation-prompt-idea-button",
+            zh.generationPromptIdeaContentDescription
+        )
+        assertEquals(
+            "\u8584\u8377\u8272\u5B88\u62A4\u8005\u684C\u5BA0\uFF0C\u5F85\u673A\u8F7B\u8F7B\u6F02\u6D6E\uFF0C\u8DD1\u52A8\u65F6\u5C3E\u5DF4\u5F39\u8DF3\u3002",
+            zh.generationPromptIdeaText
+        )
+        assertEquals("任务控制", zh.generationTaskStageTitle)
+        assertEquals("体型预设", zh.generationBodyStageTitle)
+        assertEquals("运行操作", zh.generationRunStageTitle)
+        assertEquals("审核交付", zh.generationReviewDeskTitle)
+        assertEquals(
+            "候选图会在生成完成后出现在这里，选择 candidate 后才能提交人审。",
+            zh.generationReviewWaitingForCandidate
+        )
+        assertEquals("候选检查", zh.candidateInspectionTitle)
+        assertEquals("人审备注", zh.reviewNotesStageTitle)
+        assertEquals("交付动作", zh.deliveryActionsTitle)
+        assertEquals("已选中", zh.candidateSelectedStatus)
+        assertEquals("待选择", zh.candidateAvailableStatus)
+        assertEquals("候选图画廊", zh.candidateGalleryTitle)
+        assertEquals("接受", zh.reviewAccept)
+        assertEquals("提交到社区审核", zh.submitToCommunityReview)
+        assertEquals(
+            "generation-submit-community-review-button",
+            zh.submitCommunityReviewContentDescription
+        )
+        assertEquals(
+            "generation-refresh-community-submission-button",
+            zh.refreshCommunitySubmissionContentDescription
+        )
+        assertEquals(
+            "generation-contract-demo-no-live-worker",
+            zh.contractDemoNoLiveWorkerContentDescription
+        )
+        assertEquals(
+            "generation-server-worker-wait-notice",
+            zh.serverWorkerWaitNoticeContentDescription
+        )
+
+        assertEquals("Gamer Community", en.communityTitle)
+        assertEquals("Pet-first feed prototype", en.communitySubtitle)
+        assertEquals("Tap the bubble to enter", en.launchEnterHint)
+        assertEquals("Generate Desktop Pet", en.generatePanelTitle)
+        assertEquals(
+            "Public API only creates and polls jobs; live generation workers must be started on the server side.",
+            en.generationPublicApiBoundaryNotice
+        )
+        assertEquals("Create generation job", en.createGenerationJob)
+        assertEquals(" (required)", en.requiredFieldSuffix)
+        assertEquals("Creation flow", en.generationFlowRailTitle)
+        assertEquals("Creation brief", en.generationBriefPanelTitle)
+        assertEquals("Pet prompt", en.generationPromptStageTitle)
+        assertEquals("Idea", en.generationPromptIdeaAction)
+        assertEquals(
+            "generation-prompt-idea-button",
+            en.generationPromptIdeaContentDescription
+        )
+        assertEquals(
+            "Mint guardian pet, gentle idle bob, springy tail run.",
+            en.generationPromptIdeaText
+        )
+        assertEquals("Job control", en.generationTaskStageTitle)
+        assertEquals("Body preset", en.generationBodyStageTitle)
+        assertEquals("Runtime actions", en.generationRunStageTitle)
+        assertEquals("Review and delivery", en.generationReviewDeskTitle)
+        assertEquals(
+            "Candidates appear here when generation reaches review; select a candidate before review.",
+            en.generationReviewWaitingForCandidate
+        )
+        assertEquals("Candidate inspection", en.candidateInspectionTitle)
+        assertEquals("Human review notes", en.reviewNotesStageTitle)
+        assertEquals("Delivery actions", en.deliveryActionsTitle)
+        assertEquals("Selected", en.candidateSelectedStatus)
+        assertEquals("Available", en.candidateAvailableStatus)
+        assertEquals("Candidate gallery", en.candidateGalleryTitle)
+        assertEquals("Accept", en.reviewAccept)
+        assertEquals("Submit to community review", en.submitToCommunityReview)
+    }
+
+    @Test
+    fun petShellStringsExposeCommunityFeedPerspectiveCopy() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("\u684C\u5BA0\u89C6\u89D2", zh.communityFeedSignalTitle)
+        assertEquals("\u4E92\u52A8", zh.feedReactionLabel)
+        assertEquals("\u751F\u6210", zh.showcasePathGenerate)
+        assertEquals("\u4EBA\u5BA1", zh.showcasePathReview)
+        assertEquals("\u5C55\u793A", zh.showcasePathPublish)
+        assertTrue(zh.communityFeedSignalDetail.contains("\u4E0A\u4E00\u9875"))
+        assertTrue(zh.communityFeedSignalDetail.contains("\u4E0B\u4E0B\u9875"))
+        assertEquals("Pet view", en.communityFeedSignalTitle)
+        assertEquals("Reactions", en.feedReactionLabel)
+        assertEquals("Generate", en.showcasePathGenerate)
+        assertEquals("Review", en.showcasePathReview)
+        assertEquals("Showcase", en.showcasePathPublish)
+        assertTrue(en.communityFeedSignalDetail.contains("previous"))
+        assertTrue(en.communityFeedSignalDetail.contains("skip ahead"))
+    }
+
+    @Test
+    fun petShellStringsLocalizeBodyShapesAndReviewSuggestions() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("均衡", zh.bodyShapeLabel("balanced"))
+        assertEquals("宽体长尾", zh.bodyShapeLabel("wide-tail"))
+        assertEquals("wide-tail", en.bodyShapeLabel("wide-tail"))
+        assertEquals("idle 动作上下跳动明显", zh.reviewNoteSuggestion("idle action jumps vertically"))
+        assertEquals("idle action jumps vertically", en.reviewNoteSuggestion("idle action jumps vertically"))
+    }
+
+    @Test
+    fun petShellStringsLocalizeCommonStateMessagesButKeepUnknownSafeText() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals("正在加载社区...", zh.speechBubble("Loading community..."))
+        assertEquals("欢迎回来，Demo Keeper。", zh.speechBubble("Welcome back, Demo Keeper."))
+        assertEquals("正在加载应用", zh.petActionLabel(PetAction.AppLoading))
+        assertEquals("描述一个桌宠，开始生成。", zh.generationMessage(DEFAULT_GENERATION_MESSAGE))
+        assertEquals("正在创建生成任务...", zh.generationMessage("Creating generation job..."))
+        assertEquals(
+            "这是公共 API 契约演示任务：候选图是服务端预置的验证资源，不代表真实桌宠生成链路已运行。",
+            zh.generationMessage(
+                "Contract demo task: this candidate is pre-seeded for public API validation; it is not a live pet generation run."
+            )
+        )
+        assertEquals(
+            "契约演示资源已载入；真实生成 worker 尚未运行。",
+            zh.generationMessage("Contract demo fixture loaded; no live generation worker has run.")
+        )
+        assertEquals(
+            "正在等待可信服务端 worker；app 只负责创建和轮询任务。",
+            zh.generationMessage(
+                "Waiting for a trusted server worker; this app only created and polls the job."
+            )
+        )
+        assertEquals(
+            "反馈已记录；需要可信服务端 worker 发布新的候选图。",
+            zh.generationMessage(
+                "Feedback recorded; a trusted server worker must publish the next candidate."
+            )
+        )
+        assertEquals(
+            "审核失败: 这是公共 API 契约演示任务，不能作为真实生成任务提交人审。",
+            zh.generationMessage("Review failed: contract_demo_job_review_disabled")
+        )
+        assertEquals("生成轮询失败: offline", zh.generationMessage("Generation poll failed: offline"))
+        assertEquals("安全的自定义消息", zh.generationMessage("安全的自定义消息"))
+
+        assertEquals("Loading community...", en.speechBubble("Loading community..."))
+        assertEquals("AppLoading", en.petActionLabel(PetAction.AppLoading))
+        assertEquals(DEFAULT_GENERATION_MESSAGE, en.generationMessage(DEFAULT_GENERATION_MESSAGE))
+        assertEquals(
+            "Contract demo fixture loaded; no live generation worker has run.",
+            en.generationMessage("Contract demo fixture loaded; no live generation worker has run.")
+        )
+        assertEquals(
+            "Waiting for a trusted server worker; this app only created and polls the job.",
+            en.generationMessage(
+                "Waiting for a trusted server worker; this app only created and polls the job."
+            )
+        )
+        assertEquals("Generation poll failed: offline", en.generationMessage("Generation poll failed: offline"))
+    }
+
+    @Test
+    fun petShellStringsLocalizeReviewFailureReasonsWithoutRawKeys() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals(
+            "人审提交失败: 这个候选图已经审核过，请等待新的候选图。",
+            zh.generationMessage("Review failed: review_target_already_decided")
+        )
+        assertEquals(
+            "人审提交失败: 请选择未审核的候选图。",
+            zh.generationMessage("Review failed: review_target_must_be_candidate")
+        )
+        assertEquals(
+            "人审提交失败: 请先选择候选图。",
+            zh.generationMessage("Review failed: target_download_id_required")
+        )
+
+        assertEquals(
+            "Review failed: this candidate has already been reviewed; wait for a new candidate.",
+            en.generationMessage("Review failed: review_target_already_decided")
+        )
+        assertEquals(
+            "Review failed: select an unreviewed candidate image.",
+            en.generationMessage("Review failed: review_target_must_be_candidate")
+        )
+        assertEquals(
+            "Review failed: select a candidate image first.",
+            en.generationMessage("Review failed: target_download_id_required")
+        )
+    }
+
+    @Test
+    fun petShellStringsHideUnsafeDynamicGenerationMessageDetails() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+        val unsafeFailure =
+            "Generation poll failed: D:/workspace4Codex/fantasy-pet-rule/runs/job/codex-worker-task.json"
+        val proofSummaryFailure = "Generation poll failed: server-proof-summary.json"
+        val adapterProvenanceFailure = "Review failed: adapterProvenance"
+
+        assertEquals("Generation poll failed: unavailable", en.generationMessage(unsafeFailure))
+        assertEquals("Generation poll failed: unavailable", en.generationMessage(proofSummaryFailure))
+        assertEquals("Review failed: unavailable", en.generationMessage(adapterProvenanceFailure))
+        assertEquals("Message unavailable.", en.generationMessage("D:\\secret\\runs\\output.json"))
+        assertEquals("Message unavailable.", en.generationMessage("genericagent-ledger-import.json"))
+
+        val zhMessage = zh.generationMessage(unsafeFailure)
+        assertTrue(zhMessage.isNotBlank())
+        assertFalse(zhMessage.contains("D:/"))
+        assertFalse(zhMessage.contains("runs/"))
+        assertFalse(zhMessage.contains("codex-worker-task"))
+
+        val zhProofMessage = zh.generationMessage(proofSummaryFailure)
+        assertFalse(zhProofMessage.contains("server-proof-summary"))
+        assertFalse(zh.generationMessage(adapterProvenanceFailure).contains("adapterProvenance"))
+    }
+
+    @Test
+    fun petShellStringsLocalizeApprovedPetShowcaseSummaries() {
+        val zh = petShellStrings(PetShellLanguage.Chinese)
+        val en = petShellStrings(PetShellLanguage.English)
+        val pet = approvedPet(
+            petId = "pet-moonfox-001",
+            displayName = "Moon Fox",
+            previewPath = "previews/moonfox.png",
+            exportArtifactPath = "exports/moonfox.zip",
+            totalScore = 91,
+            motionSheetCount = 3
+        )
+
+        assertEquals("暂时还没有已通过的桌宠", zh.approvedPetRegistrySummary(emptyList()))
+        assertEquals("1 个已通过桌宠", zh.approvedPetRegistrySummary(listOf(pet)))
+        assertEquals("Moon Fox", zh.approvedPetShowcaseTitle(listOf(pet), selectedIndex = 0))
+        assertEquals(
+            "fantasy-pet-rule / 评分 91 / 3 张动作表",
+            zh.approvedPetShowcaseDetail(listOf(pet), selectedIndex = 0)
+        )
+        assertEquals("桌宠 1 / 1", zh.approvedPetShowcasePosition(listOf(pet), selectedIndex = 0))
+        assertEquals("预览 previews/moonfox.png", zh.approvedPetShowcaseAsset(listOf(pet), selectedIndex = 0))
+        assertEquals("资源包 exports/moonfox.zip", zh.approvedPetShowcasePackage(listOf(pet), selectedIndex = 0))
+
+        assertEquals("1 approved pet", en.approvedPetRegistrySummary(listOf(pet)))
+        assertEquals("Pet 1 of 1", en.approvedPetShowcasePosition(listOf(pet), selectedIndex = 0))
+    }
+
     @Test
     fun feedPostMetadataLabelsReturnsImportAndRewardLabels() {
         val post = FeedPost(
@@ -60,6 +464,68 @@ class PetShellUiModelTest {
                 "Preview previews/overall-showcase.png",
                 "Package exports/stardust-package.zip"
             ),
+            feedPostAuditLabels(post)
+        )
+    }
+
+    @Test
+    fun feedPostAuditLabelsHideInternalAssetPathReferences() {
+        val post = FeedPost(
+            id = "post-import-001",
+            petId = "pet-import-001",
+            title = "Approved pet import: pet-import-001",
+            body = "preview accepted by user",
+            authorName = "Demo Keeper",
+            reactionCount = 0,
+            importDraftLabel = "Draft import-draft-local-001",
+            importPreviewLabel = "Preview D:/workspace4Codex/fantasy-pet-rule/runs/feed/preview.html",
+            exportArtifactLabel = "Package C:\\secret\\runs\\feed\\export.zip"
+        )
+
+        assertEquals(
+            listOf("Draft import-draft-local-001"),
+            feedPostAuditLabels(post)
+        )
+    }
+
+    @Test
+    fun feedPostAuditLabelsHideInternalLearningDrillReferences() {
+        val post = FeedPost(
+            id = "post-import-001",
+            petId = "pet-import-001",
+            title = "Approved pet import: pet-import-001",
+            body = "preview accepted by user",
+            authorName = "Demo Keeper",
+            reactionCount = 0,
+            importDraftLabel = "Draft import-draft-local-001",
+            importPreviewLabel = "Preview server-generation-learning-drill.json",
+            exportArtifactLabel = "Package server-generation-regression-report.json"
+        )
+
+        assertEquals(
+            listOf("Draft import-draft-local-001"),
+            feedPostAuditLabels(post)
+        )
+    }
+
+    @Test
+    fun feedPostAuditLabelsHideInternalLedgerReferences() {
+        val post = FeedPost(
+            id = "post-import-001",
+            petId = "pet-import-001",
+            title = "Approved pet import: pet-import-001",
+            body = "preview accepted by user",
+            authorName = "Demo Keeper",
+            reactionCount = 0,
+            importDraftLabel = "Draft import-draft-local-001",
+            scoreReportLabel = "Score learning-ledger.jsonl",
+            importSourceLabel = "Source route-policy-decision.json",
+            importPreviewLabel = "Preview ledger-suggestions/genericagent-ledger-suggestions.json",
+            exportArtifactLabel = "Package review/stage-gate-ledger-import.json"
+        )
+
+        assertEquals(
+            listOf("Draft import-draft-local-001"),
             feedPostAuditLabels(post)
         )
     }
@@ -167,6 +633,19 @@ class PetShellUiModelTest {
     }
 
     @Test
+    fun approvedPetShowcaseAssetHidesInternalPreviewPaths() {
+        val pets = listOf(
+            approvedPet(
+                petId = "pet-moonfox-001",
+                displayName = "Moon Fox",
+                previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/export-registry/preview.html"
+            )
+        )
+
+        assertEquals("Preview asset pending", approvedPetShowcaseAsset(pets, selectedIndex = 0))
+    }
+
+    @Test
     fun approvedPetShowcasePackageShowsSelectedExportArtifactPath() {
         val pets = listOf(
             approvedPet("pet-stardust-001", "Stardust Dragon"),
@@ -179,6 +658,19 @@ class PetShellUiModelTest {
 
         assertEquals("Package exports/moonfox.zip", approvedPetShowcasePackage(pets, selectedIndex = 1))
         assertEquals("Package artifact pending", approvedPetShowcasePackage(emptyList(), selectedIndex = 1))
+    }
+
+    @Test
+    fun approvedPetShowcasePackageHidesInternalExportPaths() {
+        val pets = listOf(
+            approvedPet(
+                petId = "pet-moonfox-001",
+                displayName = "Moon Fox",
+                exportArtifactPath = "D:\\workspace4Codex\\fantasy-pet-rule\\runs\\export-registry\\export.zip"
+            )
+        )
+
+        assertEquals("Package artifact pending", approvedPetShowcasePackage(pets, selectedIndex = 0))
     }
 
     private fun approvedPet(

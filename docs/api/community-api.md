@@ -124,3 +124,107 @@ Unknown approved pets return:
   "petId": "pet-missing-001"
 }
 ```
+
+## POST /v1/import-drafts/from-fantasy-pet-package
+
+Creates a community import draft from the public package manifest inside a
+downloaded `fantasy-pet-rule` package. This endpoint is for the Android
+generation handoff after human review and package download.
+
+The request uses the app-safe `fantasy-pet.package-manifest.v1` data and does
+not accept server run paths, local filesystem paths, or `file://` references.
+Every `packageManifest.files[].path` must be a safe package-relative path from
+inside the ZIP.
+
+To verify the route with a real package produced by `fantasy-pet-rule`, run:
+
+```powershell
+tools\smoke-fantasy-pet-community-import.cmd
+```
+
+The smoke uses only public app and community endpoints: it runs the public
+generation lifecycle, reads the downloaded `pet.zip`, creates an import draft
+through this route, then submits it through `/v1/import-drafts/submit`.
+
+Example request:
+
+```json
+{
+  "packageManifest": {
+    "schema": "fantasy-pet.package-manifest.v1",
+    "runId": "run-public-lifecycle-smoke",
+    "appJobId": "public-lifecycle-smoke",
+    "acceptedBy": "human-review",
+    "sourceDownloadId": "artifact-1",
+    "sourceTaskId": "codex-worker-task",
+    "files": [
+      {
+        "kind": "candidate",
+        "path": "artifacts/candidates/final-preview.png"
+      }
+    ]
+  },
+  "packageFileName": "pet-public-lifecycle-smoke.zip",
+  "packageByteCount": 664,
+  "targetDownloadId": "artifact-1",
+  "ownershipClaimId": "claim-public-lifecycle-smoke"
+}
+```
+
+Example response:
+
+```json
+{
+  "id": "import-draft-local-001",
+  "userId": "user-demo-001",
+  "status": "ready",
+  "petId": "public-lifecycle-smoke",
+  "ownershipClaimId": "claim-public-lifecycle-smoke",
+  "scoreReportId": "score-import-draft-local-001",
+  "readiness": {
+    "status": "community-ready",
+    "reason": "human-reviewed fantasy pet package downloaded"
+  },
+  "importSummary": {
+    "source": {
+      "petId": "public-lifecycle-smoke",
+      "displayName": "Generated pet public-lifecycle-smoke",
+      "schema": "fantasy-pet.package-manifest.v1",
+      "kind": "fantasy-pet-rule",
+      "runId": "run-public-lifecycle-smoke",
+      "appJobId": "public-lifecycle-smoke",
+      "statePath": "",
+      "baseIdentityStatus": "accepted"
+    },
+    "review": {
+      "blockers": [],
+      "previewDecision": "keep",
+      "exportStatus": "ready",
+      "acceptedBy": "human-review",
+      "targetDownloadId": "artifact-1"
+    },
+    "assets": {
+      "previewPath": "artifact-1",
+      "exportArtifactPath": "pet-public-lifecycle-smoke.zip",
+      "packageByteCount": 664,
+      "motionSheets": [
+        "artifacts/candidates/final-preview.png"
+      ]
+    }
+  }
+}
+```
+
+Invalid requests return:
+
+```json
+{
+  "error": "invalid_fantasy_pet_package",
+  "validation": {
+    "ok": false,
+    "errors": [
+      "files[0].path must be a safe package-relative path"
+    ]
+  }
+}
+```

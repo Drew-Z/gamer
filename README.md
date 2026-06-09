@@ -38,6 +38,7 @@ Run the standard verification set before committing a phase:
 npm.cmd test
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
 git diff --check
 ```
 
@@ -57,11 +58,18 @@ Run the service skeletons with Docker Compose:
 docker compose up --build
 ```
 
+Run the community services plus the public `fantasy-pet-rule` app API:
+
+```powershell
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
+```
+
 The default ports are:
 
 - Community API: `http://localhost:4000`
 - Pet Generator Adapter: `http://localhost:4100`
 - Admin Review Prototype: `http://localhost:4200`
+- Fantasy Pet Public API: `http://127.0.0.1:8765`
 
 ## Community API
 
@@ -158,3 +166,219 @@ Build the debug APK:
 ```powershell
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
 ```
+
+### Fantasy Pet Generation API
+
+The Android app can connect to the public `fantasy-pet-rule` app API for the
+desktop-pet generation loop. The service lives beside this workspace:
+
+```text
+D:\workspace4Codex\fantasy-pet-rule
+```
+
+Start the public app API without admin endpoints:
+
+```powershell
+Set-Location D:\workspace4Codex\fantasy-pet-rule
+uv run --with-requirements requirements-server.txt python tools\app_server.py --run-root runs --host 127.0.0.1 --port 8765
+```
+
+The Android build reads `FANTASY_PET_API_BASE_URL` and defaults to:
+
+```text
+http://127.0.0.1:8765
+```
+
+Override it before building when needed:
+
+```powershell
+$env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
+D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+```
+
+Use `http://10.0.2.2:8765` for the Android emulator to reach the host machine's
+`fantasy-pet-rule` server. Use `http://127.0.0.1:8765` only when the app process
+and the server share the same network namespace.
+
+The Android build also reads `COMMUNITY_API_BASE_URL` and defaults to:
+
+```text
+http://10.0.2.2:4000
+```
+
+Override both local API targets before building when needed:
+
+```powershell
+$env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
+$env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
+D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+```
+
+Keep `npm.cmd run start:community-api` running when testing the generated
+`pet.zip` import, community review submission, and submission status refresh.
+The Android app uses public community endpoints such as
+`/v1/import-drafts/submit`; admin review or approval remains a separate
+protected surface and is not called by the app.
+
+Public contract and smoke checks:
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:8765/app-api-contract
+```
+
+With the Docker overlay running, the same public contract is available at:
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:8765/app-api-contract
+```
+
+Run the app-side public lifecycle smoke from this repo:
+
+```powershell
+tools\smoke-fantasy-pet-public-lifecycle.cmd
+```
+
+The `.cmd` wrapper runs `tools\smoke-fantasy-pet-public-lifecycle.ps1` with a
+local PowerShell execution-policy bypass. The smoke uses `fantasy-pet-rule`
+server-side demo data to publish a candidate, then exercises only public app
+endpoints: poll job, download candidate preview, confirm package download is
+blocked before review, submit a human `accept` with `targetDownloadId`, and
+download the final `pet.zip`. It does not enable or call admin endpoints.
+This is an API contract smoke, not proof that the live generation worker stack
+is running.
+
+Run the fantasy-pet to community import smoke when you want to verify the
+downloaded package can become a community import draft and submission:
+
+```powershell
+tools\smoke-fantasy-pet-community-import.cmd
+```
+
+The `.cmd` wrapper runs `tools\smoke-fantasy-pet-community-import.ps1`. It
+reuses the public lifecycle smoke, reads the generated `pet.zip` manifest,
+starts the local community API on a temporary port, then posts only to
+`/v1/import-drafts/from-fantasy-pet-package` and `/v1/import-drafts/submit`.
+
+Run the full fantasy-pet integration verification before handing off a larger
+change:
+
+```powershell
+tools\verify-fantasy-pet-integration.cmd
+```
+
+When an emulator is already running and you want the handoff check to include
+the Compose connected tests plus the contract-demo Android UI smoke:
+
+```powershell
+tools\verify-fantasy-pet-integration.cmd -IncludeAndroidUi
+```
+
+The `.cmd` wrapper runs `tools\verify-fantasy-pet-integration.ps1`, which
+serially runs JS tests, Android unit tests, Android debug build, both
+fantasy-pet smoke scripts, the Android public-app forbidden surface scan, and
+`git diff --check`. With `-IncludeAndroidUi`, it also runs
+`connectedDebugAndroidTest` and
+`tools\launch-fantasy-pet-android-ui-smoke.cmd -StartPublicApi -AssertContractDemoUi`,
+then stops the temporary public API process started for that UI smoke. The
+Android UI public API port defaults to `18765` in this aggregate verifier so an
+already-running local `fantasy-pet-rule` service on `8765` can stay untouched.
+
+Android emulator generation UI smoke:
+
+Scripted setup and launch:
+
+```powershell
+tools\launch-fantasy-pet-android-ui-smoke.cmd -StartPublicApi
+```
+
+To also save a launch screenshot for the manual review record:
+
+```powershell
+tools\launch-fantasy-pet-android-ui-smoke.cmd -StartPublicApi -CaptureScreenshot
+```
+
+To drive the seeded contract-demo task through the Android UI and assert the
+warning plus disabled Accept / Download pet.zip controls:
+
+```powershell
+tools\launch-fantasy-pet-android-ui-smoke.cmd -StartPublicApi -AssertContractDemoUi
+```
+
+The `.cmd` wrapper runs `tools\launch-fantasy-pet-android-ui-smoke.ps1`. It
+seeds a public demo job in a temp run root, optionally starts
+`tools\app_server.py` without admin flags, builds and installs the Android app
+with `FANTASY_PET_API_BASE_URL=http://10.0.2.2:8765` and
+`COMMUNITY_API_BASE_URL=http://10.0.2.2:4000`, clears the emulator app state,
+and launches `com.gamer.community/.MainActivity`. Keep
+`npm.cmd run start:community-api` running separately when testing import draft
+creation and submission refresh.
+Use `-SkipLaunch` when you only want to seed/build without requiring a running
+emulator. Use `-CaptureScreenshot` to pull a PNG from the emulator into the
+smoke run root after launch. Use `-AssertContractDemoUi` when the emulator is
+available and you want the script to tap the launch bubble, poll
+`public-lifecycle-smoke`, select the candidate, and verify that the contract
+demo warning and no-live-worker copy are visible while Accept and Download
+pet.zip stay disabled. The demo candidate seeded by
+`run_server_job_lifecycle_demo.py` is a 1x1 transparent placeholder, not a real
+generated desktop pet image. The script reports `screenshotLikelyBlank=true`
+when the captured PNG is mostly
+black; treat that as an emulator display/capture problem and restart or repair
+the emulator before doing visual QA.
+
+```powershell
+# Terminal A: seed a public demo job and keep the public API running.
+Set-Location D:\workspace4Codex\fantasy-pet-rule
+$runRoot = Join-Path $env:TEMP "fantasy-pet-android-ui"
+Remove-Item -LiteralPath $runRoot -Recurse -Force -ErrorAction SilentlyContinue
+uv run --with-requirements requirements-server.txt python tools\run_server_job_lifecycle_demo.py --run-dir "$runRoot\public-lifecycle-smoke" --app-job-id public-lifecycle-smoke --run-id public-lifecycle-smoke --description "A tiny stardust dragon desktop pet with smooth idle motion." --body-shape wide-tail
+uv run --with-requirements requirements-server.txt python tools\app_server.py --run-root $runRoot --host 127.0.0.1 --port 8765
+```
+
+```powershell
+# Terminal B: run the community API for package import and submission.
+npm.cmd run start:community-api
+```
+
+```powershell
+# Terminal C: install an emulator build pointed at the host service.
+$env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
+D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community installDebug --console=plain --rerun-tasks
+adb devices
+adb -s emulator-5554 shell pm clear com.gamer.community
+adb -s emulator-5554 shell am start -n com.gamer.community/.MainActivity
+```
+
+In the app, tap the launch bubble, enter `public-lifecycle-smoke` in App job id,
+tap Poll job, scroll to Candidate gallery, confirm the candidate preview renders,
+and confirm the app shows both the contract-demo warning and the
+`no live generation worker has run` message. The Android UI treats
+`public-lifecycle-smoke` as pre-seeded public API validation data, so the
+placeholder candidate does not mean the real generation worker stack has run,
+and human review submission plus final package download stay disabled for that
+job. Use a real non-demo generation job after the `fantasy-pet-rule` worker
+stack is available when validating the full accept, package download, and
+community import path from the app, including the Submit to community review and
+Refresh community submission buttons.
+
+Run the app-side public API drift guard:
+
+```powershell
+node --test packages/community-contracts/src/fantasy-pet-public-api-coverage.test.js
+```
+
+This guard builds the current `fantasy-pet-rule` app API contract and verifies
+that the Android generation client only uses public endpoints. It allows
+`/app-api-contract` as a documented non-runtime endpoint; any other public
+endpoint that is not represented by the app appears in
+`unexpectedUnhandledPublicEndpointPaths` and should be reviewed before the app
+integration is considered current.
+
+Run the community API package-import safety drift guard:
+
+```powershell
+node --test packages/community-contracts/src/fantasy-pet-community-api-safety-coverage.test.js
+```
+
+This guard reads the current `fantasy-pet-rule` handoff record and verifies that
+the community API rejects every internal artifact basename when building import
+drafts from downloaded `pet.zip` package manifests.

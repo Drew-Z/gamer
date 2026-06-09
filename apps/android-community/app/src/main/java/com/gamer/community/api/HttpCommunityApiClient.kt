@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class HttpCommunityApiClient(
@@ -28,6 +29,25 @@ class HttpCommunityApiClient(
         get(
             "/v1/pets/approved/${petId.pathSegment()}/package",
             Companion::decodeApprovedPetPackage
+        )
+
+    override suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto> =
+        get("/v1/submissions", Companion::decodeSubmissions)
+
+    override suspend fun createImportDraftFromFantasyPetPackage(
+        request: FantasyPetPackageImportDraftRequestDto
+    ): ApiCallResult<ImportDraftDto> =
+        post(
+            "/v1/import-drafts/from-fantasy-pet-package",
+            json.encodeToString(request),
+            Companion::decodeImportDraft
+        )
+
+    override suspend fun submitImportDraft(draftId: String): ApiCallResult<ImportDraftSubmissionResponseDto> =
+        post(
+            "/v1/import-drafts/submit",
+            json.encodeToString(ImportDraftSubmitRequestDto(draftId = draftId)),
+            Companion::decodeImportDraftSubmission
         )
 
     override suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto> =
@@ -84,7 +104,10 @@ class HttpCommunityApiClient(
         BufferedReader(InputStreamReader(this, Charsets.UTF_8)).use { it.readText() }
 
     companion object {
-        private val json = Json { ignoreUnknownKeys = true }
+        private val json = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
         fun decodeFeed(text: String): FeedResponseDto = json.decodeFromString<FeedResponseDto>(text)
 
@@ -95,6 +118,15 @@ class HttpCommunityApiClient(
 
         fun decodeApprovedPetPackage(text: String): ApprovedPetPackageDto =
             json.decodeFromString<ApprovedPetPackageDto>(text)
+
+        fun decodeImportDraft(text: String): ImportDraftDto =
+            json.decodeFromString<ImportDraftDto>(text)
+
+        fun decodeImportDraftSubmission(text: String): ImportDraftSubmissionResponseDto =
+            json.decodeFromString<ImportDraftSubmissionResponseDto>(text)
+
+        fun decodeSubmissions(text: String): SubmissionsResponseDto =
+            json.decodeFromString<SubmissionsResponseDto>(text)
 
         fun decodeCheckIn(text: String): CheckInResponseDto = json.decodeFromString<CheckInResponseDto>(text)
 

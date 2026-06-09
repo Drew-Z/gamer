@@ -83,8 +83,59 @@ class CommunityRepository(
                 )
         }
 
+    suspend fun createImportDraftFromFantasyPetPackage(
+        request: FantasyPetPackageImportDraftRequestDto
+    ): ApiCallResult<ImportDraftDto> =
+        client.createImportDraftFromFantasyPetPackage(request)
+
+    suspend fun submitImportDraftToCommunity(
+        draft: ImportDraftDto
+    ): ApiCallResult<ImportDraftSubmissionResponseDto> {
+        val draftId = draft.id.trim()
+        if (!draftId.isSafePublicToken()) {
+            return ApiCallResult.Failure("import_draft_id_required")
+        }
+        if (draft.status != "ready") {
+            return ApiCallResult.Failure("import_draft_not_ready")
+        }
+
+        return client.submitImportDraft(draftId)
+    }
+
+    suspend fun getSubmissionStatus(submissionId: String): ApiCallResult<SubmissionDto> {
+        val safeSubmissionId = submissionId.trim()
+        if (!safeSubmissionId.isSafePublicToken()) {
+            return ApiCallResult.Failure("submission_id_required")
+        }
+
+        return when (val result = client.getSubmissions()) {
+            is ApiCallResult.Success -> {
+                val submission = result.value.submissions.firstOrNull { item ->
+                    item.id == safeSubmissionId
+                }
+                if (submission == null) {
+                    ApiCallResult.Failure("submission_not_found")
+                } else {
+                    ApiCallResult.Success(submission)
+                }
+            }
+            is ApiCallResult.Failure -> result
+        }
+    }
+
     private companion object {
         const val FALLBACK_WALLET_BALANCE = 90
         const val FALLBACK_CHECK_IN_REWARD = 10
     }
+}
+
+private fun String.isSafePublicToken(): Boolean {
+    val trimmed = trim()
+    val lower = trimmed.lowercase()
+    return trimmed.isNotBlank() &&
+        !lower.startsWith("file:") &&
+        !Regex("^[A-Za-z]:[\\\\/]").containsMatchIn(trimmed) &&
+        !trimmed.contains("/") &&
+        !trimmed.contains("\\") &&
+        !trimmed.contains(":")
 }

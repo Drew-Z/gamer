@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = 'com.gamer.community'
     compileSdk = libs.versions.android.compile.sdk.get().toInteger()
+    def communityApiBaseUrl = System.getenv('COMMUNITY_API_BASE_URL') ?: 'http://10.0.2.2:4000'
+    def fantasyPetApiBaseUrl = System.getenv('FANTASY_PET_API_BASE_URL') ?: 'http://127.0.0.1:8765'
 
     defaultConfig {
         applicationId = 'com.gamer.community'
@@ -15,7 +17,8 @@ android {
         versionCode = 1
         versionName = '0.1.0'
 
-        buildConfigField 'String', 'COMMUNITY_API_BASE_URL', '"http://10.0.2.2:4000"'
+        buildConfigField 'String', 'COMMUNITY_API_BASE_URL', "\"${communityApiBaseUrl.replace('\\', '\\\\').replace('\"', '\\\"')}\""
+        buildConfigField 'String', 'FANTASY_PET_API_BASE_URL', "\"${fantasyPetApiBaseUrl.replace('\\', '\\\\').replace('\"', '\\\"')}\""
 
         testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -42,6 +45,13 @@ dependencies {
     implementation libs.kotlinx.serialization.json
 
     debugImplementation libs.compose.ui.tooling
+    debugImplementation libs.compose.ui.test.manifest
+
+    androidTestImplementation platform(libs.compose.bom)
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.compose.ui.test.junit4
 
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.junit

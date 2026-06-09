@@ -23,6 +23,9 @@ const defaultSeed = {
 };
 
 const nowIso = () => new Date().toISOString();
+const isObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+const hasText = (value) => typeof value === "string" && value.trim() !== "";
 
 const sumPostedLedger = (entries, userId) =>
   entries
@@ -81,6 +84,244 @@ const createImportSummaryFromPetPackageBundle = (bundle) => ({
     motionSheets: clone(bundle.manifest.assets.motionSheets)
   }
 });
+
+const INTERNAL_PACKAGE_MARKERS = [
+  "server_run.json",
+  "artifact-index.json",
+  "resolution-map",
+  "desktop-pet-casebook-audit.json",
+  "desktop-pet-stage-gate-report.json",
+  "desktop-pet-learning-memory.json",
+  "human-feedback-context.json",
+  "genericagent-orchestrator-task.json",
+  "codex-worker-task.json",
+  "codex-worker-task.output.json",
+  "*.invocation.json",
+  ".invocation.json",
+  "*.execution.json",
+  ".execution.json",
+  "*.output.json.adapterprovenance",
+  ".output.json.adapterprovenance",
+  "adapterprovenance",
+  "directcodexcli",
+  "strategy-plan.json",
+  "codex-generation-directives.json",
+  "server-proof-summary.json",
+  "server-proof-summary",
+  "realadapterlaunch",
+  "humanacceptance",
+  "server-generation-learning-drill.json",
+  "server-generation-regression-report.json",
+  "learning-ledger.jsonl",
+  "route-policy-decision.json",
+  "genericagent-ledger-suggestions.json",
+  "genericagent-ledger-import.json",
+  "stage-gate-ledger-import.json",
+  "learning-drill",
+  "learningprogress",
+  "learningmemory",
+  "learningmemoryresponse",
+  "codexgenerationdirectiveresponse",
+  "codexgenerationdirectiveresponsepresentcount",
+  "codexgenerationdirectiveresponsesummary",
+  "codexqaevidence",
+  "directivehistoryresponse",
+  "narrowedrepairfocus",
+  "gadirectivehistoryresponse",
+  "gadirectivehistoryresponsepresentcount",
+  "gadirectivehistoryaddressedgenerationdirectivetext",
+  "gadirectivehistorynarrowedrepairfocus",
+  "gadirectivehistorynarrowedrepairfocuscounts",
+  "directivehistorynarrowedrepairfocuscountdeltas",
+  "repeateddirectivehistorynarrowedrepairfocus",
+  "casebookreferencesused",
+  "repairstrategies",
+  "repairstrategiesused",
+  "desktoppetlearningmemorysummary",
+  "servergenerationlearningprogresssummary",
+  "qualitygatestatus",
+  "qualitygatestatuscounts",
+  "qualitygatetrend",
+  "learningassessment",
+  "nextrepairfocus",
+  "memorycarryforward",
+  "learningmemoryinput",
+  "learningmemoryoutput",
+  "priormemorypresent",
+  "priormemoryqualitygatestatus",
+  "priormemoryscenariocount",
+  "repeatedneedsrevisionstages",
+  "repeatedhardfailuresobserved",
+  "missingneedsrevisioncoverage",
+  "missinghardfailurecoverage",
+  "repaircoverage",
+  "repairstrategyusecounts",
+  "codex-action-attempt-n-server-imagegen-001",
+  "stagegatereport",
+  "stagegaterepair",
+  "stagegaterepairrequests",
+  "stagegatestatus",
+  "learningledgersuggestions",
+  "routeswitchrequired",
+  "disabledroutes",
+  "caseid",
+  "referencetype",
+  "strengthstopreserve",
+  "reviewlessons",
+  "regression-report",
+  "agent-review.json",
+  "orchestration-review.json",
+  "runs/",
+  "runs\\",
+  "secret/",
+  "secret\\",
+  "targetoutput",
+  "prompt-pack",
+  "adapter-config"
+];
+
+const isOpaquePublicToken = (value) => {
+  if (!hasText(value)) {
+    return false;
+  }
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  return !lower.startsWith("file:") &&
+    !/^[A-Za-z]:[\\/]/.test(trimmed) &&
+    !trimmed.includes("/") &&
+    !trimmed.includes("\\") &&
+    !trimmed.includes(":") &&
+    INTERNAL_PACKAGE_MARKERS.every((marker) => !lower.includes(marker));
+};
+
+const isSafePackageFileName = (value) => {
+  if (!hasText(value)) {
+    return false;
+  }
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  return lower.endsWith(".zip") &&
+    !lower.startsWith("file:") &&
+    !/^[A-Za-z]:[\\/]/.test(trimmed) &&
+    !trimmed.includes("/") &&
+    !trimmed.includes("\\") &&
+    !trimmed.includes(":") &&
+    INTERNAL_PACKAGE_MARKERS.every((marker) => !lower.includes(marker));
+};
+
+const isSafePackageRelativePath = (value) => {
+  if (!hasText(value)) {
+    return false;
+  }
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  const segments = trimmed.split("/");
+  return !lower.startsWith("file:") &&
+    !/^[A-Za-z]:[\\/]/.test(trimmed) &&
+    !trimmed.startsWith("/") &&
+    !trimmed.includes("\\") &&
+    !trimmed.includes(":") &&
+    !segments.includes("..") &&
+    INTERNAL_PACKAGE_MARKERS.every((marker) => !lower.includes(marker));
+};
+
+const validateFantasyPetPackageImport = (input) => {
+  const errors = [];
+  const manifest = input.packageManifest;
+
+  if (!isObject(manifest)) {
+    errors.push("packageManifest must be an object");
+    return { ok: false, errors };
+  }
+  if (manifest.schema !== "fantasy-pet.package-manifest.v1") {
+    errors.push("packageManifest.schema must be fantasy-pet.package-manifest.v1");
+  }
+  if (!hasText(manifest.appJobId)) {
+    errors.push("packageManifest.appJobId must be a non-empty string");
+  }
+  if (!hasText(manifest.runId)) {
+    errors.push("packageManifest.runId must be a non-empty string");
+  }
+  if (manifest.acceptedBy !== "human-review") {
+    errors.push("packageManifest.acceptedBy must be human-review");
+  }
+  if (!isSafePackageFileName(input.packageFileName)) {
+    errors.push("packageFileName must be a safe zip file name");
+  }
+  if (
+    typeof input.packageByteCount !== "number" ||
+    !Number.isFinite(input.packageByteCount) ||
+    input.packageByteCount <= 0
+  ) {
+    errors.push("packageByteCount must be a positive number");
+  }
+  if (!isOpaquePublicToken(input.targetDownloadId)) {
+    errors.push("targetDownloadId must be an opaque public artifact id");
+  }
+  if (
+    hasText(manifest.sourceDownloadId) &&
+    hasText(input.targetDownloadId) &&
+    manifest.sourceDownloadId !== input.targetDownloadId
+  ) {
+    errors.push("targetDownloadId must match packageManifest.sourceDownloadId");
+  }
+  if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
+    errors.push("packageManifest.files must be a non-empty array");
+  } else {
+    manifest.files.forEach((file, index) => {
+      if (!isObject(file)) {
+        errors.push(`files[${index}] must be an object`);
+        return;
+      }
+      if (!hasText(file.kind)) {
+        errors.push(`files[${index}].kind must be a non-empty string`);
+      }
+      if (!isSafePackageRelativePath(file.path)) {
+        errors.push(`files[${index}].path must be a safe package-relative path`);
+      }
+    });
+  }
+
+  return { ok: errors.length === 0, errors };
+};
+
+const createImportSummaryFromFantasyPetPackage = (input) => {
+  const manifest = input.packageManifest;
+  const candidateFiles = manifest.files
+    .filter((file) => file.kind === "candidate")
+    .map((file) => file.path);
+  const petId = manifest.appJobId.trim();
+
+  return {
+    source: {
+      petId,
+      displayName: `Generated pet ${petId}`,
+      schema: manifest.schema,
+      kind: "fantasy-pet-rule",
+      runId: manifest.runId,
+      appJobId: manifest.appJobId,
+      statePath: "",
+      baseIdentityStatus: "accepted"
+    },
+    review: {
+      blockers: [],
+      previewDecision: "keep",
+      exportStatus: "ready",
+      acceptedBy: "human-review",
+      targetDownloadId: input.targetDownloadId
+    },
+    assets: {
+      previewPath: input.targetDownloadId,
+      exportArtifactPath: input.packageFileName,
+      packageByteCount: input.packageByteCount,
+      motionSheets: clone(candidateFiles)
+    },
+    notes: [
+      "imported from fantasy-pet public package manifest",
+      "no server run paths were accepted from app input"
+    ]
+  };
+};
 
 const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
 const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
@@ -355,6 +596,40 @@ export function createCommunityStore(seed = defaultSeed) {
         importSummary: createImportSummaryFromPetPackageBundle(input.bundle),
         ownershipClaimId: input.bundle.ownershipClaim.claimId,
         scoreReport: input.bundle.scoreReport
+      });
+    },
+
+    createImportDraftFromFantasyPetPackage(input) {
+      const validation = validateFantasyPetPackageImport(input);
+      if (!validation.ok) {
+        return {
+          error: "invalid_fantasy_pet_package",
+          validation
+        };
+      }
+
+      const petId = input.packageManifest.appJobId.trim();
+      const existingDraft = state.importDrafts.find(
+        (draft) =>
+          draft.userId === input.userId &&
+          draft.petId === petId
+      );
+      if (existingDraft) {
+        return {
+          error: "duplicate_import_draft",
+          petId,
+          existingDraftId: existingDraft.id
+        };
+      }
+
+      return this.createImportDraft({
+        userId: input.userId,
+        readiness: {
+          status: "community-ready",
+          reason: "human-reviewed fantasy pet package downloaded"
+        },
+        importSummary: createImportSummaryFromFantasyPetPackage(input),
+        ownershipClaimId: input.ownershipClaimId ?? ""
       });
     },
 

@@ -17,4 +17,11 @@ test("community API docs include export artifact response examples", () => {
   assert.ok(doc.includes("GET /v1/pets/approved/:petId/package"));
   assert.ok(doc.includes("approvedPetPackage.package.exportArtifactPath"));
   assert.ok(doc.includes("approved_pet_package_not_found"));
+  assert.ok(doc.includes("POST /v1/import-drafts/from-fantasy-pet-package"));
+  assert.ok(doc.includes("fantasy-pet.package-manifest.v1"));
+  assert.ok(doc.includes("invalid_fantasy_pet_package"));
+  assert.ok(doc.includes("safe package-relative path"));
+  assert.ok(doc.includes("tools\\smoke-fantasy-pet-community-import.cmd"));
+  assert.ok(doc.includes("/v1/import-drafts/submit"));
+  assert.ok(doc.includes("public app and community endpoints"));
 });

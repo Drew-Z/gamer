@@ -93,6 +93,71 @@ data class ApprovedPetPackageSourceDto(
 )
 
 @Serializable
+data class FantasyPetPackageImportDraftRequestDto(
+    val packageManifest: FantasyPetPackageManifestDto,
+    val packageFileName: String,
+    val packageByteCount: Long,
+    val targetDownloadId: String,
+    val ownershipClaimId: String = ""
+)
+
+@Serializable
+data class FantasyPetPackageManifestDto(
+    val schema: String = "fantasy-pet.package-manifest.v1",
+    val runId: String,
+    val appJobId: String,
+    val acceptedBy: String,
+    val sourceDownloadId: String = "",
+    val sourceTaskId: String = "",
+    val files: List<FantasyPetPackageFileDto> = emptyList()
+)
+
+@Serializable
+data class FantasyPetPackageFileDto(
+    val kind: String,
+    val path: String
+)
+
+@Serializable
+data class ImportDraftDto(
+    val id: String,
+    val userId: String,
+    val status: String,
+    val petId: String,
+    val ownershipClaimId: String = "",
+    val scoreReportId: String = "",
+    val submissionId: String = ""
+)
+
+@Serializable
+data class ImportDraftSubmitRequestDto(
+    val draftId: String
+)
+
+@Serializable
+data class ImportDraftSubmissionResponseDto(
+    val draft: ImportDraftDto,
+    val submission: SubmissionDto
+)
+
+@Serializable
+data class SubmissionDto(
+    val id: String,
+    val petId: String,
+    val userId: String,
+    val status: String,
+    val scoreReportId: String = "",
+    val ownershipClaimId: String = "",
+    val importDraftId: String = "",
+    val submittedAt: String = ""
+)
+
+@Serializable
+data class SubmissionsResponseDto(
+    val submissions: List<SubmissionDto> = emptyList()
+)
+
+@Serializable
 data class WalletDto(
     val userId: String,
     val balance: Int,

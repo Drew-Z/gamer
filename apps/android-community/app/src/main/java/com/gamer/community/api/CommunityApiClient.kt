@@ -10,5 +10,10 @@ interface CommunityApiClient {
     suspend fun getWallet(): ApiCallResult<WalletDto>
     suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto>
     suspend fun getApprovedPetPackage(petId: String): ApiCallResult<ApprovedPetPackageDto>
+    suspend fun createImportDraftFromFantasyPetPackage(
+        request: FantasyPetPackageImportDraftRequestDto
+    ): ApiCallResult<ImportDraftDto>
+    suspend fun submitImportDraft(draftId: String): ApiCallResult<ImportDraftSubmissionResponseDto>
+    suspend fun getSubmissions(): ApiCallResult<SubmissionsResponseDto>
     suspend fun claimDailyCheckIn(): ApiCallResult<CheckInResponseDto>
 }

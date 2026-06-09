@@ -9,3 +9,7 @@ __pycache__/
 *.log
 *.tmp
 local.properties
+tmp-anr-*.txt
+tmp-gamer-*.png
+tmp-gamer-*.xml
+tmp-settings-*.png

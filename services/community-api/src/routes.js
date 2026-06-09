@@ -127,6 +127,27 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     return json(201, draft);
   }
 
+  if (method === "POST" && url.pathname === "/v1/import-drafts/from-fantasy-pet-package") {
+    const draft = store.createImportDraftFromFantasyPetPackage({
+      userId: currentUserId,
+      packageManifest: body.packageManifest,
+      packageFileName: body.packageFileName,
+      packageByteCount: body.packageByteCount,
+      targetDownloadId: body.targetDownloadId,
+      ownershipClaimId: body.ownershipClaimId
+    });
+
+    if (draft.error === "invalid_fantasy_pet_package") {
+      return json(400, draft);
+    }
+
+    if (draft.error === "duplicate_import_draft") {
+      return json(409, draft);
+    }
+
+    return json(201, draft);
+  }
+
   if (method === "POST" && url.pathname === "/v1/import-drafts") {
     const draft = store.createImportDraft({
       userId: currentUserId,
