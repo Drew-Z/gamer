@@ -128,7 +128,6 @@ Expected: PASS.
 ### Task 3: Documentation and Verification
 
 **Files:**
-- Modify: `docs/deployment/boxd-cloudflare-aiven.md`
 - Modify: `README.md`
 
 - [ ] **Step 1: Document migration scope**

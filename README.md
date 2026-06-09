@@ -21,9 +21,6 @@ gamer/
 
 - Community API contract: `docs/api/community-api.md`
 - Ecosystem design spec: `docs/superpowers/specs/2026-06-04-gamer-pet-community-ecosystem-design.md`
-- Boxd / Cloudflare / Aiven deployment skeleton: `docs/deployment/boxd-cloudflare-aiven.md`
-- Boxd direct deployment runbook: `deploy/boxd/README.md`
-- HidenCloud Node.js deployment runbook: `deploy/hidencloud/README.md`
 - Community PostgreSQL migrations: `services/community-api/db/migrations`
 
 ## Local
@@ -35,7 +32,7 @@ npm.cmd test
 ```
 
 Preview or apply community database migrations when `DATABASE_URL` points at
-Aiven/PostgreSQL:
+PostgreSQL:
 
 ```powershell
 npm.cmd run migrate:community-db:dry-run
@@ -53,13 +50,13 @@ node --test services/community-api/src/database/*.test.js
 D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
-docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 git diff --check
 ```
 
 Run services:
 
 ```powershell
+node index.js
 npm.cmd run start:admin-review
 npm.cmd run start:community-api
 npm.cmd run start:pet-generator
@@ -78,22 +75,6 @@ Run the community services plus the public `fantasy-pet-rule` app API:
 ```powershell
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
 ```
-
-Render the production-shaped Boxd / Cloudflare Tunnel / Aiven / R2 skeleton:
-
-```powershell
-docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
-```
-
-Deploy directly from inside a Boxd VM after filling
-`deploy/boxd/.env.production`:
-
-```bash
-deploy/boxd/deploy.sh
-```
-
-Run on HidenCloud / Pterodactyl-style Node.js hosting by setting the startup
-main file to `index.js`; see `deploy/hidencloud/README.md`.
 
 The default ports are:
 

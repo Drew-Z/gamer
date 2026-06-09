@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a real migration runner for the community API so Boxd can initialize Aiven PostgreSQL through `DATABASE_URL` without switching runtime reads/writes away from the in-memory store.
+**Goal:** Add a real migration runner for the community API so PostgreSQL can be initialized through `DATABASE_URL` without switching runtime reads/writes away from the in-memory store.
 
 **Architecture:** Keep migration execution separate from HTTP serving. A pure runner accepts an injected query client for tests, bootstraps `schema_migrations`, applies pending SQL files in transactions, and supports dry-run. A CLI creates a `pg` Client from existing database config and calls the runner.
 
@@ -68,7 +68,6 @@ Expected: PASS.
 
 **Files:**
 - Modify: `README.md`
-- Modify: `docs/deployment/boxd-cloudflare-aiven.md`
 
 - [ ] **Step 1: Document commands**
 
@@ -81,7 +80,6 @@ Run:
 ```powershell
 node --test services/community-api/src/database/*.test.js
 npm.cmd test
-docker compose -f compose.boxd.yaml --env-file deploy/boxd/.env.production.example config
 git diff --check
 ```
 
