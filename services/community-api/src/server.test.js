@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
 import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
-import { createCommunityHttpHandler } from "./server.js";
+import { createCommunityHttpHandler, resolveCommunityApiPort } from "./server.js";
 import { createCommunityStore } from "./store.js";
 
 const requestJson = (server, method, path, body) =>
@@ -36,6 +36,12 @@ const requestJson = (server, method, path, body) =>
     request.on("error", reject);
     request.end(payload);
   });
+
+test("community API port prefers PORT then SERVER_PORT then default", () => {
+  assert.equal(resolveCommunityApiPort({ PORT: "5123", SERVER_PORT: "6123" }), 5123);
+  assert.equal(resolveCommunityApiPort({ SERVER_PORT: "6123" }), 6123);
+  assert.equal(resolveCommunityApiPort({}), 4000);
+});
 
 test("HTTP server parses JSON body for check-in", async () => {
   const server = http.createServer(

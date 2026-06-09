@@ -3,7 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleCommunityRequest } from "./routes.js";
 
-const port = Number.parseInt(process.env.PORT ?? "4000", 10);
+export function resolveCommunityApiPort(env = process.env) {
+  return Number.parseInt(env.PORT ?? env.SERVER_PORT ?? "4000", 10);
+}
 
 const readBody = (request) =>
   new Promise((resolve, reject) => {
@@ -58,13 +60,25 @@ export function createCommunityHttpHandler(options = {}) {
   };
 }
 
+export function startCommunityApiServer(options = {}) {
+  const port = resolveCommunityApiPort(options.env);
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store: options.store
+    })
+  );
+
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`community-api listening on ${port}`);
+  });
+
+  return server;
+}
+
 const isDirectRun =
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
-  const server = http.createServer(createCommunityHttpHandler());
-  server.listen(port, "0.0.0.0", () => {
-    console.log(`community-api listening on ${port}`);
-  });
+  startCommunityApiServer();
 }

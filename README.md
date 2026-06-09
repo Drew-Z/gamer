@@ -23,6 +23,7 @@ gamer/
 - Ecosystem design spec: `docs/superpowers/specs/2026-06-04-gamer-pet-community-ecosystem-design.md`
 - Boxd / Cloudflare / Aiven deployment skeleton: `docs/deployment/boxd-cloudflare-aiven.md`
 - Boxd direct deployment runbook: `deploy/boxd/README.md`
+- HidenCloud Node.js deployment runbook: `deploy/hidencloud/README.md`
 - Community PostgreSQL migrations: `services/community-api/db/migrations`
 
 ## Local
@@ -90,6 +91,9 @@ Deploy directly from inside a Boxd VM after filling
 ```bash
 deploy/boxd/deploy.sh
 ```
+
+Run on HidenCloud / Pterodactyl-style Node.js hosting by setting the startup
+main file to `index.js`; see `deploy/hidencloud/README.md`.
 
 The default ports are:
 
