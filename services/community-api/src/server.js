@@ -5,6 +5,7 @@ import {
   isFantasyPetPublicProxyRequest,
   proxyFantasyPetPublicRequest
 } from "./fantasy-pet-proxy.js";
+import { createFileBackedCommunityStore } from "./file-store.js";
 import { handleCommunityRequest } from "./routes.js";
 
 export function resolveCommunityApiPort(env = process.env) {
@@ -86,11 +87,16 @@ export function createCommunityHttpHandler(options = {}) {
 
 export function startCommunityApiServer(options = {}) {
   const port = resolveCommunityApiPort(options.env);
+  const store =
+    options.store ??
+    createFileBackedCommunityStore({
+      env: options.env
+    });
   const server = http.createServer(
     createCommunityHttpHandler({
       env: options.env,
       fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
-      store: options.store
+      store
     })
   );
 

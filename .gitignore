@@ -4,6 +4,7 @@
 build/
 dist/
 node_modules/
+services/community-api/data/
 .venv/
 __pycache__/
 *.log

@@ -48,6 +48,14 @@ npm.cmd run migrate:community-db:dry-run
 npm.cmd run migrate:community-db
 ```
 
+The Community API runtime keeps state in a JSON snapshot by default at
+`services/community-api/data/community-store.json`, so imported drafts,
+submissions, review decisions, approved pets, feed posts, wallet entries, and
+daily check-ins survive service restarts. Override the path with
+`COMMUNITY_API_STORE_FILE`; set it to `memory` or `none` for a temporary
+in-memory run. Docker Compose mounts this path on the `community-api-data`
+volume.
+
 ## Verification
 
 Run the standard verification set before committing a phase:

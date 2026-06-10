@@ -22,6 +22,23 @@ const defaultSeed = {
   approvedPets: []
 };
 
+const stateKeys = Object.keys(defaultSeed);
+
+export const createDefaultCommunityState = () => clone(defaultSeed);
+
+export const normalizeCommunityState = (seed = defaultSeed) => {
+  const candidate = isObject(seed) ? seed : {};
+  const normalized = createDefaultCommunityState();
+
+  for (const key of stateKeys) {
+    if (Array.isArray(candidate[key])) {
+      normalized[key] = clone(candidate[key]);
+    }
+  }
+
+  return normalized;
+};
+
 const nowIso = () => new Date().toISOString();
 const isObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
@@ -388,13 +405,22 @@ const createPublicSubmissionsSummary = (submissionsForUser) => {
   };
 };
 
-export function createCommunityStore(seed = defaultSeed) {
-  const state = clone(seed);
+export function createCommunityStore(seed = defaultSeed, options = {}) {
+  const state = normalizeCommunityState(seed);
 
   const nextId = (prefix, collection) =>
     `${prefix}-${String(collection.length + 1).padStart(3, "0")}`;
+  const notifyChange = () => {
+    if (typeof options.onChange === "function") {
+      options.onChange(clone(state));
+    }
+  };
 
   return {
+    getStateSnapshot() {
+      return clone(state);
+    },
+
     getMe() {
       return clone(state.users[0]);
     },
@@ -510,6 +536,7 @@ export function createCommunityStore(seed = defaultSeed) {
 
       state.ledgerEntries.push(ledgerEntry);
       state.checkIns.push(checkIn);
+      notifyChange();
 
       return {
         checkIn: clone(checkIn),
@@ -604,6 +631,7 @@ export function createCommunityStore(seed = defaultSeed) {
       }
 
       state.importDrafts.push(draft);
+      notifyChange();
       return clone(draft);
     },
 
@@ -706,6 +734,7 @@ export function createCommunityStore(seed = defaultSeed) {
       draft.status = "submitted";
       draft.submissionId = submission.id;
       draft.submittedAt = nowIso();
+      notifyChange();
 
       return {
         draft: clone(draft),
@@ -726,6 +755,7 @@ export function createCommunityStore(seed = defaultSeed) {
       };
 
       state.submissions.push(submission);
+      notifyChange();
       return clone(submission);
     },
 
@@ -855,6 +885,7 @@ export function createCommunityStore(seed = defaultSeed) {
         reviewedAt: nowIso()
       };
       state.reviewQueue.push(review);
+      notifyChange();
 
       return {
         ...clone(review),
