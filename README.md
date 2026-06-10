@@ -1,20 +1,29 @@
 # Gamer
 
-Pet-first community ecosystem workspace.
+Pet-first app and community ecosystem workspace.
+
+`gamer` is primarily the app/community repository. It owns the Android app,
+community API, admin review prototype, and shared app-facing packages. The
+server-side generation rules, worker orchestration, private pipeline, QA gates,
+and public app API contract live in the sibling repository:
+`D:\workspace4Codex\pet\fantasy-pet-rule`.
 
 ## Structure
 
 ```text
 gamer/
   apps/
+    admin-review/           # Admin review prototype.
+    android-community/      # Android app prototype.
   services/
-    community-api/
-    pet-generator/
+    community-api/          # App/community backend and app gateway.
+    pet-generator/          # Pet generation adapter/service shell.
   packages/
-    community-contracts/
-    pet-package-spec/
-    pet-runtime/
-  docs/
+    community-contracts/    # Shared API contracts and drift guards.
+    pet-package-spec/       # pet.zip package and manifest rules.
+    pet-runtime/            # Shared pet runtime helpers.
+  docs/                     # Project docs, API notes, specs, agent config.
+  tools/                    # Local smoke, verification, and helper scripts.
 ```
 
 ## Docs
@@ -47,7 +56,7 @@ Run the standard verification set before committing a phase:
 npm.cmd test
 node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
 node --test services/community-api/src/database/*.test.js
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest --console=plain
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
 git diff --check
@@ -151,7 +160,7 @@ http://localhost:4200
 ## Android Community Prototype
 
 The Android prototype lives in `apps/android-community`. It uses the local verified
-baseline from `D:\workspace4Codex\floating-pet-android`:
+baseline from `D:\workspace4Codex\pet\floating-pet-android`:
 
 - Android Gradle Plugin `9.2.0`
 - Kotlin `2.2.10`
@@ -165,24 +174,24 @@ apps/android-community/gradle/libs.versions.toml
 ```
 
 This workspace currently reuses the known-good local Gradle wrapper from
-`D:\workspace4Codex\floating-pet-android`.
+`D:\workspace4Codex\pet\floating-pet-android`.
 
 List Android projects:
 
 ```powershell
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community projects
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community projects
 ```
 
 Run Android unit tests:
 
 ```powershell
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community testDebugUnitTest
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest
 ```
 
 Build the debug APK:
 
 ```powershell
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
 ```
 
 ### Fantasy Pet Generation API
@@ -194,13 +203,13 @@ desktop-pet generation loop. The `fantasy-pet-rule` service lives beside this
 workspace:
 
 ```text
-D:\workspace4Codex\fantasy-pet-rule
+D:\workspace4Codex\pet\fantasy-pet-rule
 ```
 
 Start the public app API without admin endpoints:
 
 ```powershell
-Set-Location D:\workspace4Codex\fantasy-pet-rule
+Set-Location D:\workspace4Codex\pet\fantasy-pet-rule
 uv run --with-requirements requirements-server.txt python tools\app_server.py --run-root runs --host 127.0.0.1 --port 8765
 ```
 
@@ -226,7 +235,7 @@ Use this default single-backend setup for emulator builds:
 
 ```powershell
 $env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
 ```
 
 Override both local API targets only when you intentionally want Android to
@@ -235,7 +244,7 @@ connect directly to the public `fantasy-pet-rule` server:
 ```powershell
 $env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
 $env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community assembleDebug
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
 ```
 
 Use `http://10.0.2.2:8765` for the Android emulator to reach the host machine's
@@ -365,7 +374,7 @@ the emulator before doing visual QA.
 
 ```powershell
 # Terminal A: seed a public demo job and keep the public API running.
-Set-Location D:\workspace4Codex\fantasy-pet-rule
+Set-Location D:\workspace4Codex\pet\fantasy-pet-rule
 $runRoot = Join-Path $env:TEMP "fantasy-pet-android-ui"
 Remove-Item -LiteralPath $runRoot -Recurse -Force -ErrorAction SilentlyContinue
 uv run --with-requirements requirements-server.txt python tools\run_server_job_lifecycle_demo.py --run-dir "$runRoot\public-lifecycle-smoke" --app-job-id public-lifecycle-smoke --run-id public-lifecycle-smoke --description "A tiny stardust dragon desktop pet with smooth idle motion." --body-shape wide-tail
@@ -380,7 +389,7 @@ npm.cmd run start:community-api
 ```powershell
 # Terminal C: install an emulator build pointed at the host service.
 $env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
-D:\workspace4Codex\floating-pet-android\gradlew.bat -p D:\workspace4Codex\gamer\apps\android-community installDebug --console=plain --rerun-tasks
+D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community installDebug --console=plain --rerun-tasks
 adb devices
 adb -s emulator-5554 shell pm clear com.gamer.community
 adb -s emulator-5554 shell am start -n com.gamer.community/.MainActivity

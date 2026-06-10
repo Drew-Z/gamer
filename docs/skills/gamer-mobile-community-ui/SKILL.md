@@ -1,17 +1,17 @@
 ---
 name: gamer-mobile-community-ui
-description: Use when designing, reviewing, or implementing UI for the D:\workspace4Codex\gamer Android community app. This skill keeps the app aligned with a pet-first game-community direction, Material 3 Compose behavior, HoYoLAB-like density, fantasy-pet public API safety boundaries, and emulator-verified mobile polish.
+description: Use when designing, reviewing, or implementing UI for the D:\workspace4Codex\pet\gamer Android community app. This skill keeps the app aligned with a pet-first game-community direction, Material 3 Compose behavior, HoYoLAB-like density, fantasy-pet public API safety boundaries, and emulator-verified mobile polish.
 ---
 
 # Gamer Mobile Community UI
 
-Use this skill whenever work touches the Android community shell, generation flow, profile, feed, navigation, or visual design tokens in `D:\workspace4Codex\gamer`.
+Use this skill whenever work touches the Android community shell, generation flow, profile, feed, navigation, or visual design tokens in `D:\workspace4Codex\pet\gamer`.
 
 The goal is not to clone any existing community app. The goal is to make Gamer feel like a pet-first game companion community: compact, lively, trustworthy, and usable on Android.
 
 ## Starting Context
 
-Read `D:\workspace4Codex\gamer\docs\ui\mobile-community-ui-direction.md` when available. Treat it as the project design brief and update it when the UI direction changes.
+Read `D:\workspace4Codex\pet\gamer\docs\ui\mobile-community-ui-direction.md` when available. Treat it as the project design brief and update it when the UI direction changes.
 
 Relevant reference styles:
 

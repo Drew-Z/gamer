@@ -4,7 +4,7 @@ This note captures the UI skills and online references currently used for the An
 
 ## Skill Stack
 
-- `gamer-mobile-community-ui`: project-local skill for this Android pet-community app. Source copy: `D:\workspace4Codex\gamer\docs\skills\gamer-mobile-community-ui\SKILL.md`.
+- `gamer-mobile-community-ui`: project-local skill for this Android pet-community app. Source copy: `D:\workspace4Codex\pet\gamer\docs\skills\gamer-mobile-community-ui\SKILL.md`.
 - `frontend-design`: choose a clear aesthetic point of view and avoid prototype-looking generic screens.
 - `web-design-guidelines`: use as a review pass for hierarchy, accessibility, readable density, and layout polish.
 - `theme-factory`: translate the visual direction into stable color roles instead of one-off colors.
@@ -69,14 +69,14 @@ Project-local takeaway:
 
 - Keep remote UI skills as research inputs. Do not install them globally without reviewing source and scope.
 - The generation page now uses a more compact console layout: slimmer flow rail, shorter status tiles, lighter prompt canvas, and tighter stage headers.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-generation-compact-console-ui.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-generation-compact-console-ui.png`.
 
 2026-06-09 empty-generation refinement:
 
 - Empty jobs now show the creation brief before progress/status modules, so the first generation screen starts with the user's prompt and supported controls instead of four waiting-state tiles.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-generation-empty-brief-first.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-generation-empty-brief-first.png`.
 - The description field now marks itself required and starts compact, keeping the disabled create button fully visible in the first screen.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-generation-compact-required-label.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-generation-compact-required-label.png`.
 
 2026-06-09 online UI skill follow-up:
 
@@ -84,31 +84,31 @@ Project-local takeaway:
 - Keep the generation entry path thumb-reachable: after a user fills the prompt, the primary create action should be fully visible above the bottom navigation on the default emulator viewport.
 - Use remote UI skill catalogs for discovery only. Before a rule becomes project policy, translate it into this document and `gamer-mobile-community-ui` in Android-specific language.
 - The generation hero is now a compact product header instead of a tall mascot card, making the prompt-to-create path less crowded.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-generation-compact-hero-prompt-filled.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-generation-compact-hero-prompt-filled.png`.
 
 2026-06-09 community quick-entry polish:
 
 - Community quick actions now use compact glyphs for check-in, generation, review, and showcase. This makes the first community viewport feel more like a game companion app and less like a text-only prototype grid.
 - Keep these entries short and thumb-friendly: the icon, action label, and one-line detail should fit without pushing the pet companion strip out of the first viewport.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-community-quick-icons.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-community-quick-icons.png`.
 
 2026-06-09 profile compact home-base pass:
 
 - Profile now uses a compact keeper hero with pet artwork and a short bubble instead of the taller action-labeled pet avatar. The wallet, shelf, and quick actions all fit more naturally in the first viewport.
 - Keep profile surfaces as a home base: the hero should identify the keeper, the wallet should summarize reward state, and the action dock should remain visible above bottom navigation on the default emulator viewport.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-profile-compact-hero.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-profile-compact-hero.png`.
 
 2026-06-09 pet-view feed pass:
 
 - Community posts now use a stronger pet-view header, a compact interaction badge, and a dark pet-perspective hint block. The feed should read as desktop-pet-guided browsing rather than a generic social card.
 - Feed controls now use directional glyphs for previous, next, and skip-ahead actions while keeping the existing navigation callbacks and semantics.
-- Screenshot artifacts: `D:\workspace4Codex\gamer\tmp-gamer-community-feed-card-top.png`, `D:\workspace4Codex\gamer\tmp-gamer-community-feed-card-controls.png`.
+- Screenshot artifacts: `D:\workspace4Codex\pet\gamer\tmp-gamer-community-feed-card-top.png`, `D:\workspace4Codex\pet\gamer\tmp-gamer-community-feed-card-controls.png`.
 
 2026-06-09 showcase empty-state CTA:
 
 - The community showcase empty state now shows the ecosystem path `generate -> human review -> showcase` and a primary `Create new pet` action instead of disabled previous/next pet controls.
 - Empty states should explain the next useful action without implying automatic approval. The user still needs generation, human review, and community import before a pet appears in the showcase.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-community-showcase-empty-cta.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-community-showcase-empty-cta.png`.
 
 2026-06-09 profile empty-shelf CTA:
 
@@ -121,26 +121,26 @@ Project-local takeaway:
 - The shared top header now follows the selected product surface instead of always saying `Gamer Community`.
 - Generation shows the generation workspace title/subtitle; Profile shows the keeper home-base title/subtitle. The wallet and language controls remain shared chrome.
 - This follows the online UI-skill scan takeaway: use product-mode orientation, compact repeated chrome, and Android-native verification rather than installing remote web-first skills.
-- Screenshot artifacts: `D:\workspace4Codex\gamer\tmp-gamer-header-generate.png`, `D:\workspace4Codex\gamer\tmp-gamer-header-profile.png`.
+- Screenshot artifacts: `D:\workspace4Codex\pet\gamer\tmp-gamer-header-generate.png`, `D:\workspace4Codex\pet\gamer\tmp-gamer-header-profile.png`.
 
 2026-06-09 generation hero copy polish:
 
 - The generation page keeps `Generation Workspace` as the shell orientation title, while the inner hero now uses a more specific safe-generation workbench title.
 - This avoids the prototype-like feeling of repeating the same title twice in the first viewport.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-generation-hero-copy.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-generation-hero-copy.png`.
 
 2026-06-09 compact header utility dock:
 
 - The shared language and wallet controls now live in a semantically grouped header utility dock.
 - Wallet balance is the first compact status chip; language switching remains available but reads as app chrome rather than a large settings block.
 - Keep `header-utility-dock` as the stable UI tree anchor for future header polish and smoke checks.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-header-utility-dock.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-header-utility-dock.png`.
 
 2026-06-09 readable Android system bars:
 
 - The app now applies a light system bar style with dark status and navigation icons before Compose content is rendered.
 - This keeps the emulator status bar readable on the light shell background and avoids the unfinished feel of white icons on near-white UI.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-readable-system-bars.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-readable-system-bars.png`.
 
 2026-06-09 immersive shell header:
 
@@ -162,7 +162,7 @@ Project-local takeaway:
 - Discord and Reddit are useful as structure references: spaces/channels/topics make dense communities navigable, while voting/reputation mechanics explain why a post matters.
 - Product translation for Gamer: the first community viewport should not be only a post list. It needs a pet-led command center that summarizes wallet/check-in/showcase status and gives quick next actions, then channels, tools, showcase, and feed.
 - The community home now starts with a pet navigator module before the channel rail. Keep it compact, status-rich, and action-oriented; avoid turning it into a marketing hero.
-- Screenshot artifact: `D:\workspace4Codex\gamer\tmp-gamer-community-market-ui-final.png`.
+- Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-community-market-ui-final.png`.
 
 ## Product Direction
 
