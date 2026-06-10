@@ -197,7 +197,8 @@ fun PetShellApp(
     onRequestDesktopPetNotificationPermission: () -> Unit = {},
     onStartDesktopPetOverlay: () -> Unit = {},
     onStopDesktopPetOverlay: () -> Unit = {},
-    onResetDesktopPetOverlayPosition: () -> Unit = {}
+    onResetDesktopPetOverlayPosition: () -> Unit = {},
+    onRefreshDesktopPetNotification: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val generationPrefs = remember(context) {
@@ -275,6 +276,9 @@ fun PetShellApp(
         uiPrefs.edit()
             .putString("language", nextLanguage.preferenceValue)
             .apply()
+        if (desktopPetOverlayRunning) {
+            onRefreshDesktopPetNotification()
+        }
     }
 
     fun changeDirectPetLaunch(enabled: Boolean) {

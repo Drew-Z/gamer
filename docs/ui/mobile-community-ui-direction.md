@@ -182,6 +182,7 @@ Project-local takeaway:
 - The floating pet should remember its last dragged position across service restarts, while clamping restored coordinates so the pet stays reachable on the current screen.
 - Profile settings should provide a reset-position action so users can recover the floating pet's default placement without clearing app data.
 - The foreground notification should follow the app language preference and expose clear open-app and stop actions, because it is the reliable system entry back to the full app.
+- If the user changes language while the floating pet is running, refresh the existing foreground notification copy without recreating or unexpectedly showing a new overlay.
 
 2026-06-11 emulator validation:
 

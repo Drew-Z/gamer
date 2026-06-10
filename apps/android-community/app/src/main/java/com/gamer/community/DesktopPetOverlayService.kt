@@ -59,6 +59,14 @@ class DesktopPetOverlayService : Service() {
                 }
                 return START_STICKY
             }
+            ACTION_REFRESH_NOTIFICATION -> {
+                if (overlayView == null) {
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                startAsForegroundService()
+                return START_STICKY
+            }
         }
         startAsForegroundService()
         showOverlayIfAllowed()
@@ -246,7 +254,9 @@ class DesktopPetOverlayService : Service() {
             CHANNEL_ID,
             copy.channelName,
             NotificationManager.IMPORTANCE_LOW
-        )
+        ).apply {
+            description = copy.channelDescription
+        }
         manager.createNotificationChannel(channel)
 
         val openAppIntent = PendingIntent.getActivity(
@@ -293,6 +303,7 @@ class DesktopPetOverlayService : Service() {
         return if (language == ENGLISH_LANGUAGE) {
             DesktopPetNotificationCopy(
                 channelName = "Desktop pet",
+                channelDescription = "Shows your approved pet over the launcher and other apps.",
                 title = "Gamer desktop pet",
                 text = "Your pet is showing over the launcher and other apps.",
                 openAction = "Open app",
@@ -301,6 +312,7 @@ class DesktopPetOverlayService : Service() {
         } else {
             DesktopPetNotificationCopy(
                 channelName = "\u684c\u9762\u684c\u5ba0",
+                channelDescription = "\u8ba9\u5df2\u901a\u8fc7\u7684\u684c\u5ba0\u663e\u793a\u5728\u684c\u9762\u548c\u5176\u4ed6 App \u4e0a\u3002",
                 title = "Gamer \u684c\u9762\u684c\u5ba0",
                 text = "\u684c\u5ba0\u6b63\u5728\u663e\u793a\uff0c\u53ef\u4ee5\u968f\u65f6\u56de\u5230\u5b8c\u6574 App\u3002",
                 openAction = "\u6253\u5f00 App",
@@ -380,6 +392,7 @@ class DesktopPetOverlayService : Service() {
 
     private data class DesktopPetNotificationCopy(
         val channelName: String,
+        val channelDescription: String,
         val title: String,
         val text: String,
         val openAction: String,
@@ -502,6 +515,8 @@ class DesktopPetOverlayService : Service() {
         private const val ACTION_STOP = "com.gamer.community.desktop_pet_overlay.STOP"
         private const val ACTION_RESET_POSITION =
             "com.gamer.community.desktop_pet_overlay.RESET_POSITION"
+        private const val ACTION_REFRESH_NOTIFICATION =
+            "com.gamer.community.desktop_pet_overlay.REFRESH_NOTIFICATION"
         private const val CHANNEL_ID = "desktop_pet_overlay"
         private const val NOTIFICATION_ID = 7001
         private const val DRAG_SLOP = 4f
@@ -522,6 +537,9 @@ class DesktopPetOverlayService : Service() {
 
         fun resetPositionIntent(context: Context): Intent =
             Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_RESET_POSITION)
+
+        fun refreshNotificationIntent(context: Context): Intent =
+            Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_REFRESH_NOTIFICATION)
 
         fun clearSavedPosition(context: Context) {
             context.getSharedPreferences(UI_PREFS_NAME, Context.MODE_PRIVATE)
