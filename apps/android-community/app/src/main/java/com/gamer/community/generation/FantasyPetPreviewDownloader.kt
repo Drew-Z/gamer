@@ -18,8 +18,8 @@ sealed class PetPreviewDownloadResult {
 }
 
 class FantasyPetPreviewDownloader(
-    private val connectTimeoutMillis: Int = 2_000,
-    private val readTimeoutMillis: Int = 2_000,
+    private val connectTimeoutMillis: Int = 10_000,
+    private val readTimeoutMillis: Int = 45_000,
     private val connectionFactory: (URL) -> HttpURLConnection = { url ->
         url.openConnection() as HttpURLConnection
     }

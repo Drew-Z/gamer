@@ -687,6 +687,31 @@ class PetShellUiModelTest {
         assertEquals("Package artifact pending", approvedPetShowcasePackage(pets, selectedIndex = 0))
     }
 
+    @Test
+    fun approvedPetPreviewUrlUsesPublicArtifactRoute() {
+        val pet = approvedPet(
+            petId = "issue-1-fresh-timeout3600-20260610-1",
+            displayName = "Generated pet",
+            previewPath = "artifact-34"
+        )
+
+        assertEquals(
+            "http://olivia.hidencloud.com:24674/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34",
+            approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674")
+        )
+    }
+
+    @Test
+    fun approvedPetPreviewUrlRejectsNonPublicPreviewPath() {
+        val pet = approvedPet(
+            petId = "issue-1-fresh-timeout3600-20260610-1",
+            displayName = "Generated pet",
+            previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+        )
+
+        assertEquals("", approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674"))
+    }
+
     private fun approvedPet(
         petId: String,
         displayName: String,

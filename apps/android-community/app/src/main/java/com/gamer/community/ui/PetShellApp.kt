@@ -66,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import java.net.URLEncoder
 import com.gamer.community.api.ApiCallResult
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.HttpCommunityApiClient
@@ -1618,6 +1619,7 @@ private fun ProfilePetShelf(
     onCreatePet: () -> Unit
 ) {
     val hasApprovedPets = state.approvedPets.isNotEmpty()
+    val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -1637,8 +1639,10 @@ private fun ProfilePetShelf(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PetArtworkBadge(
+                ApprovedPetPreviewArtwork(
+                    pet = selectedPet,
                     action = state.petAction,
+                    strings = strings,
                     modifier = Modifier.size(82.dp)
                 )
                 Column(
@@ -1940,6 +1944,7 @@ private fun ApprovedPetShowcaseBlock(
     onCreatePet: () -> Unit
 ) {
     val hasApprovedPets = state.approvedPets.isNotEmpty()
+    val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -1961,8 +1966,10 @@ private fun ApprovedPetShowcaseBlock(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PetArtworkBadge(
+                ApprovedPetPreviewArtwork(
+                    pet = selectedPet,
                     action = state.petAction,
+                    strings = strings,
                     modifier = Modifier.size(82.dp)
                 )
                 Column(
@@ -3801,6 +3808,46 @@ private fun RemoteCandidateImage(
     previewUrl: String,
     strings: PetShellStrings
 ) {
+    RemotePreviewImage(
+        previewUrl = previewUrl,
+        strings = strings,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+    )
+}
+
+@Composable
+private fun ApprovedPetPreviewArtwork(
+    pet: ApprovedPet?,
+    action: PetAction,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier
+) {
+    val previewUrl = approvedPetPreviewUrl(pet)
+
+    if (previewUrl.isBlank()) {
+        PetArtworkBadge(action = action, modifier = modifier)
+        return
+    }
+
+    RemotePreviewImage(
+        previewUrl = previewUrl,
+        strings = strings,
+        modifier = modifier,
+        fallback = {
+            PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
+        }
+    )
+}
+
+@Composable
+private fun RemotePreviewImage(
+    previewUrl: String,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier,
+    fallback: @Composable (() -> Unit)? = null
+) {
     var image by remember(previewUrl) { mutableStateOf<ImageBitmap?>(null) }
     var failed by remember(previewUrl) { mutableStateOf(false) }
     val previewDownloader = remember { FantasyPetPreviewDownloader() }
@@ -3828,9 +3875,7 @@ private fun RemoteCandidateImage(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp)
+        modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFEFF3F7)),
         contentAlignment = Alignment.Center
@@ -3843,6 +3888,8 @@ private fun RemoteCandidateImage(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
+        } else if (failed && fallback != null) {
+            fallback()
         } else {
             Text(
                 text = if (failed) strings.previewUnavailable else strings.loadingPreview,
@@ -4307,10 +4354,34 @@ internal fun approvedPetShowcasePackage(
     }
 }
 
+internal fun approvedPetPreviewUrl(
+    pet: ApprovedPet?,
+    baseUrl: String = com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL
+): String {
+    if (pet == null || pet.sourceKind != "fantasy-pet-rule") {
+        return ""
+    }
+
+    val appJobId = pet.petId.trim()
+    val targetDownloadId = pet.previewPath.trim()
+    if (
+        appJobId.isBlank() ||
+        !PUBLIC_ARTIFACT_ID.matches(targetDownloadId) ||
+        !targetDownloadId.isSafeAssetDisplayText()
+    ) {
+        return ""
+    }
+
+    return "${baseUrl.trimEnd('/')}/pet-generation-jobs/${appJobId.pathSegment()}/artifacts/${targetDownloadId.pathSegment()}"
+}
+
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
     if (isEmpty()) return null
     return this[if (selectedIndex in indices) selectedIndex else 0]
 }
+
+private fun String.pathSegment(): String =
+    URLEncoder.encode(this, Charsets.UTF_8.name()).replace("+", "%20")
 
 private fun String.isSafeAssetDisplayText(): Boolean {
     val trimmed = trim()
@@ -4327,6 +4398,8 @@ private fun String.isSafeAssetDisplayText(): Boolean {
 }
 
 private val WINDOWS_ASSET_PATH = Regex("(^|\\s)[A-Za-z]:[\\\\/]")
+
+private val PUBLIC_ARTIFACT_ID = Regex("[A-Za-z0-9._-]{1,128}")
 
 private val INTERNAL_ASSET_MARKERS = listOf(
     "server_run.json",
