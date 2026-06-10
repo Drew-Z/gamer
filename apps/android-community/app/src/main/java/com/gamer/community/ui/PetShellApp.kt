@@ -2558,20 +2558,13 @@ private fun DesktopPetActivePreviewStatus(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            ApprovedPetPreviewArtwork(
+                pet = activeDesktopPet,
+                action = PetAction.Idle,
+                strings = strings,
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF0F766E)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "P",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+                    .size(42.dp)
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)

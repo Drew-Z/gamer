@@ -183,7 +183,7 @@ Project-local takeaway:
 - Profile settings should provide a reset-position action so users can recover the floating pet's default placement without clearing app data.
 - The foreground notification should follow the app language preference and expose clear open-app and stop actions, because it is the reliable system entry back to the full app.
 - If the user changes language while the floating pet is running, refresh the existing foreground notification copy without recreating or unexpectedly showing a new overlay.
-- Desktop pet settings should show which approved pet is currently feeding the floating preview and whether a public remote preview is ready, without exposing URLs, artifact IDs, or internal paths.
+- Desktop pet settings should show which approved pet is currently feeding the floating preview, render a compact public-preview thumbnail when available, and indicate whether a public remote preview is ready, without exposing URLs, artifact IDs, or internal paths.
 
 2026-06-11 emulator validation:
 
