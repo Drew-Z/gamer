@@ -55,6 +55,7 @@ class PetShellStrings internal constructor(
     val directPetLaunchToggleContentDescription: String get() = "direct-pet-launch-toggle"
     val desktopPetOverlayToggleContentDescription: String get() = "desktop-pet-overlay-toggle"
     val desktopPetOverlayPermissionContentDescription: String get() = "desktop-pet-overlay-permission-button"
+    val desktopPetNotificationPermissionContentDescription: String get() = "desktop-pet-notification-permission-button"
     val desktopPetOverlayStartContentDescription: String get() = "desktop-pet-overlay-start-button"
     val desktopPetOverlayStopContentDescription: String get() = "desktop-pet-overlay-stop-button"
     val profileKeeperHeroContentDescription: String get() = "profile-keeper-hero"
@@ -129,10 +130,14 @@ class PetShellStrings internal constructor(
         )
     val desktopPetOverlayPermissionGranted: String get() = text("悬浮权限已开启", "Overlay allowed")
     val desktopPetOverlayPermissionMissing: String get() = text("需要悬浮权限", "Overlay permission needed")
+    val desktopPetNotificationPermissionGranted: String get() = text("通知已开启", "Notifications allowed")
+    val desktopPetNotificationPermissionMissing: String get() = text("需要通知权限", "Notification permission needed")
     val desktopPetOverlayRunning: String get() = text("桌宠显示中", "Pet showing")
     val desktopPetOverlayStopped: String get() = text("未显示", "Not showing")
     val desktopPetOverlayRequestPermission: String get() = text("授权悬浮窗", "Grant overlay")
     val desktopPetOverlayManagePermission: String get() = text("管理权限", "Manage permission")
+    val desktopPetNotificationRequestPermission: String get() = text("授权通知", "Grant notifications")
+    val desktopPetNotificationManagePermission: String get() = text("通知已授权", "Notifications granted")
     val desktopPetOverlayShow: String get() = text("显示到桌面", "Show on desktop")
     val desktopPetOverlayHide: String get() = text("关闭桌面桌宠", "Hide desktop pet")
     fun communityCommandStatus(

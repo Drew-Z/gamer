@@ -63,6 +63,10 @@ class PetShellUiModelTest {
             "desktop-pet-overlay-permission-button",
             zh.desktopPetOverlayPermissionContentDescription
         )
+        assertEquals(
+            "desktop-pet-notification-permission-button",
+            zh.desktopPetNotificationPermissionContentDescription
+        )
         assertEquals("desktop-pet-overlay-start-button", zh.desktopPetOverlayStartContentDescription)
         assertEquals("desktop-pet-overlay-stop-button", zh.desktopPetOverlayStopContentDescription)
         assertEquals("profile-keeper-hero", zh.profileKeeperHeroContentDescription)

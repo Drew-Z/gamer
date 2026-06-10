@@ -192,7 +192,9 @@ fun PetShellApp(
     generationService: FantasyPetGenerationService,
     initialGenerationDescription: String = "",
     canShowDesktopPetOverlay: () -> Boolean = { false },
+    canPostDesktopPetNotification: () -> Boolean = { true },
     onRequestDesktopPetOverlayPermission: () -> Unit = {},
+    onRequestDesktopPetNotificationPermission: () -> Unit = {},
     onStartDesktopPetOverlay: () -> Unit = {},
     onStopDesktopPetOverlay: () -> Unit = {}
 ) {
@@ -211,6 +213,9 @@ fun PetShellApp(
     }
     var desktopPetOverlayPermissionGranted by remember {
         mutableStateOf(canShowDesktopPetOverlay())
+    }
+    var desktopPetNotificationPermissionGranted by remember {
+        mutableStateOf(canPostDesktopPetNotification())
     }
     var desktopPetOverlayRunning by remember {
         mutableStateOf(uiPrefs.getBoolean("desktopPetOverlayRunning", false))
@@ -279,11 +284,22 @@ fun PetShellApp(
     }
 
     fun refreshDesktopPetOverlayState(): Boolean {
-        val granted = canShowDesktopPetOverlay()
-        desktopPetOverlayPermissionGranted = granted
-        desktopPetOverlayRunning = granted &&
+        val overlayGranted = canShowDesktopPetOverlay()
+        val notificationGranted = canPostDesktopPetNotification()
+        desktopPetOverlayPermissionGranted = overlayGranted
+        desktopPetNotificationPermissionGranted = notificationGranted
+        desktopPetOverlayRunning = overlayGranted &&
+            notificationGranted &&
             uiPrefs.getBoolean("desktopPetOverlayRunning", desktopPetOverlayRunning)
-        return granted
+        return overlayGranted && notificationGranted
+    }
+
+    fun requestMissingDesktopPetPermission() {
+        refreshDesktopPetOverlayState()
+        when {
+            !desktopPetOverlayPermissionGranted -> onRequestDesktopPetOverlayPermission()
+            !desktopPetNotificationPermissionGranted -> onRequestDesktopPetNotificationPermission()
+        }
     }
 
     fun changeDesktopPetOverlayAutoShow(enabled: Boolean) {
@@ -292,7 +308,7 @@ fun PetShellApp(
             .putBoolean("desktopPetOverlayAutoShowEnabled", enabled)
             .apply()
         if (enabled && !refreshDesktopPetOverlayState()) {
-            onRequestDesktopPetOverlayPermission()
+            requestMissingDesktopPetPermission()
         }
     }
 
@@ -301,12 +317,17 @@ fun PetShellApp(
         refreshDesktopPetOverlayState()
     }
 
+    fun requestDesktopPetNotificationPermission() {
+        onRequestDesktopPetNotificationPermission()
+        refreshDesktopPetOverlayState()
+    }
+
     fun startDesktopPetOverlay() {
         if (refreshDesktopPetOverlayState()) {
             onStartDesktopPetOverlay()
             desktopPetOverlayRunning = true
         } else {
-            onRequestDesktopPetOverlayPermission()
+            requestMissingDesktopPetPermission()
         }
     }
 
@@ -519,12 +540,14 @@ fun PetShellApp(
                     directPetLaunchEnabled = directPetLaunchEnabled,
                     desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
                     desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+                    desktopPetNotificationPermissionGranted = desktopPetNotificationPermissionGranted,
                     desktopPetOverlayRunning = desktopPetOverlayRunning,
                     onTabSelected = { selectedTab = it },
                     onLanguageChange = ::changeLanguage,
                     onDirectPetLaunchChange = ::changeDirectPetLaunch,
                     onDesktopPetOverlayAutoShowChange = ::changeDesktopPetOverlayAutoShow,
                     onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
+                    onRequestDesktopPetNotificationPermission = ::requestDesktopPetNotificationPermission,
                     onStartDesktopPetOverlay = ::startDesktopPetOverlay,
                     onStopDesktopPetOverlay = ::stopDesktopPetOverlay,
                     onEnterDesktopPet = {
@@ -1271,12 +1294,14 @@ private fun CommunityScreen(
     directPetLaunchEnabled: Boolean,
     desktopPetOverlayAutoShowEnabled: Boolean,
     desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetNotificationPermissionGranted: Boolean,
     desktopPetOverlayRunning: Boolean,
     onTabSelected: (PetShellTab) -> Unit,
     onLanguageChange: (PetShellLanguage) -> Unit,
     onDirectPetLaunchChange: (Boolean) -> Unit,
     onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
     onRequestDesktopPetOverlayPermission: () -> Unit,
+    onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onEnterDesktopPet: () -> Unit,
@@ -1330,10 +1355,12 @@ private fun CommunityScreen(
                     directPetLaunchEnabled = directPetLaunchEnabled,
                     desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
                     desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+                    desktopPetNotificationPermissionGranted = desktopPetNotificationPermissionGranted,
                     desktopPetOverlayRunning = desktopPetOverlayRunning,
                     onDirectPetLaunchChange = onDirectPetLaunchChange,
                     onDesktopPetOverlayAutoShowChange = onDesktopPetOverlayAutoShowChange,
                     onRequestDesktopPetOverlayPermission = onRequestDesktopPetOverlayPermission,
+                    onRequestDesktopPetNotificationPermission = onRequestDesktopPetNotificationPermission,
                     onStartDesktopPetOverlay = onStartDesktopPetOverlay,
                     onStopDesktopPetOverlay = onStopDesktopPetOverlay,
                     onCheckIn = onCheckIn,
@@ -2077,10 +2104,12 @@ private fun ProfileWorkspace(
     directPetLaunchEnabled: Boolean,
     desktopPetOverlayAutoShowEnabled: Boolean,
     desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetNotificationPermissionGranted: Boolean,
     desktopPetOverlayRunning: Boolean,
     onDirectPetLaunchChange: (Boolean) -> Unit,
     onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
     onRequestDesktopPetOverlayPermission: () -> Unit,
+    onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onCheckIn: () -> Unit,
@@ -2106,10 +2135,12 @@ private fun ProfileWorkspace(
             directPetLaunchEnabled = directPetLaunchEnabled,
             desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
             desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+            desktopPetNotificationPermissionGranted = desktopPetNotificationPermissionGranted,
             desktopPetOverlayRunning = desktopPetOverlayRunning,
             onDirectPetLaunchChange = onDirectPetLaunchChange,
             onDesktopPetOverlayAutoShowChange = onDesktopPetOverlayAutoShowChange,
             onRequestDesktopPetOverlayPermission = onRequestDesktopPetOverlayPermission,
+            onRequestDesktopPetNotificationPermission = onRequestDesktopPetNotificationPermission,
             onStartDesktopPetOverlay = onStartDesktopPetOverlay,
             onStopDesktopPetOverlay = onStopDesktopPetOverlay,
             onEnterDesktopPet = onEnterDesktopPet
@@ -2429,10 +2460,12 @@ private fun ProfileDesktopPetSettings(
     directPetLaunchEnabled: Boolean,
     desktopPetOverlayAutoShowEnabled: Boolean,
     desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetNotificationPermissionGranted: Boolean,
     desktopPetOverlayRunning: Boolean,
     onDirectPetLaunchChange: (Boolean) -> Unit,
     onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
     onRequestDesktopPetOverlayPermission: () -> Unit,
+    onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onEnterDesktopPet: () -> Unit
@@ -2463,9 +2496,11 @@ private fun ProfileDesktopPetSettings(
                 strings = strings,
                 autoShowEnabled = desktopPetOverlayAutoShowEnabled,
                 permissionGranted = desktopPetOverlayPermissionGranted,
+                notificationPermissionGranted = desktopPetNotificationPermissionGranted,
                 overlayRunning = desktopPetOverlayRunning,
                 onAutoShowChange = onDesktopPetOverlayAutoShowChange,
                 onRequestPermission = onRequestDesktopPetOverlayPermission,
+                onRequestNotificationPermission = onRequestDesktopPetNotificationPermission,
                 onStartOverlay = onStartDesktopPetOverlay,
                 onStopOverlay = onStopDesktopPetOverlay
             )
@@ -2484,9 +2519,11 @@ private fun SystemDesktopPetSetting(
     strings: PetShellStrings,
     autoShowEnabled: Boolean,
     permissionGranted: Boolean,
+    notificationPermissionGranted: Boolean,
     overlayRunning: Boolean,
     onAutoShowChange: (Boolean) -> Unit,
     onRequestPermission: () -> Unit,
+    onRequestNotificationPermission: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit
 ) {
@@ -2524,15 +2561,24 @@ private fun SystemDesktopPetSetting(
                     modifier = Modifier.weight(1f)
                 )
                 DesktopPetSettingPill(
-                    label = if (overlayRunning) {
-                        strings.desktopPetOverlayRunning
+                    label = if (notificationPermissionGranted) {
+                        strings.desktopPetNotificationPermissionGranted
                     } else {
-                        strings.desktopPetOverlayStopped
+                        strings.desktopPetNotificationPermissionMissing
                     },
-                    accent = if (overlayRunning) Color(0xFFF97316) else Color(0xFF667085),
+                    accent = if (notificationPermissionGranted) Color(0xFF0F766E) else Color(0xFFB42318),
                     modifier = Modifier.weight(1f)
                 )
             }
+            DesktopPetSettingPill(
+                label = if (overlayRunning) {
+                    strings.desktopPetOverlayRunning
+                } else {
+                    strings.desktopPetOverlayStopped
+                },
+                accent = if (overlayRunning) Color(0xFFF97316) else Color(0xFF667085),
+                modifier = Modifier.fillMaxWidth()
+            )
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2592,27 +2638,42 @@ private fun SystemDesktopPetSetting(
                         }
                     )
                 }
-                Button(
-                    onClick = if (overlayRunning) onStopOverlay else onStartOverlay,
-                    enabled = permissionGranted,
+                TextButton(
+                    onClick = onRequestNotificationPermission,
                     modifier = Modifier
                         .weight(1f)
                         .semantics {
-                            contentDescription = if (overlayRunning) {
-                                strings.desktopPetOverlayStopContentDescription
-                            } else {
-                                strings.desktopPetOverlayStartContentDescription
-                            }
+                            contentDescription = strings.desktopPetNotificationPermissionContentDescription
                         }
                 ) {
                     Text(
-                        if (overlayRunning) {
-                            strings.desktopPetOverlayHide
+                        if (notificationPermissionGranted) {
+                            strings.desktopPetNotificationManagePermission
                         } else {
-                            strings.desktopPetOverlayShow
+                            strings.desktopPetNotificationRequestPermission
                         }
                     )
                 }
+            }
+            Button(
+                onClick = if (overlayRunning) onStopOverlay else onStartOverlay,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = if (overlayRunning) {
+                            strings.desktopPetOverlayStopContentDescription
+                        } else {
+                            strings.desktopPetOverlayStartContentDescription
+                        }
+                    }
+            ) {
+                Text(
+                    if (overlayRunning) {
+                        strings.desktopPetOverlayHide
+                    } else {
+                        strings.desktopPetOverlayShow
+                    }
+                )
             }
         }
     }

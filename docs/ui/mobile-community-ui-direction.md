@@ -176,9 +176,9 @@ Project-local takeaway:
 - The app now separates in-app desktop pet launch from Android system overlay behavior.
 - Keep first open conventional by default. Users can later enable direct in-app pet launch, and separately grant overlay permission for a floating desktop pet.
 - The floating pet uses Android `SYSTEM_ALERT_WINDOW` plus a foreground service, not web UI technology. It should stay a small native surface that can be dragged over the launcher or other apps.
-- If the "app icon opens the floating pet" setting is enabled and overlay permission is granted, launching the app should start the floating pet service and move the main app to the background quickly.
+- If the "app icon opens the floating pet" setting is enabled and both overlay and notification permissions are granted, launching the app should start the floating pet service and move the main app to the background quickly.
 - The floating pet and its foreground notification must provide a full-app entry that bypasses auto-hide, so users can still reach community, generation, profile, and settings.
-- If overlay permission is missing, fall back to the normal app flow and guide the user to the system permission screen. Never hide the permission boundary.
+- If overlay or notification permission is missing, fall back to the normal app flow and guide the user to the missing permission. Never hide the permission boundary.
 
 2026-06-11 emulator validation:
 

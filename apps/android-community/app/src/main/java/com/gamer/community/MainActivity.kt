@@ -1,6 +1,8 @@
 package com.gamer.community
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -22,7 +24,8 @@ class MainActivity : ComponentActivity() {
         if (
             !intent.getBooleanExtra(EXTRA_OPEN_FULL_APP, false) &&
             uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false) &&
-            canShowDesktopPetOverlay()
+            canShowDesktopPetOverlay() &&
+            canPostDesktopPetNotification()
         ) {
             startDesktopPetOverlay()
             moveTaskToBack(true)
@@ -43,7 +46,9 @@ class MainActivity : ComponentActivity() {
                 repository = repository,
                 generationService = generationService,
                 canShowDesktopPetOverlay = ::canShowDesktopPetOverlay,
+                canPostDesktopPetNotification = ::canPostDesktopPetNotification,
                 onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
+                onRequestDesktopPetNotificationPermission = ::requestDesktopPetNotificationPermission,
                 onStartDesktopPetOverlay = ::startDesktopPetOverlay,
                 onStopDesktopPetOverlay = ::stopDesktopPetOverlay
             )
@@ -54,6 +59,11 @@ class MainActivity : ComponentActivity() {
     private fun canShowDesktopPetOverlay(): Boolean =
         Settings.canDrawOverlays(this)
 
+    private fun canPostDesktopPetNotification(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+
     private fun requestDesktopPetOverlayPermission() {
         val intent = Intent(
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -62,9 +72,25 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
+    private fun requestDesktopPetNotificationPermission() {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !canPostDesktopPetNotification()
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_POST_NOTIFICATIONS
+            )
+        }
+    }
+
     private fun startDesktopPetOverlay() {
         if (!canShowDesktopPetOverlay()) {
             requestDesktopPetOverlayPermission()
+            return
+        }
+        if (!canPostDesktopPetNotification()) {
+            requestDesktopPetNotificationPermission()
             return
         }
         val intent = DesktopPetOverlayService.startIntent(this)
@@ -81,5 +107,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_OPEN_FULL_APP = "com.gamer.community.extra.OPEN_FULL_APP"
+        private const val REQUEST_POST_NOTIFICATIONS = 7301
     }
 }
