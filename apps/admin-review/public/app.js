@@ -67,6 +67,18 @@ const labelForField = (field) =>
 
 const labelForAction = (action) => (action === "held" ? "hold" : action);
 
+const reviewStatusForAction = (action) => {
+  if (action === "approve") {
+    return "approved";
+  }
+
+  if (action === "reject") {
+    return "rejected";
+  }
+
+  return action;
+};
+
 const pathSegment = (value) => encodeURIComponent(String(value ?? "").trim());
 
 const proxiedUrl = (path) => `/api${path}`;
@@ -542,7 +554,14 @@ function renderList() {
       }`;
       button.type = "button";
       button.textContent = labelForAction(action);
-      button.addEventListener("click", () => reviewSubmission(row.submissionId, action));
+      button.addEventListener("click", () => {
+        reviewSubmission(row.submissionId, reviewStatusForAction(action)).catch(
+          (error) => {
+            elements.statusLine.textContent =
+              error instanceof Error ? error.message : "Unable to post review";
+          }
+        );
+      });
       actionBar.append(button);
     }
 
