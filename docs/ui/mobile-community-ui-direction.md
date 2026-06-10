@@ -180,6 +180,7 @@ Project-local takeaway:
 - The floating pet and its foreground notification must provide a full-app entry that bypasses auto-hide, so users can still reach community, generation, profile, and settings.
 - If overlay or notification permission is missing, fall back to the normal app flow and guide the user to the missing permission. Never hide the permission boundary.
 - The floating pet should remember its last dragged position across service restarts, while clamping restored coordinates so the pet stays reachable on the current screen.
+- Profile settings should provide a reset-position action so users can recover the floating pet's default placement without clearing app data.
 
 2026-06-11 emulator validation:
 

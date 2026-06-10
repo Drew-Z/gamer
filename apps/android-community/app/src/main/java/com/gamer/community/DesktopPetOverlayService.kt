@@ -43,15 +43,24 @@ class DesktopPetOverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WindowManager::class.java)
-        startAsForegroundService()
-        showOverlayIfAllowed()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
+        when (intent?.action) {
+            ACTION_STOP -> {
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_RESET_POSITION -> {
+                resetOverlayPosition()
+                if (overlayView == null) {
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                return START_STICKY
+            }
         }
+        startAsForegroundService()
         showOverlayIfAllowed()
         return START_STICKY
     }
@@ -76,9 +85,8 @@ class DesktopPetOverlayService : Service() {
 
         val density = resources.displayMetrics.density
         val sizePx = (132f * density).roundToInt()
-        val defaultX = (20f * density).roundToInt()
-        val defaultY = (118f * density).roundToInt()
-        val savedPosition = savedOverlayPosition(defaultX, defaultY, sizePx)
+        val defaultPosition = defaultOverlayPosition(sizePx)
+        val savedPosition = savedOverlayPosition(defaultPosition, sizePx)
         val params = WindowManager.LayoutParams(
             sizePx,
             sizePx,
@@ -126,22 +134,39 @@ class DesktopPetOverlayService : Service() {
     }
 
     private fun savedOverlayPosition(
-        defaultX: Int,
-        defaultY: Int,
+        defaultPosition: OverlayPosition,
         sizePx: Int
     ): OverlayPosition {
         val prefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
         val savedX = if (prefs.contains(DESKTOP_PET_OVERLAY_X_KEY)) {
-            prefs.getInt(DESKTOP_PET_OVERLAY_X_KEY, defaultX)
+            prefs.getInt(DESKTOP_PET_OVERLAY_X_KEY, defaultPosition.x)
         } else {
-            defaultX
+            defaultPosition.x
         }
         val savedY = if (prefs.contains(DESKTOP_PET_OVERLAY_Y_KEY)) {
-            prefs.getInt(DESKTOP_PET_OVERLAY_Y_KEY, defaultY)
+            prefs.getInt(DESKTOP_PET_OVERLAY_Y_KEY, defaultPosition.y)
         } else {
-            defaultY
+            defaultPosition.y
         }
         return overlayBounds(sizePx).clamp(savedX, savedY)
+    }
+
+    private fun resetOverlayPosition() {
+        clearSavedPosition(this)
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val sizePx = params.width
+        val position = defaultOverlayPosition(sizePx)
+        params.x = position.x
+        params.y = position.y
+        windowManager.updateViewLayout(view, params)
+    }
+
+    private fun defaultOverlayPosition(sizePx: Int): OverlayPosition {
+        val density = resources.displayMetrics.density
+        val defaultX = (20f * density).roundToInt()
+        val defaultY = (118f * density).roundToInt()
+        return overlayBounds(sizePx).clamp(defaultX, defaultY)
     }
 
     private fun persistOverlayPosition(x: Int, y: Int, sizePx: Int) {
@@ -435,6 +460,8 @@ class DesktopPetOverlayService : Service() {
 
     companion object {
         private const val ACTION_STOP = "com.gamer.community.desktop_pet_overlay.STOP"
+        private const val ACTION_RESET_POSITION =
+            "com.gamer.community.desktop_pet_overlay.RESET_POSITION"
         private const val CHANNEL_ID = "desktop_pet_overlay"
         private const val NOTIFICATION_ID = 7001
         private const val DRAG_SLOP = 4f
@@ -449,6 +476,17 @@ class DesktopPetOverlayService : Service() {
 
         fun stopIntent(context: Context): Intent =
             Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_STOP)
+
+        fun resetPositionIntent(context: Context): Intent =
+            Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_RESET_POSITION)
+
+        fun clearSavedPosition(context: Context) {
+            context.getSharedPreferences(UI_PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .remove(DESKTOP_PET_OVERLAY_X_KEY)
+                .remove(DESKTOP_PET_OVERLAY_Y_KEY)
+                .apply()
+        }
 
         fun fullAppIntent(context: Context): Intent =
             Intent(context, MainActivity::class.java)

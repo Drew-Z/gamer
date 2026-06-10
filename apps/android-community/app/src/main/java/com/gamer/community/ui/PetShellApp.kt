@@ -196,7 +196,8 @@ fun PetShellApp(
     onRequestDesktopPetOverlayPermission: () -> Unit = {},
     onRequestDesktopPetNotificationPermission: () -> Unit = {},
     onStartDesktopPetOverlay: () -> Unit = {},
-    onStopDesktopPetOverlay: () -> Unit = {}
+    onStopDesktopPetOverlay: () -> Unit = {},
+    onResetDesktopPetOverlayPosition: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val generationPrefs = remember(context) {
@@ -334,6 +335,11 @@ fun PetShellApp(
     fun stopDesktopPetOverlay() {
         onStopDesktopPetOverlay()
         desktopPetOverlayRunning = false
+    }
+
+    fun resetDesktopPetOverlayPosition() {
+        onResetDesktopPetOverlayPosition()
+        refreshDesktopPetOverlayState()
     }
 
     val lifecycleOwner = context as? LifecycleOwner
@@ -550,6 +556,7 @@ fun PetShellApp(
                     onRequestDesktopPetNotificationPermission = ::requestDesktopPetNotificationPermission,
                     onStartDesktopPetOverlay = ::startDesktopPetOverlay,
                     onStopDesktopPetOverlay = ::stopDesktopPetOverlay,
+                    onResetDesktopPetOverlayPosition = ::resetDesktopPetOverlayPosition,
                     onEnterDesktopPet = {
                         state = PetShellController.openDesktopPet(state)
                     },
@@ -1304,6 +1311,7 @@ private fun CommunityScreen(
     onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
+    onResetDesktopPetOverlayPosition: () -> Unit,
     onEnterDesktopPet: () -> Unit,
     onNavigate: (FeedDirection) -> Unit,
     onShowcaseNavigate: (FeedDirection) -> Unit,
@@ -1363,6 +1371,7 @@ private fun CommunityScreen(
                     onRequestDesktopPetNotificationPermission = onRequestDesktopPetNotificationPermission,
                     onStartDesktopPetOverlay = onStartDesktopPetOverlay,
                     onStopDesktopPetOverlay = onStopDesktopPetOverlay,
+                    onResetDesktopPetOverlayPosition = onResetDesktopPetOverlayPosition,
                     onCheckIn = onCheckIn,
                     onCreatePet = { onTabSelected(PetShellTab.Generate) },
                     onEnterDesktopPet = onEnterDesktopPet
@@ -2112,6 +2121,7 @@ private fun ProfileWorkspace(
     onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
+    onResetDesktopPetOverlayPosition: () -> Unit,
     onCheckIn: () -> Unit,
     onCreatePet: () -> Unit,
     onEnterDesktopPet: () -> Unit
@@ -2143,6 +2153,7 @@ private fun ProfileWorkspace(
             onRequestDesktopPetNotificationPermission = onRequestDesktopPetNotificationPermission,
             onStartDesktopPetOverlay = onStartDesktopPetOverlay,
             onStopDesktopPetOverlay = onStopDesktopPetOverlay,
+            onResetDesktopPetOverlayPosition = onResetDesktopPetOverlayPosition,
             onEnterDesktopPet = onEnterDesktopPet
         )
         ProfilePetShelf(
@@ -2468,6 +2479,7 @@ private fun ProfileDesktopPetSettings(
     onRequestDesktopPetNotificationPermission: () -> Unit,
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
+    onResetDesktopPetOverlayPosition: () -> Unit,
     onEnterDesktopPet: () -> Unit
 ) {
     Surface(
@@ -2502,7 +2514,8 @@ private fun ProfileDesktopPetSettings(
                 onRequestPermission = onRequestDesktopPetOverlayPermission,
                 onRequestNotificationPermission = onRequestDesktopPetNotificationPermission,
                 onStartOverlay = onStartDesktopPetOverlay,
-                onStopOverlay = onStopDesktopPetOverlay
+                onStopOverlay = onStopDesktopPetOverlay,
+                onResetPosition = onResetDesktopPetOverlayPosition
             )
             Button(
                 onClick = onEnterDesktopPet,
@@ -2525,7 +2538,8 @@ private fun SystemDesktopPetSetting(
     onRequestPermission: () -> Unit,
     onRequestNotificationPermission: () -> Unit,
     onStartOverlay: () -> Unit,
-    onStopOverlay: () -> Unit
+    onStopOverlay: () -> Unit,
+    onResetPosition: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -2654,6 +2668,16 @@ private fun SystemDesktopPetSetting(
                         }
                     )
                 }
+            }
+            TextButton(
+                onClick = onResetPosition,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = strings.desktopPetOverlayResetPositionContentDescription
+                    }
+            ) {
+                Text(strings.desktopPetOverlayResetPosition)
             }
             Button(
                 onClick = if (overlayRunning) onStopOverlay else onStartOverlay,

@@ -50,7 +50,8 @@ class MainActivity : ComponentActivity() {
                 onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
                 onRequestDesktopPetNotificationPermission = ::requestDesktopPetNotificationPermission,
                 onStartDesktopPetOverlay = ::startDesktopPetOverlay,
-                onStopDesktopPetOverlay = ::stopDesktopPetOverlay
+                onStopDesktopPetOverlay = ::stopDesktopPetOverlay,
+                onResetDesktopPetOverlayPosition = ::resetDesktopPetOverlayPosition
             )
         }
 
@@ -103,6 +104,14 @@ class MainActivity : ComponentActivity() {
 
     private fun stopDesktopPetOverlay() {
         startService(DesktopPetOverlayService.stopIntent(this))
+    }
+
+    private fun resetDesktopPetOverlayPosition() {
+        DesktopPetOverlayService.clearSavedPosition(this)
+        val uiPrefs = getSharedPreferences("pet-shell-ui", MODE_PRIVATE)
+        if (uiPrefs.getBoolean("desktopPetOverlayRunning", false)) {
+            startService(DesktopPetOverlayService.resetPositionIntent(this))
+        }
     }
 
     companion object {

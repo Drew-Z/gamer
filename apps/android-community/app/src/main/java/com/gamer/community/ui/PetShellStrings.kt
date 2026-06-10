@@ -56,6 +56,7 @@ class PetShellStrings internal constructor(
     val desktopPetOverlayToggleContentDescription: String get() = "desktop-pet-overlay-toggle"
     val desktopPetOverlayPermissionContentDescription: String get() = "desktop-pet-overlay-permission-button"
     val desktopPetNotificationPermissionContentDescription: String get() = "desktop-pet-notification-permission-button"
+    val desktopPetOverlayResetPositionContentDescription: String get() = "desktop-pet-overlay-reset-position-button"
     val desktopPetOverlayStartContentDescription: String get() = "desktop-pet-overlay-start-button"
     val desktopPetOverlayStopContentDescription: String get() = "desktop-pet-overlay-stop-button"
     val profileKeeperHeroContentDescription: String get() = "profile-keeper-hero"
@@ -138,6 +139,7 @@ class PetShellStrings internal constructor(
     val desktopPetOverlayManagePermission: String get() = text("管理权限", "Manage permission")
     val desktopPetNotificationRequestPermission: String get() = text("授权通知", "Grant notifications")
     val desktopPetNotificationManagePermission: String get() = text("通知已授权", "Notifications granted")
+    val desktopPetOverlayResetPosition: String get() = text("恢复默认位置", "Reset position")
     val desktopPetOverlayShow: String get() = text("显示到桌面", "Show on desktop")
     val desktopPetOverlayHide: String get() = text("关闭桌面桌宠", "Hide desktop pet")
     fun communityCommandStatus(
