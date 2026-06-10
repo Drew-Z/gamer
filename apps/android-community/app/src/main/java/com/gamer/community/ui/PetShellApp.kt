@@ -484,6 +484,7 @@ fun PetShellApp(
         val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
         uiPrefs.edit()
             .putString("desktopPetOverlayPreviewUrl", approvedPetPreviewUrl(selectedPet))
+            .putString("desktopPetOverlayPetName", desktopPetOverlayDisplayName(selectedPet))
             .apply()
         if (desktopPetOverlayRunning) {
             onRefreshDesktopPetOverlayPreview()
@@ -5687,6 +5688,19 @@ private fun approvedPetExplicitPreviewUrl(previewUrl: String, baseUrl: String): 
     return ""
 }
 
+private fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
+    val displayName = pet?.displayName?.trim().orEmpty()
+    return if (
+        displayName.isNotBlank() &&
+        displayName.isSafeAssetDisplayText() &&
+        !PUBLIC_ARTIFACT_DOWNLOAD_ID.matches(displayName)
+    ) {
+        displayName.take(36)
+    } else {
+        ""
+    }
+}
+
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
     if (isEmpty()) return null
     return this[if (selectedIndex in indices) selectedIndex else 0]
@@ -5724,6 +5738,7 @@ private fun String.isSafePublicArtifactRoute(): Boolean {
 private val WINDOWS_ASSET_PATH = Regex("(^|\\s)[A-Za-z]:[\\\\/]")
 
 private val PUBLIC_ARTIFACT_ID = Regex("[A-Za-z0-9._-]{1,128}")
+private val PUBLIC_ARTIFACT_DOWNLOAD_ID = Regex("artifact-\\d+", RegexOption.IGNORE_CASE)
 
 private val INTERNAL_ASSET_MARKERS = listOf(
     "server_run.json",

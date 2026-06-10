@@ -186,6 +186,7 @@ Project-local takeaway:
 - Desktop pet settings should show which approved pet is currently feeding the floating preview, render a compact public-preview thumbnail when available, and indicate whether a public remote preview is ready, without exposing URLs, artifact IDs, or internal paths.
 - Compact thumbnails should use image or mascot placeholders during loading; do not place long loading/error text inside icon-sized surfaces.
 - When the selected approved pet changes while the floating pet is already running, refresh the existing overlay preview from the stored public preview URL instead of waiting for a service restart.
+- The foreground notification may show the active approved pet display name, but it must use a sanitized name only and never expose preview URLs, artifact IDs, or internal paths.
 
 2026-06-11 emulator validation:
 

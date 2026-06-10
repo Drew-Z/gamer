@@ -298,14 +298,21 @@ class DesktopPetOverlayService : Service() {
     }
 
     private fun notificationCopy(): DesktopPetNotificationCopy {
-        val language = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
-            .getString(LANGUAGE_PREF_KEY, DEFAULT_LANGUAGE)
+        val prefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+        val language = prefs.getString(LANGUAGE_PREF_KEY, DEFAULT_LANGUAGE)
+        val petName = prefs.getString(DESKTOP_PET_OVERLAY_PET_NAME_KEY, "")
+            .orEmpty()
+            .trim()
         return if (language == ENGLISH_LANGUAGE) {
             DesktopPetNotificationCopy(
                 channelName = "Desktop pet",
                 channelDescription = "Shows your approved pet over the launcher and other apps.",
                 title = "Gamer desktop pet",
-                text = "Your pet is showing over the launcher and other apps.",
+                text = if (petName.isBlank()) {
+                    "Your pet is showing over the launcher and other apps."
+                } else {
+                    "Showing $petName over the launcher and other apps."
+                },
                 openAction = "Open app",
                 stopAction = "Stop"
             )
@@ -314,7 +321,11 @@ class DesktopPetOverlayService : Service() {
                 channelName = "\u684c\u9762\u684c\u5ba0",
                 channelDescription = "\u8ba9\u5df2\u901a\u8fc7\u7684\u684c\u5ba0\u663e\u793a\u5728\u684c\u9762\u548c\u5176\u4ed6 App \u4e0a\u3002",
                 title = "Gamer \u684c\u9762\u684c\u5ba0",
-                text = "\u684c\u5ba0\u6b63\u5728\u663e\u793a\uff0c\u53ef\u4ee5\u968f\u65f6\u56de\u5230\u5b8c\u6574 App\u3002",
+                text = if (petName.isBlank()) {
+                    "\u684c\u5ba0\u6b63\u5728\u663e\u793a\uff0c\u53ef\u4ee5\u968f\u65f6\u56de\u5230\u5b8c\u6574 App\u3002"
+                } else {
+                    "\u6b63\u5728\u663e\u793a $petName\uff0c\u53ef\u4ee5\u968f\u65f6\u56de\u5230\u5b8c\u6574 App\u3002"
+                },
                 openAction = "\u6253\u5f00 App",
                 stopAction = "\u505c\u6b62"
             )
@@ -523,6 +534,7 @@ class DesktopPetOverlayService : Service() {
         private const val UI_PREFS_NAME = "pet-shell-ui"
         private const val DESKTOP_PET_OVERLAY_RUNNING_KEY = "desktopPetOverlayRunning"
         private const val DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY = "desktopPetOverlayPreviewUrl"
+        private const val DESKTOP_PET_OVERLAY_PET_NAME_KEY = "desktopPetOverlayPetName"
         private const val DESKTOP_PET_OVERLAY_X_KEY = "desktopPetOverlayX"
         private const val DESKTOP_PET_OVERLAY_Y_KEY = "desktopPetOverlayY"
         private const val LANGUAGE_PREF_KEY = "language"
