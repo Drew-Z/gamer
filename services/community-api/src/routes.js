@@ -7,18 +7,11 @@ import {
   resolveFantasyPetRuleState,
   StateSourceError
 } from "../../pet-generator/src/state-source.js";
+import { releaseCommit } from "./release.js";
 import { createCommunityStore } from "./store.js";
 
 const json = (status, body) => ({ status, body });
 const defaultStore = createCommunityStore();
-const releaseCommit = (env = process.env) =>
-  (
-    env.GIT_COMMIT ??
-    env.COMMIT_SHA ??
-    env.SOURCE_VERSION ??
-    env.RENDER_GIT_COMMIT ??
-    ""
-  ).trim();
 
 export function handleCommunityRequest(method, requestUrl, options = {}) {
   const url = new URL(requestUrl, "http://localhost");
