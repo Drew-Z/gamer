@@ -1,7 +1,9 @@
 import {
   createApprovedPetRegistryModel,
+  createFantasyPetJobModel,
   createFantasyPetImportPayload,
   createImportDraftListModel,
+  createReviewDecisionPayload,
   createReviewDashboardModel,
   formatImportDraftStatus,
   formatImportEvidenceDetails,
@@ -12,6 +14,8 @@ const state = {
   filter: "all",
   approvedPetModel: createApprovedPetRegistryModel({ items: [] }),
   draftModel: createImportDraftListModel({ drafts: [] }),
+  generationJobModel: createFantasyPetJobModel({}),
+  selectedGenerationCandidateId: "",
   model: createReviewDashboardModel({ items: [] })
 };
 
@@ -19,6 +23,20 @@ const elements = {
   list: document.querySelector("#queue-list"),
   statusLine: document.querySelector("#status-line"),
   refreshButton: document.querySelector("#refresh-button"),
+  generationJobForm: document.querySelector("#generation-job-form"),
+  generationJobIdInput: document.querySelector("#generation-job-id-input"),
+  generationLoadButton: document.querySelector("#generation-load-button"),
+  generationStatus: document.querySelector("#generation-status"),
+  generationJobDetail: document.querySelector("#generation-job-detail"),
+  generationJobId: document.querySelector("#generation-job-id"),
+  generationJobProgress: document.querySelector("#generation-job-progress"),
+  generationJobPackage: document.querySelector("#generation-job-package"),
+  generationSecurity: document.querySelector("#generation-security"),
+  generationCandidateList: document.querySelector("#generation-candidate-list"),
+  generationAcceptButton: document.querySelector("#generation-accept-button"),
+  generationReviseButton: document.querySelector("#generation-revise-button"),
+  generationRejectButton: document.querySelector("#generation-reject-button"),
+  generationPackageLink: document.querySelector("#generation-package-link"),
   importForm: document.querySelector("#import-form"),
   importButton: document.querySelector("#import-button"),
   importStatus: document.querySelector("#import-status"),
@@ -42,6 +60,10 @@ const labelForField = (field) =>
   field.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`);
 
 const labelForAction = (action) => (action === "held" ? "hold" : action);
+
+const pathSegment = (value) => encodeURIComponent(String(value ?? "").trim());
+
+const proxiedUrl = (path) => `/api${path}`;
 
 function setActiveFilter(filter) {
   state.filter = filter;
@@ -210,6 +232,86 @@ function renderApprovedPetList() {
   }
 }
 
+function selectedGenerationCandidate() {
+  return state.generationJobModel.candidates.find(
+    (candidate) => candidate.downloadId === state.selectedGenerationCandidateId
+  );
+}
+
+function renderGenerationJob() {
+  const model = state.generationJobModel;
+  const hasJob = Boolean(model.appJobId);
+  elements.generationJobDetail.hidden = !hasJob;
+
+  if (!hasJob) {
+    return;
+  }
+
+  const selected = selectedGenerationCandidate();
+  elements.generationJobId.textContent = model.appJobId;
+  elements.generationJobProgress.textContent =
+    `${model.progressStatus || model.status} / ${model.currentStage || "unknown"}`;
+  elements.generationJobPackage.textContent = model.downloadReady
+    ? `Package ${model.packageStatus || "ready"}`
+    : `Next ${model.nextAction || "wait"}`;
+  elements.generationSecurity.textContent = model.hasSafeSecurity
+    ? "Security clean: no paths, no worker commands, no agent promotion."
+    : "Security report needs review.";
+
+  elements.generationCandidateList.replaceChildren();
+  if (model.candidates.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "generation-empty";
+    empty.textContent = "No candidate artifacts yet.";
+    elements.generationCandidateList.append(empty);
+  }
+
+  for (const candidate of model.candidates) {
+    const node = document.createElement("article");
+    node.className = "generation-candidate";
+    node.classList.toggle(
+      "is-selected",
+      candidate.downloadId === state.selectedGenerationCandidateId
+    );
+
+    const image = document.createElement("img");
+    image.alt = `${candidate.actionId || "candidate"} ${candidate.downloadId}`;
+    image.src = proxiedUrl(candidate.downloadUrl);
+    image.loading = "lazy";
+
+    const body = document.createElement("div");
+    body.className = "generation-candidate-body";
+
+    const title = document.createElement("strong");
+    title.textContent = `${candidate.actionId || "candidate"} / ${candidate.downloadId}`;
+
+    const meta = document.createElement("small");
+    meta.textContent = `${candidate.status} ${candidate.reviewDecision || ""}`.trim();
+
+    const button = document.createElement("button");
+    button.className = "secondary-button";
+    button.type = "button";
+    button.textContent = "Select";
+    button.addEventListener("click", () => {
+      state.selectedGenerationCandidateId = candidate.downloadId;
+      renderGenerationJob();
+    });
+
+    body.append(title, meta, button);
+    node.append(image, body);
+    elements.generationCandidateList.append(node);
+  }
+
+  const canReview = Boolean(selected?.canReview);
+  elements.generationAcceptButton.disabled = !canReview;
+  elements.generationReviseButton.disabled = !canReview;
+  elements.generationRejectButton.disabled = !canReview;
+
+  const packageHref = model.packageLink ? proxiedUrl(model.packageLink) : "";
+  elements.generationPackageLink.hidden = !model.downloadReady || !packageHref;
+  elements.generationPackageLink.href = packageHref || "#";
+}
+
 function renderList() {
   elements.list.replaceChildren();
 
@@ -319,6 +421,7 @@ function renderList() {
 }
 
 function render() {
+  renderGenerationJob();
   renderSummary();
   renderApprovedPetList();
   renderDraftList();
@@ -347,6 +450,35 @@ async function loadDashboard() {
   render();
 }
 
+async function loadGenerationJob(appJobId) {
+  const normalizedJobId = String(appJobId ?? "").trim();
+  if (!normalizedJobId) {
+    return;
+  }
+
+  elements.generationLoadButton.disabled = true;
+  elements.generationStatus.textContent = `Loading ${normalizedJobId}...`;
+
+  try {
+    const job = await requestJson(`/pet-generation-jobs/${pathSegment(normalizedJobId)}`);
+    state.generationJobModel = createFantasyPetJobModel(job);
+    const currentSelection = state.selectedGenerationCandidateId;
+    const candidates = state.generationJobModel.candidates;
+    state.selectedGenerationCandidateId = candidates.some(
+      (candidate) => candidate.downloadId === currentSelection
+    )
+      ? currentSelection
+      : candidates.find((candidate) => candidate.canReview)?.downloadId ||
+        candidates[0]?.downloadId ||
+        "";
+    elements.generationStatus.textContent =
+      `${state.generationJobModel.progressStatus || "loaded"} / ${state.generationJobModel.nextAction || "wait"}`;
+    renderGenerationJob();
+  } finally {
+    elements.generationLoadButton.disabled = false;
+  }
+}
+
 async function reviewSubmission(submissionId, status) {
   elements.statusLine.textContent = `Posting ${status} review...`;
   await requestJson("/v1/admin/reviews", {
@@ -358,6 +490,39 @@ async function reviewSubmission(submissionId, status) {
     })
   });
   await loadDashboard();
+}
+
+async function reviewGenerationCandidate(decision) {
+  const candidate = selectedGenerationCandidate();
+  const appJobId = state.generationJobModel.appJobId;
+  if (!candidate || !appJobId) {
+    return;
+  }
+
+  elements.generationStatus.textContent = `Posting ${decision} for ${candidate.downloadId}...`;
+  const response = await requestJson(
+    `/pet-generation-jobs/${pathSegment(appJobId)}/review-decisions`,
+    {
+      method: "POST",
+      body: JSON.stringify(
+        createReviewDecisionPayload({
+          decision,
+          targetDownloadId: candidate.downloadId,
+          notes: [`${decision} from gamer admin review console`]
+        })
+      )
+    }
+  );
+  state.generationJobModel = createFantasyPetJobModel(response);
+  state.selectedGenerationCandidateId =
+    state.generationJobModel.candidates.find(
+      (item) => item.downloadId === candidate.downloadId
+    )?.downloadId ||
+    state.generationJobModel.candidates[0]?.downloadId ||
+    "";
+  elements.generationStatus.textContent =
+    `${state.generationJobModel.progressStatus || "updated"} / ${state.generationJobModel.nextAction || "wait"}`;
+  renderGenerationJob();
 }
 
 async function submitImportDraft(draftId) {
@@ -450,6 +615,35 @@ elements.importForm.addEventListener("submit", (event) => {
   importFantasyPetState(event).catch((error) => {
     elements.importStatus.textContent =
       error instanceof Error ? error.message : "Unable to create import draft";
+  });
+});
+
+elements.generationJobForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  loadGenerationJob(elements.generationJobIdInput.value).catch((error) => {
+    elements.generationStatus.textContent =
+      error instanceof Error ? error.message : "Unable to load generation job";
+  });
+});
+
+elements.generationAcceptButton.addEventListener("click", () => {
+  reviewGenerationCandidate("accept").catch((error) => {
+    elements.generationStatus.textContent =
+      error instanceof Error ? error.message : "Unable to accept candidate";
+  });
+});
+
+elements.generationReviseButton.addEventListener("click", () => {
+  reviewGenerationCandidate("revise").catch((error) => {
+    elements.generationStatus.textContent =
+      error instanceof Error ? error.message : "Unable to revise candidate";
+  });
+});
+
+elements.generationRejectButton.addEventListener("click", () => {
+  reviewGenerationCandidate("reject").catch((error) => {
+    elements.generationStatus.textContent =
+      error instanceof Error ? error.message : "Unable to reject candidate";
   });
 });
 

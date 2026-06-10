@@ -3,9 +3,11 @@ import test from "node:test";
 import {
   actionsForStatus,
   createApprovedPetRegistryModel,
+  createFantasyPetJobModel,
   createImportDraftListModel,
   createReviewDashboardModel,
   createFantasyPetImportPayload,
+  createReviewDecisionPayload,
   formatImportEvidenceDetails,
   formatImportDraftStatus,
   formatReward
@@ -225,6 +227,88 @@ test("formatImportDraftStatus summarizes created draft", () => {
     message,
     "Created ready draft import-draft-local-003 for pet-demo-003."
   );
+});
+
+test("createFantasyPetJobModel exposes reviewable candidates and package state", () => {
+  const model = createFantasyPetJobModel({
+    appJobId: "job-123",
+    status: "ready",
+    progressStatus: "ready-for-download",
+    nextAction: "download-package",
+    downloadReady: true,
+    packageStatus: "ready",
+    artifactIndexStatus: "ready",
+    artifactCount: 2,
+    generationProgress: {
+      currentStage: "ready-for-download",
+      message: "Ready",
+      summary: {
+        candidateCount: 1,
+        latestHumanDecision: "accept"
+      },
+      security: {
+        exposesInternalPaths: false,
+        exposesWorkerCommands: false,
+        agentsCanPromote: false
+      }
+    },
+    artifacts: [
+      {
+        downloadId: "artifact-1",
+        kind: "candidate",
+        actionId: "idle",
+        status: "human-accepted",
+        reviewDecision: "accept",
+        downloadUrl: "/pet-generation-jobs/job-123/artifacts/artifact-1"
+      },
+      {
+        downloadId: "artifact-2",
+        kind: "package",
+        status: "ready",
+        packageReady: true
+      }
+    ],
+    links: {
+      package: "/pet-generation-jobs/job-123/package"
+    }
+  });
+
+  assert.equal(model.appJobId, "job-123");
+  assert.equal(model.downloadReady, true);
+  assert.equal(model.candidateCount, 1);
+  assert.equal(model.candidates[0].canReview, false);
+  assert.equal(model.packageArtifacts[0].downloadId, "artifact-2");
+  assert.equal(model.packageLink, "/pet-generation-jobs/job-123/package");
+  assert.equal(model.hasSafeSecurity, true);
+});
+
+test("createReviewDecisionPayload uses public targetDownloadId only", () => {
+  const payload = createReviewDecisionPayload({
+    decisionId: "decision-1",
+    decision: "accept",
+    targetDownloadId: "artifact-1",
+    notes: ["accepted in admin UI"]
+  });
+
+  assert.deepEqual(payload, {
+    schema: "fantasy-pet.review-decision.v1",
+    decisionId: "decision-1",
+    reviewer: "human-review",
+    decision: "accept",
+    targetDownloadId: "artifact-1",
+    stage: "human-review",
+    notes: ["accepted in admin UI"]
+  });
+  assert.equal(Object.hasOwn(payload, "targetOutput"), false);
+});
+
+test("createReviewDecisionPayload caps generated decision ids", () => {
+  const payload = createReviewDecisionPayload({
+    decision: "accept",
+    targetDownloadId: "artifact-" + "x".repeat(120)
+  });
+
+  assert.equal(payload.decisionId.length <= 120, true);
 });
 
 test("createImportDraftListModel summarizes draft statuses and rows", () => {

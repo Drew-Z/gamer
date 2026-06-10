@@ -424,6 +424,165 @@ h1 {
   padding: 0 14px;
 }
 
+.secondary-button:disabled,
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.generation-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.generation-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.generation-panel-heading h2 {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.generation-panel-heading p,
+.generation-security,
+.generation-job-summary span,
+.generation-candidate small,
+.generation-empty {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.generation-job-form {
+  display: flex;
+  flex: 0 1 440px;
+  gap: 8px;
+}
+
+.generation-job-form input {
+  min-width: 0;
+  min-height: 36px;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 10px;
+}
+
+.generation-job-detail {
+  display: grid;
+  gap: 12px;
+}
+
+.generation-job-detail[hidden] {
+  display: none;
+}
+
+.generation-job-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.generation-job-summary strong {
+  border-radius: 999px;
+  background: #e5f3ea;
+  color: var(--good);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.generation-security {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.generation-candidate-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.generation-candidate {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 10px;
+}
+
+.generation-candidate.is-selected {
+  border-color: var(--accent);
+  outline: 2px solid rgba(23, 126, 137, 0.18);
+}
+
+.generation-candidate img {
+  width: 112px;
+  height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, #d8e0e4 25%, transparent 25%),
+    linear-gradient(-45deg, #d8e0e4 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d8e0e4 75%),
+    linear-gradient(-45deg, transparent 75%, #d8e0e4 75%),
+    #ffffff;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+  object-fit: contain;
+}
+
+.generation-candidate-body {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.generation-candidate strong,
+.generation-candidate small {
+  overflow-wrap: anywhere;
+}
+
+.generation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.package-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  border: 1px solid var(--good);
+  border-radius: 8px;
+  background: var(--good);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0 12px;
+  text-decoration: none;
+}
+
 .queue-list {
   display: grid;
   gap: 14px;
@@ -642,5 +801,20 @@ h1 {
   .toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .generation-panel-heading,
+  .generation-job-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .generation-candidate {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .generation-candidate img {
+    width: 96px;
+    height: 96px;
   }
 }

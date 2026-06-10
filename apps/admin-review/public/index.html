@@ -98,6 +98,42 @@
           <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
         </header>
 
+        <section class="generation-panel" aria-label="Fantasy pet generation job">
+          <div class="generation-panel-heading">
+            <div>
+              <h2>Generation Job</h2>
+              <p id="generation-status">Load a public fantasy-pet job.</p>
+            </div>
+            <form id="generation-job-form" class="generation-job-form">
+              <input
+                id="generation-job-id-input"
+                name="appJobId"
+                type="text"
+                autocomplete="off"
+                placeholder="app job id"
+                required
+              />
+              <button id="generation-load-button" class="secondary-button" type="submit">Load</button>
+            </form>
+          </div>
+
+          <div id="generation-job-detail" class="generation-job-detail" hidden>
+            <div class="generation-job-summary">
+              <span id="generation-job-id"></span>
+              <strong id="generation-job-progress"></strong>
+              <span id="generation-job-package"></span>
+            </div>
+            <div id="generation-security" class="generation-security"></div>
+            <div id="generation-candidate-list" class="generation-candidate-list"></div>
+            <div class="generation-actions">
+              <button id="generation-accept-button" class="action-button primary" type="button">Accept</button>
+              <button id="generation-revise-button" class="action-button" type="button">Revise</button>
+              <button id="generation-reject-button" class="action-button danger" type="button">Reject</button>
+              <a id="generation-package-link" class="package-link" href="#" download hidden>Download Package</a>
+            </div>
+          </div>
+        </section>
+
         <section id="queue-list" class="queue-list" aria-live="polite"></section>
       </main>
     </div>

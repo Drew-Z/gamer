@@ -49,6 +49,81 @@ export function formatImportEvidenceDetails(row = {}) {
   };
 }
 
+export function createFantasyPetJobModel(job = {}) {
+  const artifacts = Array.isArray(job.artifacts) ? job.artifacts : [];
+  const progress = job.generationProgress ?? {};
+  const progressSummary = progress.summary ?? {};
+  const security = progress.security ?? {};
+  const links = job.links ?? {};
+  const candidates = artifacts
+    .filter((artifact) => artifact?.kind === "candidate")
+    .map((artifact) => ({
+      downloadId: artifact.downloadId ?? "",
+      actionId: artifact.actionId ?? "",
+      status: artifact.status ?? "available",
+      reviewDecision: artifact.reviewDecision ?? "",
+      packageReady: artifact.packageReady === true,
+      downloadUrl: artifact.downloadUrl ?? "",
+      taskId: artifact.taskId ?? "",
+      canReview:
+        !artifact.reviewDecision &&
+        artifact.status !== "human-accepted" &&
+        Boolean(artifact.downloadId)
+    }));
+  const packageArtifacts = artifacts
+    .filter((artifact) => artifact?.kind === "package")
+    .map((artifact) => ({
+      downloadId: artifact.downloadId ?? "",
+      status: artifact.status ?? "",
+      packageReady: artifact.packageReady === true,
+      downloadUrl: artifact.downloadUrl ?? ""
+    }));
+
+  return {
+    appJobId: job.appJobId ?? "",
+    runId: job.runId ?? "",
+    status: job.status ?? "",
+    progressStatus: job.progressStatus ?? "",
+    currentStage: progress.currentStage ?? "",
+    message: progress.message ?? "",
+    nextAction: job.nextAction ?? "",
+    downloadReady: job.downloadReady === true,
+    packageStatus: job.packageStatus ?? "",
+    packagePlanStatus: job.packagePlanStatus ?? "",
+    artifactIndexStatus: job.artifactIndexStatus ?? "",
+    artifactCount: Number(job.artifactCount ?? artifacts.length),
+    candidateCount: Number(progressSummary.candidateCount ?? candidates.length),
+    latestHumanDecision: progressSummary.latestHumanDecision ?? "",
+    security,
+    candidates,
+    packageArtifacts,
+    packageLink: links.package ?? "",
+    reviewLink: links.reviewDecisions ?? "",
+    hasSafeSecurity:
+      security.exposesInternalPaths === false &&
+      security.exposesWorkerCommands === false &&
+      security.agentsCanPromote === false
+  };
+}
+
+export function createReviewDecisionPayload(input = {}) {
+  const decision = String(input.decision ?? "").trim();
+  const targetDownloadId = String(input.targetDownloadId ?? "").trim();
+  const decisionId =
+    String(input.decisionId ?? "").trim() ||
+    `admin-${targetDownloadId.slice(0, 64)}-${decision}-${Date.now()}`;
+
+  return {
+    schema: "fantasy-pet.review-decision.v1",
+    decisionId,
+    reviewer: "human-review",
+    decision,
+    targetDownloadId,
+    stage: "human-review",
+    notes: Array.isArray(input.notes) ? input.notes : []
+  };
+}
+
 export function createImportDraftListModel(response = { drafts: [] }) {
   const drafts = Array.isArray(response.drafts) ? response.drafts : [];
   const summary = {
