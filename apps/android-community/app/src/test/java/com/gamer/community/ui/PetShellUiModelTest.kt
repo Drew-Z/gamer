@@ -802,6 +802,39 @@ class PetShellUiModelTest {
         assertEquals("", approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674"))
     }
 
+    @Test
+    fun desktopPetOverlayDisplayNameNormalizesSafeNamesForNotification() {
+        val pet = approvedPet(
+            petId = "pet-moonfox-001",
+            displayName = "  Moon   Fox\nGuardian  "
+        )
+
+        assertEquals("Moon Fox Guardian", desktopPetOverlayDisplayName(pet))
+    }
+
+    @Test
+    fun desktopPetOverlayDisplayNameRejectsUnsafeNotificationNames() {
+        val unsafeNames = listOf(
+            "http://olivia.hidencloud.com:24674/pet-generation-jobs/job/artifacts/artifact-34",
+            "/pet-generation-jobs/job/artifacts/artifact-34",
+            "artifact-34",
+            "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png",
+            "server-proof-summary.json"
+        )
+
+        unsafeNames.forEach { unsafeName ->
+            assertEquals(
+                "",
+                desktopPetOverlayDisplayName(
+                    approvedPet(
+                        petId = "pet-unsafe-name",
+                        displayName = unsafeName
+                    )
+                )
+            )
+        }
+    }
+
     private fun approvedPet(
         petId: String,
         displayName: String,

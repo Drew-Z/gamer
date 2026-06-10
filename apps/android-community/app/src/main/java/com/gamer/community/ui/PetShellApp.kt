@@ -5688,7 +5688,7 @@ private fun approvedPetExplicitPreviewUrl(previewUrl: String, baseUrl: String): 
     return ""
 }
 
-private fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
+internal fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
     val displayName = pet?.displayName
         ?.trim()
         ?.replace(WHITESPACE_RUN, " ")
