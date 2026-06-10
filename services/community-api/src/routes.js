@@ -11,17 +11,29 @@ import { createCommunityStore } from "./store.js";
 
 const json = (status, body) => ({ status, body });
 const defaultStore = createCommunityStore();
+const releaseCommit = (env = process.env) =>
+  (
+    env.GIT_COMMIT ??
+    env.COMMIT_SHA ??
+    env.SOURCE_VERSION ??
+    env.RENDER_GIT_COMMIT ??
+    ""
+  ).trim();
 
 export function handleCommunityRequest(method, requestUrl, options = {}) {
   const url = new URL(requestUrl, "http://localhost");
   const store = options.store ?? defaultStore;
   const body = options.body ?? {};
+  const env = options.env ?? process.env;
   const currentUserId = body.userId ?? users[0].id;
 
   if (method === "GET" && url.pathname === "/health") {
     return json(200, {
       ok: true,
-      service: "community-api"
+      service: "community-api",
+      release: {
+        commit: releaseCommit(env)
+      }
     });
   }
 

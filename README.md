@@ -56,6 +56,9 @@ daily check-ins survive service restarts. Override the path with
 in-memory run. Docker Compose mounts this path on the `community-api-data`
 volume.
 
+`GET /health` includes `release.commit` when the deployment sets `GIT_COMMIT`,
+`COMMIT_SHA`, `SOURCE_VERSION`, or `RENDER_GIT_COMMIT`.
+
 ## Verification
 
 Run the standard verification set before committing a phase:

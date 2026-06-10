@@ -20,11 +20,16 @@ const validFantasyPetPackageManifest = {
 };
 
 test("health route reports service status", () => {
-  const response = handleCommunityRequest("GET", "/health");
+  const response = handleCommunityRequest("GET", "/health", {
+    env: {
+      GIT_COMMIT: "abc123"
+    }
+  });
 
   assert.equal(response.status, 200);
   assert.equal(response.body.ok, true);
   assert.equal(response.body.service, "community-api");
+  assert.equal(response.body.release.commit, "abc123");
 });
 
 test("feed route returns fixture posts", () => {
