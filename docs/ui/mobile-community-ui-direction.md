@@ -236,3 +236,8 @@ Use these persistent traits:
 - The generation review action dock now starts with three compact readiness tokens: review target, package, and community draft.
 - Keep delivery buttons state-gated and grouped: download is only meaningful after package readiness, and community submission still requires a prepared import draft plus human review.
 - The generation default viewport should keep the create-job button fully visible above bottom navigation; keep the studio hero, stage headers, and body-shape controls compact enough for this.
+
+2026-06-11 desktop pet launch readiness polish:
+
+- Desktop pet settings now show whether app-icon direct launch is off, permission-blocked, or ready for the next icon tap.
+- Keep this status near the floating-pet switch so users can tell the difference between "enabled but waiting on permission" and "ready to show on desktop".

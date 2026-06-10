@@ -2636,6 +2636,12 @@ private fun SystemDesktopPetSetting(
     onStopOverlay: () -> Unit,
     onResetPosition: () -> Unit
 ) {
+    val autoShowReady = permissionGranted && notificationPermissionGranted
+    val autoShowStatusAccent = when {
+        autoShowEnabled && autoShowReady -> Color(0xFF0F766E)
+        autoShowEnabled -> Color(0xFFB42318)
+        else -> Color(0xFF667085)
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xFFF8FAFC),
@@ -2656,7 +2662,7 @@ private fun SystemDesktopPetSetting(
                     text = strings.systemDesktopPetDetail,
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF667085),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -2730,6 +2736,14 @@ private fun SystemDesktopPetSetting(
                     )
                 }
             }
+            DesktopPetSettingPill(
+                label = strings.systemDesktopPetAutoShowStatus(
+                    enabled = autoShowEnabled,
+                    ready = autoShowReady
+                ),
+                accent = autoShowStatusAccent,
+                modifier = Modifier.fillMaxWidth()
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(
                     onClick = onRequestPermission,

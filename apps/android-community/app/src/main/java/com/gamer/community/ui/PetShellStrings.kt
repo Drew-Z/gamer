@@ -130,6 +130,15 @@ class PetShellStrings internal constructor(
             "下次从 App 图标进入时，如果已授权，会直接把宠物显示到桌面并让 App 退到后台。",
             "On the next icon launch, granted devices show the floating pet and send the app to the background."
         )
+    fun systemDesktopPetAutoShowStatus(
+        enabled: Boolean,
+        ready: Boolean
+    ): String =
+        when {
+            !enabled -> text("图标仍打开完整 App", "Icon opens the full app")
+            ready -> text("下次点击图标会直接显示桌面桌宠", "Next icon tap shows the floating pet")
+            else -> text("直达桌宠待授权", "Direct launch needs permission")
+        }
     val desktopPetOverlayPermissionGranted: String get() = text("悬浮权限已开启", "Overlay allowed")
     val desktopPetOverlayPermissionMissing: String get() = text("需要悬浮权限", "Overlay permission needed")
     val desktopPetNotificationPermissionGranted: String get() = text("通知已开启", "Notifications allowed")
