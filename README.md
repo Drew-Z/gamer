@@ -317,6 +317,17 @@ reuses the public lifecycle smoke, reads the generated `pet.zip` manifest,
 starts the local community API on a temporary port, then posts only to
 `/v1/import-drafts/from-fantasy-pet-package` and `/v1/import-drafts/submit`.
 
+After deploying or restarting HidenCloud, verify the public server state and
+approved pet preview route:
+
+```powershell
+tools\verify-hidencloud-community.cmd
+```
+
+The script checks `/health`, `/v1/pets/approved`, the explicit
+`assets.previewUrl` contract, the direct public artifact route, and the admin
+`/api` proxy route. It calls the configured remote server only.
+
 Run the full fantasy-pet integration verification before handing off a larger
 change:
 
