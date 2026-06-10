@@ -2,6 +2,7 @@ package com.gamer.community.petshell
 
 enum class ShellPhase {
     LaunchBubble,
+    DesktopPet,
     Community
 }
 

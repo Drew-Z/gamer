@@ -164,6 +164,30 @@ Project-local takeaway:
 - The community home now starts with a pet navigator module before the channel rail. Keep it compact, status-rich, and action-oriented; avoid turning it into a marketing hero.
 - Screenshot artifact: `D:\workspace4Codex\pet\gamer\tmp-gamer-community-market-ui-final.png`.
 
+2026-06-11 desktop pet launch mode:
+
+- Keep the first install/open path conventional: the launch bubble remains the default when no preference is set.
+- Add an explicit profile setting for direct desktop-pet launch. When enabled, tapping the app icon should skip the bubble and show an in-app desktop pet surface first.
+- Treat this as an in-app desktop pet mode for now: large pet preview, remote approved-pet signal, language control, and quick entry to community/generation/profile.
+- Do not imply Android system overlay behavior until a separate floating-window permission and foreground-service flow exists.
+
+2026-06-11 system desktop pet overlay:
+
+- The app now separates in-app desktop pet launch from Android system overlay behavior.
+- Keep first open conventional by default. Users can later enable direct in-app pet launch, and separately grant overlay permission for a floating desktop pet.
+- The floating pet uses Android `SYSTEM_ALERT_WINDOW` plus a foreground service, not web UI technology. It should stay a small native surface that can be dragged over the launcher or other apps.
+- If the "app icon opens the floating pet" setting is enabled and overlay permission is granted, launching the app should start the floating pet service and move the main app to the background quickly.
+- The floating pet and its foreground notification must provide a full-app entry that bypasses auto-hide, so users can still reach community, generation, profile, and settings.
+- If overlay permission is missing, fall back to the normal app flow and guide the user to the system permission screen. Never hide the permission boundary.
+
+2026-06-11 emulator validation:
+
+- With HidenCloud URLs injected, first open still lands on the conventional launch bubble.
+- Community and profile load remote state: wallet balance, approved pet count, and public approved-pet preview.
+- The floating desktop pet consumes the public approved preview URL stored by the app and renders over the Android launcher.
+- When "app icon opens the floating pet" is enabled, a cold launch starts the floating pet and returns the activity to the background.
+- Tapping the floating pet opens the full app with an explicit full-app intent, preserving access to community, generation, profile, and settings.
+
 ## Product Direction
 
 The app should feel like a pet-first game community, closer to a lightweight game companion app than a generic admin dashboard.
@@ -193,3 +217,14 @@ Use these persistent traits:
 - Approved pet showcase and profile shelf share a remote-preview signal strip for score, motion sheets, preview readiness, and safe source trace. Keep this strip on public artifact IDs only.
 - Generation hero now repeats the safe loop as brief -> human review -> package delivery, reinforcing that the Android app creates and polls jobs but never bypasses human review or starts workers.
 - Chinese app copy should stay readable by default; do not reintroduce mojibake literals in `PetShellStrings.kt` or test assertions.
+
+2026-06-11 community live-status polish:
+
+- The community status summary now has a stable `community-status-summary` UI anchor and a compact title row showing remote-sync versus fallback state plus the human-review boundary.
+- Keep the status block compact enough that the channel rail and quick actions remain reachable above the bottom navigation on the default emulator viewport.
+
+2026-06-11 generation delivery dock polish:
+
+- The generation review action dock now starts with three compact readiness tokens: review target, package, and community draft.
+- Keep delivery buttons state-gated and grouped: download is only meaningful after package readiness, and community submission still requires a prepared import draft plus human review.
+- The generation default viewport should keep the create-job button fully visible above bottom navigation; keep the studio hero, stage headers, and body-shape controls compact enough for this.

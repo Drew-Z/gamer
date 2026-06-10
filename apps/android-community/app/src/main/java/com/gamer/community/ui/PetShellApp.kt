@@ -1,7 +1,6 @@
 package com.gamer.community.ui
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
 import androidx.compose.foundation.BorderStroke
@@ -34,10 +33,12 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +69,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.net.URLEncoder
+import com.gamer.community.firstSpritesheetFrame
 import com.gamer.community.api.ApiCallResult
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.HttpCommunityApiClient
@@ -131,6 +133,9 @@ import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
 import com.gamer.community.petshell.ShellPhase
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -185,15 +190,35 @@ private val GamerColorScheme = lightColorScheme(
 fun PetShellApp(
     repository: CommunityRepository,
     generationService: FantasyPetGenerationService,
-    initialGenerationDescription: String = ""
+    initialGenerationDescription: String = "",
+    canShowDesktopPetOverlay: () -> Boolean = { false },
+    onRequestDesktopPetOverlayPermission: () -> Unit = {},
+    onStartDesktopPetOverlay: () -> Unit = {},
+    onStopDesktopPetOverlay: () -> Unit = {}
 ) {
-    var state by remember { mutableStateOf(PetShellController.initialState()) }
     val context = LocalContext.current
     val generationPrefs = remember(context) {
         context.getSharedPreferences("fantasy-pet-generation", Context.MODE_PRIVATE)
     }
     val uiPrefs = remember(context) {
         context.getSharedPreferences("pet-shell-ui", Context.MODE_PRIVATE)
+    }
+    var directPetLaunchEnabled by remember {
+        mutableStateOf(uiPrefs.getBoolean("directPetLaunchEnabled", false))
+    }
+    var desktopPetOverlayAutoShowEnabled by remember {
+        mutableStateOf(uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false))
+    }
+    var desktopPetOverlayPermissionGranted by remember {
+        mutableStateOf(canShowDesktopPetOverlay())
+    }
+    var desktopPetOverlayRunning by remember {
+        mutableStateOf(uiPrefs.getBoolean("desktopPetOverlayRunning", false))
+    }
+    var state by remember {
+        mutableStateOf(
+            PetShellController.initialState(skipLaunchBubble = directPetLaunchEnabled)
+        )
     }
     var language by remember {
         mutableStateOf(parsePetShellLanguage(uiPrefs.getString("language", null)))
@@ -244,6 +269,72 @@ fun PetShellApp(
         uiPrefs.edit()
             .putString("language", nextLanguage.preferenceValue)
             .apply()
+    }
+
+    fun changeDirectPetLaunch(enabled: Boolean) {
+        directPetLaunchEnabled = enabled
+        uiPrefs.edit()
+            .putBoolean("directPetLaunchEnabled", enabled)
+            .apply()
+    }
+
+    fun refreshDesktopPetOverlayState(): Boolean {
+        val granted = canShowDesktopPetOverlay()
+        desktopPetOverlayPermissionGranted = granted
+        desktopPetOverlayRunning = granted &&
+            uiPrefs.getBoolean("desktopPetOverlayRunning", desktopPetOverlayRunning)
+        return granted
+    }
+
+    fun changeDesktopPetOverlayAutoShow(enabled: Boolean) {
+        desktopPetOverlayAutoShowEnabled = enabled
+        uiPrefs.edit()
+            .putBoolean("desktopPetOverlayAutoShowEnabled", enabled)
+            .apply()
+        if (enabled && !refreshDesktopPetOverlayState()) {
+            onRequestDesktopPetOverlayPermission()
+        }
+    }
+
+    fun requestDesktopPetOverlayPermission() {
+        onRequestDesktopPetOverlayPermission()
+        refreshDesktopPetOverlayState()
+    }
+
+    fun startDesktopPetOverlay() {
+        if (refreshDesktopPetOverlayState()) {
+            onStartDesktopPetOverlay()
+            desktopPetOverlayRunning = true
+        } else {
+            onRequestDesktopPetOverlayPermission()
+        }
+    }
+
+    fun stopDesktopPetOverlay() {
+        onStopDesktopPetOverlay()
+        desktopPetOverlayRunning = false
+    }
+
+    val lifecycleOwner = context as? LifecycleOwner
+    DisposableEffect(lifecycleOwner) {
+        if (lifecycleOwner == null) {
+            onDispose { }
+        } else {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    refreshDesktopPetOverlayState()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+    }
+
+    fun openAppTab(tab: PetShellTab) {
+        selectedTab = tab
+        state = PetShellController.openCommunity(state)
     }
 
     fun clearPackageImportSubmissionTracking(clearMessage: Boolean = true) {
@@ -357,6 +448,13 @@ fun PetShellApp(
         )
     }
 
+    LaunchedEffect(state.approvedPets, state.approvedPetIndex) {
+        val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
+        uiPrefs.edit()
+            .putString("desktopPetOverlayPreviewUrl", approvedPetPreviewUrl(selectedPet))
+            .apply()
+    }
+
     LaunchedEffect(Unit) {
         val resumeJobId = generationJobIdForResume(generationAppJobId, generationJob)
             ?: return@LaunchedEffect
@@ -399,13 +497,39 @@ fun PetShellApp(
                     }
                 )
 
+                ShellPhase.DesktopPet -> DesktopPetScreen(
+                    state = state,
+                    language = language,
+                    strings = strings,
+                    directPetLaunchEnabled = directPetLaunchEnabled,
+                    onLanguageChange = ::changeLanguage,
+                    onPetNavigate = { direction ->
+                        state = PetShellController.navigateApprovedPet(state, direction)
+                    },
+                    onOpenCommunity = { openAppTab(PetShellTab.Community) },
+                    onOpenGenerate = { openAppTab(PetShellTab.Generate) },
+                    onOpenProfile = { openAppTab(PetShellTab.Profile) }
+                )
+
                 ShellPhase.Community -> CommunityScreen(
                     state = state,
                     selectedTab = selectedTab,
                     language = language,
                     strings = strings,
+                    directPetLaunchEnabled = directPetLaunchEnabled,
+                    desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
+                    desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+                    desktopPetOverlayRunning = desktopPetOverlayRunning,
                     onTabSelected = { selectedTab = it },
                     onLanguageChange = ::changeLanguage,
+                    onDirectPetLaunchChange = ::changeDirectPetLaunch,
+                    onDesktopPetOverlayAutoShowChange = ::changeDesktopPetOverlayAutoShow,
+                    onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
+                    onStartDesktopPetOverlay = ::startDesktopPetOverlay,
+                    onStopDesktopPetOverlay = ::stopDesktopPetOverlay,
+                    onEnterDesktopPet = {
+                        state = PetShellController.openDesktopPet(state)
+                    },
                     onNavigate = { direction ->
                         state = PetShellController.navigateFeed(state, direction)
                     },
@@ -824,13 +948,338 @@ private fun LaunchBubbleScreen(
 }
 
 @Composable
+private fun DesktopPetScreen(
+    state: PetShellState,
+    language: PetShellLanguage,
+    strings: PetShellStrings,
+    directPetLaunchEnabled: Boolean,
+    onLanguageChange: (PetShellLanguage) -> Unit,
+    onPetNavigate: (FeedDirection) -> Unit,
+    onOpenCommunity: () -> Unit,
+    onOpenGenerate: () -> Unit,
+    onOpenProfile: () -> Unit
+) {
+    val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0D3430),
+                        Color(0xFF123D39),
+                        Color(0xFFF1F5F9)
+                    )
+                )
+            )
+            .semantics {
+                contentDescription = strings.desktopPetModeContentDescription
+            }
+            .padding(18.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 58.dp, bottom = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = strings.desktopPetModeTitle,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = strings.desktopPetModeSubtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFD7F3EE),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            DesktopPetModeStatusRail(
+                strings = strings,
+                directPetLaunchEnabled = directPetLaunchEnabled
+            )
+            DesktopPetStage(
+                state = state,
+                selectedPet = selectedPet,
+                strings = strings
+            )
+            if (selectedPet == null) {
+                DesktopPetRemoteSyncStrip(strings = strings)
+            } else {
+                ApprovedPetSignalStrip(
+                    pet = selectedPet,
+                    strings = strings
+                )
+                DesktopPetBrowseControls(
+                    strings = strings,
+                    onPetNavigate = onPetNavigate
+                )
+            }
+            DesktopPetActionDock(
+                strings = strings,
+                onOpenCommunity = onOpenCommunity,
+                onOpenGenerate = onOpenGenerate,
+                onOpenProfile = onOpenProfile
+            )
+        }
+        WalletPill(
+            balance = state.walletBalance,
+            strings = strings,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
+        LanguageToggle(
+            language = language,
+            strings = strings,
+            onLanguageChange = onLanguageChange,
+            modifier = Modifier.align(Alignment.TopEnd),
+            compact = true
+        )
+    }
+}
+
+@Composable
+private fun DesktopPetStage(
+    state: PetShellState,
+    selectedPet: ApprovedPet?,
+    strings: PetShellStrings
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White.copy(alpha = 0.94f),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ApprovedPetPreviewArtwork(
+                pet = selectedPet,
+                action = state.petAction,
+                strings = strings,
+                modifier = Modifier.size(166.dp)
+            )
+            SpeechBubble(
+                text = strings.speechBubble(state.speechBubble),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                text = strings.desktopPetReadyLine,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF344054),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetBrowseControls(
+    strings: PetShellStrings,
+    onPetNavigate: (FeedDirection) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(
+            onClick = { onPetNavigate(FeedDirection.Previous) },
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(strings.petPrev)
+        }
+        Button(
+            onClick = { onPetNavigate(FeedDirection.Next) },
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(strings.petNext)
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetActionDock(
+    strings: PetShellStrings,
+    onOpenCommunity: () -> Unit,
+    onOpenGenerate: () -> Unit,
+    onOpenProfile: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF101828),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFF24314A))
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = strings.desktopPetActionDockTitle,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onOpenCommunity,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = strings.desktopPetOpenCommunity,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Button(
+                    onClick = onOpenGenerate,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = strings.desktopPetOpenGenerate,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Button(
+                    onClick = onOpenProfile,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = strings.desktopPetOpenProfile,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetModeStatusRail(
+    strings: PetShellStrings,
+    directPetLaunchEnabled: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        DesktopPetStatusPill(
+            label = strings.desktopPetRemoteStatus,
+            accent = Color(0xFFACE4D9),
+            modifier = Modifier.weight(1f)
+        )
+        DesktopPetStatusPill(
+            label = strings.desktopPetReviewStatus,
+            accent = Color(0xFF60A5FA),
+            modifier = Modifier.weight(1f)
+        )
+        DesktopPetStatusPill(
+            label = strings.directPetLaunchStatus(directPetLaunchEnabled),
+            accent = Color(0xFFFFB86B),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun DesktopPetStatusPill(
+    label: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(38.dp),
+        color = Color.White.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetRemoteSyncStrip(strings: PetShellStrings) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFF7FBFA),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFACE4D9))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 5.dp, height = 42.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0F766E))
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = strings.desktopPetSyncTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0D3430)
+                )
+                Text(
+                    text = strings.desktopPetSyncDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF475467),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun CommunityScreen(
     state: PetShellState,
     selectedTab: PetShellTab,
     language: PetShellLanguage,
     strings: PetShellStrings,
+    directPetLaunchEnabled: Boolean,
+    desktopPetOverlayAutoShowEnabled: Boolean,
+    desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetOverlayRunning: Boolean,
     onTabSelected: (PetShellTab) -> Unit,
     onLanguageChange: (PetShellLanguage) -> Unit,
+    onDirectPetLaunchChange: (Boolean) -> Unit,
+    onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
+    onRequestDesktopPetOverlayPermission: () -> Unit,
+    onStartDesktopPetOverlay: () -> Unit,
+    onStopDesktopPetOverlay: () -> Unit,
+    onEnterDesktopPet: () -> Unit,
     onNavigate: (FeedDirection) -> Unit,
     onShowcaseNavigate: (FeedDirection) -> Unit,
     onCheckIn: () -> Unit,
@@ -878,8 +1327,18 @@ private fun CommunityScreen(
                 PetShellTab.Profile -> ProfileWorkspace(
                     state = state,
                     strings = strings,
+                    directPetLaunchEnabled = directPetLaunchEnabled,
+                    desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
+                    desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+                    desktopPetOverlayRunning = desktopPetOverlayRunning,
+                    onDirectPetLaunchChange = onDirectPetLaunchChange,
+                    onDesktopPetOverlayAutoShowChange = onDesktopPetOverlayAutoShowChange,
+                    onRequestDesktopPetOverlayPermission = onRequestDesktopPetOverlayPermission,
+                    onStartDesktopPetOverlay = onStartDesktopPetOverlay,
+                    onStopDesktopPetOverlay = onStopDesktopPetOverlay,
                     onCheckIn = onCheckIn,
-                    onCreatePet = { onTabSelected(PetShellTab.Generate) }
+                    onCreatePet = { onTabSelected(PetShellTab.Generate) },
+                    onEnterDesktopPet = onEnterDesktopPet
                 )
             }
             Spacer(modifier = Modifier.height(18.dp))
@@ -1089,18 +1548,47 @@ private fun CommunityStatusSummary(
     state: PetShellState,
     strings: PetShellStrings
 ) {
+    val remoteSynced = state.speechBubble != "Local fallback active."
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.communityStatusSummaryContentDescription
+            },
         color = Color.White,
         shape = RoundedCornerShape(8.dp),
         tonalElevation = 1.dp,
         shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = strings.communityStatusTitle,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828)
+                )
+                CommunityStatusPill(
+                    label = if (remoteSynced) {
+                        strings.communityStatusRemoteSynced
+                    } else {
+                        strings.communityStatusLocalFallback
+                    },
+                    accent = if (remoteSynced) Color(0xFF0F766E) else Color(0xFFF97316)
+                )
+                CommunityStatusPill(
+                    label = strings.communityStatusHumanReview,
+                    accent = Color(0xFF2F63D6)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 CommunitySummaryToken(
                     label = strings.profileWalletSummaryTitle,
                     value = strings.walletBalance(state.walletBalance),
@@ -1113,8 +1601,6 @@ private fun CommunityStatusSummary(
                     accent = Color(0xFFF97316),
                     modifier = Modifier.weight(1f)
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CommunitySummaryToken(
                     label = strings.profileApprovedPetsMetric,
                     value = state.approvedPets.size.toString(),
@@ -1133,6 +1619,28 @@ private fun CommunityStatusSummary(
 }
 
 @Composable
+private fun CommunityStatusPill(
+    label: String,
+    accent: Color
+) {
+    Surface(
+        color = accent.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.26f))
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
 private fun CommunitySummaryToken(
     label: String,
     value: String,
@@ -1141,11 +1649,11 @@ private fun CommunitySummaryToken(
 ) {
     Row(
         modifier = modifier
-            .height(44.dp)
+            .height(48.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(accent.copy(alpha = 0.10f))
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -1446,7 +1954,7 @@ private fun GenerationWorkspace(
         modifier = Modifier.semantics {
             contentDescription = strings.generationWorkspaceContentDescription
         },
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(
             modifier = Modifier
@@ -1464,22 +1972,22 @@ private fun GenerationWorkspace(
                 .semantics {
                     contentDescription = strings.generationStudioHeroContentDescription
                 }
-                .padding(10.dp)
+                .padding(8.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
                         color = Color.White.copy(alpha = 0.92f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Box(modifier = Modifier.padding(6.dp)) {
+                        Box(modifier = Modifier.padding(4.dp)) {
                             PetArtworkBadge(
                                 action = state.petAction,
                                 modifier = Modifier
-                                    .size(78.dp)
+                                    .size(60.dp)
                                     .semantics {
                                         contentDescription = strings.petAvatarContentDescription
                                     }
@@ -1544,7 +2052,7 @@ private fun GenerationSafetyStep(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.height(38.dp),
+        modifier = modifier.height(34.dp),
         color = Color.White.copy(alpha = 0.16f),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
@@ -1566,8 +2074,18 @@ private fun GenerationSafetyStep(
 private fun ProfileWorkspace(
     state: PetShellState,
     strings: PetShellStrings,
+    directPetLaunchEnabled: Boolean,
+    desktopPetOverlayAutoShowEnabled: Boolean,
+    desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetOverlayRunning: Boolean,
+    onDirectPetLaunchChange: (Boolean) -> Unit,
+    onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
+    onRequestDesktopPetOverlayPermission: () -> Unit,
+    onStartDesktopPetOverlay: () -> Unit,
+    onStopDesktopPetOverlay: () -> Unit,
     onCheckIn: () -> Unit,
-    onCreatePet: () -> Unit
+    onCreatePet: () -> Unit,
+    onEnterDesktopPet: () -> Unit
 ) {
     Column(
         modifier = Modifier.semantics {
@@ -1582,6 +2100,19 @@ private fun ProfileWorkspace(
         ProfileWalletSummary(
             state = state,
             strings = strings
+        )
+        ProfileDesktopPetSettings(
+            strings = strings,
+            directPetLaunchEnabled = directPetLaunchEnabled,
+            desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
+            desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
+            desktopPetOverlayRunning = desktopPetOverlayRunning,
+            onDirectPetLaunchChange = onDirectPetLaunchChange,
+            onDesktopPetOverlayAutoShowChange = onDesktopPetOverlayAutoShowChange,
+            onRequestDesktopPetOverlayPermission = onRequestDesktopPetOverlayPermission,
+            onStartDesktopPetOverlay = onStartDesktopPetOverlay,
+            onStopDesktopPetOverlay = onStopDesktopPetOverlay,
+            onEnterDesktopPet = onEnterDesktopPet
         )
         ProfilePetShelf(
             state = state,
@@ -1888,6 +2419,276 @@ private fun ProfileActionDock(
                     Text(strings.profileCreatePetAction)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileDesktopPetSettings(
+    strings: PetShellStrings,
+    directPetLaunchEnabled: Boolean,
+    desktopPetOverlayAutoShowEnabled: Boolean,
+    desktopPetOverlayPermissionGranted: Boolean,
+    desktopPetOverlayRunning: Boolean,
+    onDirectPetLaunchChange: (Boolean) -> Unit,
+    onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
+    onRequestDesktopPetOverlayPermission: () -> Unit,
+    onStartDesktopPetOverlay: () -> Unit,
+    onStopDesktopPetOverlay: () -> Unit,
+    onEnterDesktopPet: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White,
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = strings.desktopPetSettingsTitle,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF101828)
+            )
+            DirectPetLaunchSetting(
+                strings = strings,
+                enabled = directPetLaunchEnabled,
+                onEnabledChange = onDirectPetLaunchChange
+            )
+            SystemDesktopPetSetting(
+                strings = strings,
+                autoShowEnabled = desktopPetOverlayAutoShowEnabled,
+                permissionGranted = desktopPetOverlayPermissionGranted,
+                overlayRunning = desktopPetOverlayRunning,
+                onAutoShowChange = onDesktopPetOverlayAutoShowChange,
+                onRequestPermission = onRequestDesktopPetOverlayPermission,
+                onStartOverlay = onStartDesktopPetOverlay,
+                onStopOverlay = onStopDesktopPetOverlay
+            )
+            Button(
+                onClick = onEnterDesktopPet,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(strings.enterDesktopPetMode)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SystemDesktopPetSetting(
+    strings: PetShellStrings,
+    autoShowEnabled: Boolean,
+    permissionGranted: Boolean,
+    overlayRunning: Boolean,
+    onAutoShowChange: (Boolean) -> Unit,
+    onRequestPermission: () -> Unit,
+    onStartOverlay: () -> Unit,
+    onStopOverlay: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = strings.systemDesktopPetTitle,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF101828)
+            )
+                Text(
+                    text = strings.systemDesktopPetDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                DesktopPetSettingPill(
+                    label = if (permissionGranted) {
+                        strings.desktopPetOverlayPermissionGranted
+                    } else {
+                        strings.desktopPetOverlayPermissionMissing
+                    },
+                    accent = if (permissionGranted) Color(0xFF0F766E) else Color(0xFFB42318),
+                    modifier = Modifier.weight(1f)
+                )
+                DesktopPetSettingPill(
+                    label = if (overlayRunning) {
+                        strings.desktopPetOverlayRunning
+                    } else {
+                        strings.desktopPetOverlayStopped
+                    },
+                    accent = if (overlayRunning) Color(0xFFF97316) else Color(0xFF667085),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = strings.desktopPetOverlayToggleContentDescription
+                    },
+                color = Color.White,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = strings.systemDesktopPetAutoShowTitle,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF101828)
+                        )
+                        Text(
+                            text = strings.systemDesktopPetAutoShowDetail,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF667085),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Switch(
+                        modifier = Modifier.semantics {
+                            contentDescription = strings.desktopPetOverlayToggleContentDescription
+                        },
+                        checked = autoShowEnabled,
+                        onCheckedChange = onAutoShowChange
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = onRequestPermission,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = strings.desktopPetOverlayPermissionContentDescription
+                        }
+                ) {
+                    Text(
+                        if (permissionGranted) {
+                            strings.desktopPetOverlayManagePermission
+                        } else {
+                            strings.desktopPetOverlayRequestPermission
+                        }
+                    )
+                }
+                Button(
+                    onClick = if (overlayRunning) onStopOverlay else onStartOverlay,
+                    enabled = permissionGranted,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = if (overlayRunning) {
+                                strings.desktopPetOverlayStopContentDescription
+                            } else {
+                                strings.desktopPetOverlayStartContentDescription
+                            }
+                        }
+                ) {
+                    Text(
+                        if (overlayRunning) {
+                            strings.desktopPetOverlayHide
+                        } else {
+                            strings.desktopPetOverlayShow
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetSettingPill(
+    label: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(32.dp),
+        color = accent.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.45f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = accent,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DirectPetLaunchSetting(
+    strings: PetShellStrings,
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.directPetLaunchToggleContentDescription
+            },
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = strings.directPetLaunchTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828)
+                )
+                Text(
+                    text = strings.directPetLaunchDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Switch(
+                modifier = Modifier.semantics {
+                    contentDescription = strings.directPetLaunchToggleContentDescription
+                },
+                checked = enabled,
+                onCheckedChange = onEnabledChange
+            )
         }
     }
 }
@@ -2986,7 +3787,7 @@ private fun GenerationPanel(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Surface(
             modifier = Modifier
@@ -3002,8 +3803,8 @@ private fun GenerationPanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
             Text(
                 text = strings.generationBriefPanelTitle,
@@ -3026,8 +3827,8 @@ private fun GenerationPanel(
                     .semantics {
                         contentDescription = strings.generationPromptCanvasContentDescription
                     }
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
             GenerationBriefStageHeader(
                 title = strings.generationPromptStageTitle,
@@ -3405,9 +4206,15 @@ private fun GenerationPanel(
                 border = BorderStroke(1.dp, Color(0xFFE4E7EC))
             ) {
                 Column(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    GenerationDeliveryStatusStrip(
+                        strings = strings,
+                        selectedCandidateDownloadId = selectedCandidateDownloadId,
+                        packageReady = job?.let { canShowPackageDownload(it) } == true,
+                        communityDraftReady = canSubmitPackageImportDraft
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val acceptEnabled = canSubmitReviewDecision(
                             job = job,
@@ -3437,7 +4244,11 @@ private fun GenerationPanel(
                                 },
                             enabled = acceptEnabled
                         ) {
-                            Text(strings.reviewAccept)
+                            Text(
+                                text = strings.reviewAccept,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         Button(
                             onClick = { onReviewDecision("revise") },
@@ -3448,7 +4259,11 @@ private fun GenerationPanel(
                                 },
                             enabled = reviseEnabled
                         ) {
-                            Text(strings.reviewRevise)
+                            Text(
+                                text = strings.reviewRevise,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         Button(
                             onClick = { onReviewDecision("reject") },
@@ -3459,7 +4274,11 @@ private fun GenerationPanel(
                                 },
                             enabled = rejectEnabled
                         ) {
-                            Text(strings.reviewReject)
+                            Text(
+                                text = strings.reviewReject,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                     if (candidates.isNotEmpty()) {
@@ -3498,27 +4317,39 @@ private fun GenerationPanel(
                             color = Color(0xFF157A52)
                         )
                     }
-                    Button(
-                        onClick = onSubmitPackageImport,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .semantics {
-                                contentDescription = strings.submitCommunityReviewContentDescription
-                            },
-                        enabled = canSubmitPackageImportDraft
-                    ) {
-                        Text(strings.submitToCommunityReview)
-                    }
-                    Button(
-                        onClick = onRefreshPackageImportSubmission,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .semantics {
-                                contentDescription = strings.refreshCommunitySubmissionContentDescription
-                            },
-                        enabled = canRefreshPackageImportSubmission
-                    ) {
-                        Text(strings.refreshCommunitySubmission)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onSubmitPackageImport,
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics {
+                                    contentDescription = strings.submitCommunityReviewContentDescription
+                                },
+                            enabled = canSubmitPackageImportDraft
+                        ) {
+                            Text(
+                                text = strings.submitToCommunityReview,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Button(
+                            onClick = onRefreshPackageImportSubmission,
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics {
+                                    contentDescription = strings.refreshCommunitySubmissionContentDescription
+                                },
+                            enabled = canRefreshPackageImportSubmission
+                        ) {
+                            Text(
+                                text = strings.refreshCommunitySubmission,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                     if (packageImportSubmissionMessage.isNotBlank()) {
                         Text(
@@ -3531,6 +4362,94 @@ private fun GenerationPanel(
             }
         }
     }
+    }
+}
+
+@Composable
+private fun GenerationDeliveryStatusStrip(
+    strings: PetShellStrings,
+    selectedCandidateDownloadId: String,
+    packageReady: Boolean,
+    communityDraftReady: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        GenerationDeliveryStatusToken(
+            label = strings.deliveryReviewTargetStatus,
+            value = if (selectedCandidateDownloadId.isBlank()) {
+                strings.deliveryStatusWaiting
+            } else {
+                strings.deliveryStatusSelected
+            },
+            accent = Color(0xFF2F63D6),
+            active = selectedCandidateDownloadId.isNotBlank(),
+            modifier = Modifier.weight(1f)
+        )
+        GenerationDeliveryStatusToken(
+            label = strings.deliveryPackageStatus,
+            value = if (packageReady) {
+                strings.deliveryStatusPackageReady
+            } else {
+                strings.deliveryStatusPackageLocked
+            },
+            accent = Color(0xFFF97316),
+            active = packageReady,
+            modifier = Modifier.weight(1f)
+        )
+        GenerationDeliveryStatusToken(
+            label = strings.deliveryCommunityStatus,
+            value = if (communityDraftReady) {
+                strings.deliveryStatusCommunityReady
+            } else {
+                strings.deliveryStatusCommunityWaiting
+            },
+            accent = Color(0xFF0F766E),
+            active = communityDraftReady,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun GenerationDeliveryStatusToken(
+    label: String,
+    value: String,
+    accent: Color,
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val contentColor = if (active) accent else Color(0xFF667085)
+    Surface(
+        modifier = modifier.height(52.dp),
+        color = if (active) accent.copy(alpha = 0.12f) else Color.White,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, if (active) accent.copy(alpha = 0.30f) else Color(0xFFE4E7EC))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF667085),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = contentColor,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -3945,7 +4864,7 @@ private fun BodyShapeSegmentedControl(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(42.dp)
+            .height(38.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFEFF3F7))
             .padding(2.dp),
@@ -4079,14 +4998,6 @@ private fun RemotePreviewImage(
             )
         }
     }
-}
-
-private fun Bitmap.firstSpritesheetFrame(): Bitmap {
-    if (width < 2 || height < 2) {
-        return this
-    }
-
-    return Bitmap.createBitmap(this, 0, 0, width / 2, height / 2)
 }
 
 @Composable
@@ -4446,9 +5357,11 @@ private fun CompactLanguageSegment(
 @Composable
 private fun WalletPill(
     balance: Int,
-    strings: PetShellStrings
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier
 ) {
     Surface(
+        modifier = modifier,
         color = Color(0xFF101828),
         shape = RoundedCornerShape(8.dp)
     ) {

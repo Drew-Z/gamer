@@ -1,11 +1,11 @@
 package com.gamer.community.petshell
 
 object PetShellController {
-    fun initialState(): PetShellState =
+    fun initialState(skipLaunchBubble: Boolean = false): PetShellState =
         PetShellState(
-            phase = ShellPhase.LaunchBubble,
-            petAction = PetAction.AppLoading,
-            speechBubble = "Loading community...",
+            phase = if (skipLaunchBubble) ShellPhase.DesktopPet else ShellPhase.LaunchBubble,
+            petAction = if (skipLaunchBubble) PetAction.Idle else PetAction.AppLoading,
+            speechBubble = if (skipLaunchBubble) "Desktop pet ready." else "Loading community...",
             feedIndex = 0,
             walletBalance = 90,
             checkInClaimed = false,
@@ -16,10 +16,20 @@ object PetShellController {
         )
 
     fun onBubbleTapped(state: PetShellState): PetShellState =
+        openCommunity(state)
+
+    fun openCommunity(state: PetShellState): PetShellState =
         state.copy(
             phase = ShellPhase.Community,
             petAction = PetAction.BubbleOpen,
             speechBubble = "Welcome back, Demo Keeper."
+        )
+
+    fun openDesktopPet(state: PetShellState): PetShellState =
+        state.copy(
+            phase = ShellPhase.DesktopPet,
+            petAction = PetAction.Idle,
+            speechBubble = "Desktop pet ready."
         )
 
     fun navigateFeed(state: PetShellState, direction: FeedDirection): PetShellState {

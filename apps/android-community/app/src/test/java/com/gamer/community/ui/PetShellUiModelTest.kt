@@ -47,6 +47,7 @@ class PetShellUiModelTest {
             "community-pet-companion-strip",
             zh.communityPetCompanionStripContentDescription
         )
+        assertEquals("community-status-summary", zh.communityStatusSummaryContentDescription)
         assertEquals("community-showcase-panel", zh.communityShowcasePanelContentDescription)
         assertEquals("community-post-card", zh.communityPostCardContentDescription)
         assertEquals("community-feed-controls", zh.communityFeedControlsContentDescription)
@@ -55,6 +56,15 @@ class PetShellUiModelTest {
         assertEquals("generation-prompt-canvas", zh.generationPromptCanvasContentDescription)
         assertEquals("generation-runtime-console", zh.generationRuntimeConsoleContentDescription)
         assertEquals("generation-review-action-dock", zh.generationReviewActionDockContentDescription)
+        assertEquals("gamer-desktop-pet-mode", zh.desktopPetModeContentDescription)
+        assertEquals("direct-pet-launch-toggle", zh.directPetLaunchToggleContentDescription)
+        assertEquals("desktop-pet-overlay-toggle", zh.desktopPetOverlayToggleContentDescription)
+        assertEquals(
+            "desktop-pet-overlay-permission-button",
+            zh.desktopPetOverlayPermissionContentDescription
+        )
+        assertEquals("desktop-pet-overlay-start-button", zh.desktopPetOverlayStartContentDescription)
+        assertEquals("desktop-pet-overlay-stop-button", zh.desktopPetOverlayStopContentDescription)
         assertEquals("profile-keeper-hero", zh.profileKeeperHeroContentDescription)
         assertEquals("profile-wallet-summary", zh.profileWalletSummaryContentDescription)
         assertEquals("profile-pet-shelf", zh.profilePetShelfContentDescription)
@@ -138,7 +148,7 @@ class PetShellUiModelTest {
         val en = petShellStrings(PetShellLanguage.English)
 
         assertEquals("玩家社区", zh.communityTitle)
-        assertEquals("以桌宠为主的动态原型", zh.communitySubtitle)
+        assertEquals("桌宠带路的每日社区", zh.communitySubtitle)
         assertEquals("点击气泡进入", zh.launchEnterHint)
         assertEquals("生成桌宠", zh.generatePanelTitle)
         assertEquals(
@@ -197,7 +207,7 @@ class PetShellUiModelTest {
         )
 
         assertEquals("Gamer Community", en.communityTitle)
-        assertEquals("Pet-first feed prototype", en.communitySubtitle)
+        assertEquals("Daily community led by your desktop pet", en.communitySubtitle)
         assertEquals("Tap the bubble to enter", en.launchEnterHint)
         assertEquals("Generate Desktop Pet", en.generatePanelTitle)
         assertEquals(
@@ -222,6 +232,9 @@ class PetShellUiModelTest {
         assertEquals("Body preset", en.generationBodyStageTitle)
         assertEquals("Runtime actions", en.generationRunStageTitle)
         assertEquals("Review and delivery", en.generationReviewDeskTitle)
+        assertEquals("Review target", en.deliveryReviewTargetStatus)
+        assertEquals("Package", en.deliveryPackageStatus)
+        assertEquals("Community", en.deliveryCommunityStatus)
         assertEquals(
             "Candidates appear here when generation reaches review; select a candidate before review.",
             en.generationReviewWaitingForCandidate

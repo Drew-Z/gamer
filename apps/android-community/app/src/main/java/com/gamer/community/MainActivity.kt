@@ -1,6 +1,10 @@
 package com.gamer.community
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.gamer.community.api.CommunityRepository
@@ -13,6 +17,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyGamerSystemBars(window)
+        val uiPrefs = getSharedPreferences("pet-shell-ui", MODE_PRIVATE)
+
+        if (
+            !intent.getBooleanExtra(EXTRA_OPEN_FULL_APP, false) &&
+            uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false) &&
+            canShowDesktopPetOverlay()
+        ) {
+            startDesktopPetOverlay()
+            moveTaskToBack(true)
+            finish()
+            return
+        }
 
         val repository = CommunityRepository(
             client = HttpCommunityApiClient(BuildConfig.COMMUNITY_API_BASE_URL)
@@ -23,7 +39,47 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            PetShellApp(repository = repository, generationService = generationService)
+            PetShellApp(
+                repository = repository,
+                generationService = generationService,
+                canShowDesktopPetOverlay = ::canShowDesktopPetOverlay,
+                onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
+                onStartDesktopPetOverlay = ::startDesktopPetOverlay,
+                onStopDesktopPetOverlay = ::stopDesktopPetOverlay
+            )
         }
+
+    }
+
+    private fun canShowDesktopPetOverlay(): Boolean =
+        Settings.canDrawOverlays(this)
+
+    private fun requestDesktopPetOverlayPermission() {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName")
+        )
+        startActivity(intent)
+    }
+
+    private fun startDesktopPetOverlay() {
+        if (!canShowDesktopPetOverlay()) {
+            requestDesktopPetOverlayPermission()
+            return
+        }
+        val intent = DesktopPetOverlayService.startIntent(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun stopDesktopPetOverlay() {
+        startService(DesktopPetOverlayService.stopIntent(this))
+    }
+
+    companion object {
+        const val EXTRA_OPEN_FULL_APP = "com.gamer.community.extra.OPEN_FULL_APP"
     }
 }

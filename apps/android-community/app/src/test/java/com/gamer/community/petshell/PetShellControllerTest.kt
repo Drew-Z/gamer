@@ -18,8 +18,27 @@ class PetShellControllerTest {
     }
 
     @Test
+    fun initialStateCanSkipLaunchBubbleForDesktopPetMode() {
+        val state = PetShellController.initialState(skipLaunchBubble = true)
+
+        assertEquals(ShellPhase.DesktopPet, state.phase)
+        assertEquals(PetAction.Idle, state.petAction)
+        assertEquals("Desktop pet ready.", state.speechBubble)
+    }
+
+    @Test
     fun tappingBubbleOpensCommunity() {
         val state = PetShellController.onBubbleTapped(PetShellController.initialState())
+
+        assertEquals(ShellPhase.Community, state.phase)
+        assertEquals(PetAction.BubbleOpen, state.petAction)
+        assertEquals("Welcome back, Demo Keeper.", state.speechBubble)
+    }
+
+    @Test
+    fun desktopPetModeCanOpenCommunity() {
+        val desktopPet = PetShellController.initialState(skipLaunchBubble = true)
+        val state = PetShellController.openCommunity(desktopPet)
 
         assertEquals(ShellPhase.Community, state.phase)
         assertEquals(PetAction.BubbleOpen, state.petAction)

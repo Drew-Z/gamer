@@ -40,6 +40,7 @@ class PetShellStrings internal constructor(
     val profileWorkspaceContentDescription: String get() = "gamer-profile-workspace"
     val headerUtilityDockContentDescription: String get() = "header-utility-dock"
     val communityChannelRailContentDescription: String get() = "community-channel-rail"
+    val communityStatusSummaryContentDescription: String get() = "community-status-summary"
     val communityQuickActionsContentDescription: String get() = "community-quick-actions"
     val communityPetCompanionStripContentDescription: String get() = "community-pet-companion-strip"
     val communityShowcasePanelContentDescription: String get() = "community-showcase-panel"
@@ -50,6 +51,12 @@ class PetShellStrings internal constructor(
     val generationPromptCanvasContentDescription: String get() = "generation-prompt-canvas"
     val generationRuntimeConsoleContentDescription: String get() = "generation-runtime-console"
     val generationReviewActionDockContentDescription: String get() = "generation-review-action-dock"
+    val desktopPetModeContentDescription: String get() = "gamer-desktop-pet-mode"
+    val directPetLaunchToggleContentDescription: String get() = "direct-pet-launch-toggle"
+    val desktopPetOverlayToggleContentDescription: String get() = "desktop-pet-overlay-toggle"
+    val desktopPetOverlayPermissionContentDescription: String get() = "desktop-pet-overlay-permission-button"
+    val desktopPetOverlayStartContentDescription: String get() = "desktop-pet-overlay-start-button"
+    val desktopPetOverlayStopContentDescription: String get() = "desktop-pet-overlay-stop-button"
     val profileKeeperHeroContentDescription: String get() = "profile-keeper-hero"
     val profileWalletSummaryContentDescription: String get() = "profile-wallet-summary"
     val profilePetShelfContentDescription: String get() = "profile-pet-shelf"
@@ -67,6 +74,67 @@ class PetShellStrings internal constructor(
         )
     val communityPetCommandNextPost: String get() = text("\u770B\u4E0B\u4E00\u6761", "Next post")
     val communityPetCommandShowcase: String get() = text("\u53BB\u5C55\u793A", "Showcase")
+    val communityStatusTitle: String get() = text("今日社区状态", "Today's community status")
+    val communityStatusRemoteSynced: String get() = text("远端同步", "Remote synced")
+    val communityStatusLocalFallback: String get() = text("本地兜底", "Local fallback")
+    val communityStatusHumanReview: String get() = text("人审展示", "Human review")
+    val desktopPetModeTitle: String get() = text("桌宠模式", "Desktop pet mode")
+    val desktopPetModeSubtitle: String
+        get() = text(
+            "让桌宠先出现，再进入社区、生成或我的主页。",
+            "Let the pet appear first, then enter community, generation, or profile."
+        )
+    val desktopPetReadyLine: String
+        get() = text(
+            "桌宠已待机，远端数据会在后台同步到展示和宠物架。",
+            "Desktop pet is idle; remote data syncs into showcase and shelf."
+        )
+    val desktopPetSyncTitle: String get() = text("正在同步远端桌宠", "Syncing remote pet")
+    val desktopPetSyncDetail: String
+        get() = text(
+            "已连接 HidenCloud，预览图和评分会在社区数据返回后显示。",
+            "Connected to HidenCloud; preview and score appear after community data returns."
+        )
+    val desktopPetRemoteStatus: String get() = text("远端同步", "Remote sync")
+    val desktopPetReviewStatus: String get() = text("人审后展示", "Human reviewed")
+    fun directPetLaunchStatus(enabled: Boolean): String =
+        if (enabled) {
+            text("直达已开", "Direct on")
+        } else {
+            text("常规开屏", "Bubble first")
+        }
+    val desktopPetOpenCommunity: String get() = text("进入社区", "Community")
+    val desktopPetOpenGenerate: String get() = text("生成桌宠", "Generate")
+    val desktopPetOpenProfile: String get() = text("我的主页", "Profile")
+    val desktopPetActionDockTitle: String get() = text("快速入口", "Quick entry")
+    val desktopPetSettingsTitle: String get() = text("启动与桌宠设置", "Launch and pet settings")
+    val directPetLaunchTitle: String get() = text("下次启动先显示 App 内桌宠页", "Open to in-app pet first")
+    val directPetLaunchDetail: String
+        get() = text(
+            "关闭时保留常规气泡开屏；开启后点 App 图标会跳过气泡，先进入 App 内桌宠页。",
+            "Off keeps the launch bubble; on skips the bubble and opens the in-app pet surface."
+        )
+    val enterDesktopPetMode: String get() = text("进入 App 内桌宠模式", "Enter in-app pet mode")
+    val systemDesktopPetTitle: String get() = text("桌面悬浮桌宠", "Floating desktop pet")
+    val systemDesktopPetDetail: String
+        get() = text(
+            "授权后，宠物可以显示在桌面和其他 App 上；关闭后仍可使用 App 内桌宠页。",
+            "After permission is granted, the pet can float over the launcher and other apps."
+        )
+    val systemDesktopPetAutoShowTitle: String get() = text("点击图标直接唤出桌面桌宠", "App icon opens the floating pet")
+    val systemDesktopPetAutoShowDetail: String
+        get() = text(
+            "下次从 App 图标进入时，如果已授权，会直接把宠物显示到桌面并让 App 退到后台。",
+            "On the next icon launch, granted devices show the floating pet and send the app to the background."
+        )
+    val desktopPetOverlayPermissionGranted: String get() = text("悬浮权限已开启", "Overlay allowed")
+    val desktopPetOverlayPermissionMissing: String get() = text("需要悬浮权限", "Overlay permission needed")
+    val desktopPetOverlayRunning: String get() = text("桌宠显示中", "Pet showing")
+    val desktopPetOverlayStopped: String get() = text("未显示", "Not showing")
+    val desktopPetOverlayRequestPermission: String get() = text("授权悬浮窗", "Grant overlay")
+    val desktopPetOverlayManagePermission: String get() = text("管理权限", "Manage permission")
+    val desktopPetOverlayShow: String get() = text("显示到桌面", "Show on desktop")
+    val desktopPetOverlayHide: String get() = text("关闭桌面桌宠", "Hide desktop pet")
     fun communityCommandStatus(
         approvedPetCount: Int,
         pendingSubmissionCount: Int,
@@ -146,7 +214,7 @@ class PetShellStrings internal constructor(
     val englishLanguageToggleContentDescription: String get() = text("切换到英文", "Switch to English")
     val petBadge: String get() = text("宠", "PET")
     val communityTitle: String get() = text("玩家社区", "Gamer Community")
-    val communitySubtitle: String get() = text("以桌宠为主的动态原型", "Pet-first feed prototype")
+    val communitySubtitle: String get() = text("桌宠带路的每日社区", "Daily community led by your desktop pet")
     val communityChannelRecommended: String get() = text("推荐", "For you")
     val communityChannelCreations: String get() = text("作品", "Creations")
     val communityChannelGuides: String get() = text("攻略", "Guides")
@@ -199,6 +267,15 @@ class PetShellStrings internal constructor(
     val candidateSelectedStatus: String get() = text("已选中", "Selected")
     val candidateAvailableStatus: String get() = text("待选择", "Available")
     val deliveryActionsHint: String get() = text("先完成人审，只有资源包就绪后才能下载 pet.zip。", "Review first; pet.zip is available only after the package is ready.")
+    val deliveryReviewTargetStatus: String get() = text("审核对象", "Review target")
+    val deliveryPackageStatus: String get() = text("资源包", "Package")
+    val deliveryCommunityStatus: String get() = text("社区提交", "Community")
+    val deliveryStatusSelected: String get() = text("已选择", "Selected")
+    val deliveryStatusWaiting: String get() = text("等待", "Waiting")
+    val deliveryStatusPackageReady: String get() = text("可下载", "Ready")
+    val deliveryStatusPackageLocked: String get() = text("未就绪", "Locked")
+    val deliveryStatusCommunityReady: String get() = text("可提交", "Ready")
+    val deliveryStatusCommunityWaiting: String get() = text("待草稿", "Draft pending")
     val selectedForReview: String get() = text("已选为审核对象", "Selected for review")
     val selectCandidate: String get() = text("选择候选图", "Select candidate")
     val reviewNotesLabel: String get() = text("审核备注", "Review notes")
@@ -262,8 +339,10 @@ class PetShellStrings internal constructor(
 
         return when (rawMessage) {
             "Loading community..." -> "正在加载社区..."
+            "Desktop pet ready." -> "桌宠已待机。"
             "Welcome back, Demo Keeper." -> "欢迎回来，Demo Keeper。"
             "Community ready." -> "社区已就绪。"
+            "Community home ready." -> "社区主页已就绪。"
             "Local fallback active." -> "本地兜底数据已启用。"
             "Daily reward already claimed." -> "今日奖励已经领取。"
             "No approved pets ready yet." -> "暂时还没有已通过的桌宠。"
