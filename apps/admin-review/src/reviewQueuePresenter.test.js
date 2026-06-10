@@ -9,6 +9,7 @@ import {
   createReviewDashboardModel,
   createFantasyPetImportPayload,
   createReviewDecisionPayload,
+  formatHealthStatus,
   formatImportEvidenceDetails,
   formatImportDraftStatus,
   formatReward
@@ -147,6 +148,20 @@ test("formatReward renders positive, zero, and negative petcoin amounts", () => 
   assert.equal(formatReward(80), "+80 PC");
   assert.equal(formatReward(0), "0 PC");
   assert.equal(formatReward(-80), "-80 PC");
+});
+
+test("formatHealthStatus summarizes service release", () => {
+  assert.equal(
+    formatHealthStatus({
+      ok: true,
+      service: "community-api",
+      release: {
+        commit: "87bb807abcdef"
+      }
+    }),
+    "community-api healthy @ 87bb807"
+  );
+  assert.equal(formatHealthStatus({ ok: false }), "community-api unhealthy");
 });
 
 test("actionsForStatus exposes review actions by submission state", () => {

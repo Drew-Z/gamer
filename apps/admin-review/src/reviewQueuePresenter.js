@@ -8,6 +8,15 @@ export function formatReward(amount) {
   return `${amount} PC`;
 }
 
+export function formatHealthStatus(health = {}) {
+  const service = health.service ?? "community-api";
+  const ok = health.ok === true;
+  const commit = String(health.release?.commit ?? "").trim();
+  const commitLabel = commit ? ` @ ${commit.slice(0, 7)}` : "";
+
+  return `${service} ${ok ? "healthy" : "unhealthy"}${commitLabel}`;
+}
+
 export function actionsForStatus(status) {
   if (status === "pending") {
     return ["approve", "held", "reject"];

@@ -6,6 +6,7 @@ import {
   createImportDraftListModel,
   createReviewDecisionPayload,
   createReviewDashboardModel,
+  formatHealthStatus,
   formatImportDraftStatus,
   formatImportEvidenceDetails,
   formatReward
@@ -16,6 +17,7 @@ const state = {
   approvedPetModel: createApprovedPetRegistryModel({ items: [] }),
   draftModel: createImportDraftListModel({ drafts: [] }),
   generationJobModel: createFantasyPetJobModel({}),
+  healthStatus: formatHealthStatus({}),
   selectedGenerationCandidateId: "",
   model: createReviewDashboardModel({ items: [] })
 };
@@ -597,15 +599,18 @@ async function loadQueue() {
 
 async function loadDashboard() {
   elements.statusLine.textContent = "Loading review queue...";
-  const [drafts, queue, approvedPets] = await Promise.all([
+  const [health, drafts, queue, approvedPets] = await Promise.all([
+    requestJson("/health"),
     requestJson("/v1/import-drafts"),
     requestJson("/v1/admin/review-queue"),
     requestJson("/v1/pets/approved")
   ]);
+  state.healthStatus = formatHealthStatus(health);
   state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
   state.approvedPetModel = createApprovedPetRegistryModel(approvedPets);
-  elements.statusLine.textContent = `Loaded ${state.model.summary.total} submissions`;
+  elements.statusLine.textContent =
+    `Loaded ${state.model.summary.total} submissions / ${state.healthStatus}`;
   render();
 }
 
