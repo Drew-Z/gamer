@@ -5689,9 +5689,15 @@ private fun approvedPetExplicitPreviewUrl(previewUrl: String, baseUrl: String): 
 }
 
 private fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
-    val displayName = pet?.displayName?.trim().orEmpty()
+    val displayName = pet?.displayName
+        ?.trim()
+        ?.replace(WHITESPACE_RUN, " ")
+        .orEmpty()
     return if (
         displayName.isNotBlank() &&
+        !displayName.startsWith("http://", ignoreCase = true) &&
+        !displayName.startsWith("https://", ignoreCase = true) &&
+        !displayName.isSafePublicArtifactRoute() &&
         displayName.isSafeAssetDisplayText() &&
         !PUBLIC_ARTIFACT_DOWNLOAD_ID.matches(displayName)
     ) {
@@ -5739,6 +5745,7 @@ private val WINDOWS_ASSET_PATH = Regex("(^|\\s)[A-Za-z]:[\\\\/]")
 
 private val PUBLIC_ARTIFACT_ID = Regex("[A-Za-z0-9._-]{1,128}")
 private val PUBLIC_ARTIFACT_DOWNLOAD_ID = Regex("artifact-\\d+", RegexOption.IGNORE_CASE)
+private val WHITESPACE_RUN = Regex("\\s+")
 
 private val INTERNAL_ASSET_MARKERS = listOf(
     "server_run.json",
