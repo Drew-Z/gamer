@@ -242,6 +242,24 @@ const isSafePackageRelativePath = (value) => {
     INTERNAL_PACKAGE_MARKERS.every((marker) => !lower.includes(marker));
 };
 
+const PUBLIC_ARTIFACT_ID = /^[A-Za-z0-9._-]+$/u;
+
+const publicArtifactUrl = (appJobId, targetDownloadId) => {
+  const normalizedAppJobId = String(appJobId ?? "").trim();
+  const normalizedTargetDownloadId = String(targetDownloadId ?? "").trim();
+
+  if (
+    normalizedAppJobId === "" ||
+    !isOpaquePublicToken(normalizedAppJobId) ||
+    !isOpaquePublicToken(normalizedTargetDownloadId) ||
+    !PUBLIC_ARTIFACT_ID.test(normalizedTargetDownloadId)
+  ) {
+    return "";
+  }
+
+  return `/pet-generation-jobs/${encodeURIComponent(normalizedAppJobId)}/artifacts/${encodeURIComponent(normalizedTargetDownloadId)}`;
+};
+
 const validateFantasyPetPackageImport = (input) => {
   const errors = [];
   const manifest = input.packageManifest;
@@ -375,6 +393,7 @@ const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   source: {
     kind: draft?.importSummary?.source?.kind ?? "",
     runId: draft?.importSummary?.source?.runId ?? "",
+    appJobId: draft?.importSummary?.source?.appJobId ?? "",
     statePath: draft?.importSummary?.source?.statePath ?? ""
   },
   assets: {
@@ -390,6 +409,29 @@ const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   totalScore: Number(scoreReport?.totalScore ?? 0),
   approvedAt: nowIso()
 });
+
+const createPublicApprovedPet = (pet) => {
+  const source = pet.source ?? {};
+  const assets = pet.assets ?? {};
+  const targetDownloadId = String(assets.previewPath ?? "").trim();
+  const appJobId = source.kind === "fantasy-pet-rule"
+    ? String(source.appJobId ?? source.runId ?? pet.petId ?? "").trim()
+    : "";
+  const previewUrl = publicArtifactUrl(appJobId, targetDownloadId);
+
+  return {
+    ...clone(pet),
+    source: {
+      ...clone(source),
+      appJobId
+    },
+    assets: {
+      ...clone(assets),
+      targetDownloadId: previewUrl ? targetDownloadId : "",
+      previewUrl
+    }
+  };
+};
 
 const createPublicSubmissionsSummary = (submissionsForUser) => {
   const countStatus = (status) =>
@@ -434,7 +476,7 @@ export function createCommunityStore(seed = defaultSeed, options = {}) {
 
     listApprovedPets() {
       return {
-        items: clone(state.approvedPets)
+        items: state.approvedPets.map(createPublicApprovedPet)
       };
     },
 
@@ -446,6 +488,7 @@ export function createCommunityStore(seed = defaultSeed, options = {}) {
       }
 
       const exportArtifactPath = pet.assets?.exportArtifactPath ?? "";
+      const publicPet = createPublicApprovedPet(pet);
 
       return {
         petId: pet.petId,
@@ -457,9 +500,11 @@ export function createCommunityStore(seed = defaultSeed, options = {}) {
         },
         assets: {
           previewPath: pet.assets?.previewPath ?? "",
+          targetDownloadId: publicPet.assets.targetDownloadId,
+          previewUrl: publicPet.assets.previewUrl,
           motionSheetCount: Number(pet.assets?.motionSheetCount ?? 0)
         },
-        source: clone(pet.source ?? {}),
+        source: clone(publicPet.source ?? {}),
         submissionId: pet.submissionId,
         importDraftId: pet.importDraftId,
         scoreReportId: pet.scoreReportId

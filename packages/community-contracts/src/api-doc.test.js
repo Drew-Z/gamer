@@ -21,6 +21,13 @@ test("community API docs include export artifact response examples", () => {
   assert.ok(doc.includes('"exportArtifactPath": "exports/stardust-package.zip"'));
   assert.ok(doc.includes("GET /v1/pets/approved"));
   assert.ok(doc.includes("approvedPets.items[].assets.exportArtifactPath"));
+  assert.ok(doc.includes("approvedPets.items[].assets.previewUrl"));
+  assert.ok(doc.includes('"targetDownloadId": "artifact-34"'));
+  assert.ok(
+    doc.includes(
+      '"/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34"'
+    )
+  );
   assert.ok(doc.includes('"assets": {'));
   assert.ok(doc.includes("GET /v1/pets/approved/:petId/package"));
   assert.ok(doc.includes("approvedPetPackage.package.exportArtifactPath"));

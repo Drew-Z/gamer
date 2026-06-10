@@ -46,7 +46,10 @@ data class ApprovedPet(
     val petId: String,
     val displayName: String,
     val sourceKind: String,
+    val sourceAppJobId: String = "",
     val previewPath: String,
+    val targetDownloadId: String = "",
+    val previewUrl: String = "",
     val exportArtifactPath: String,
     val motionSheetCount: Int,
     val totalScore: Int

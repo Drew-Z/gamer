@@ -65,9 +65,14 @@ class HttpCommunityApiClientTest {
                   "petId": "pet-stardust-001",
                   "displayName": "Stardust Dragon",
                   "ownerUserId": "user-demo-001",
-                  "source": {"kind": "fantasy-pet-rule"},
+                  "source": {
+                    "kind": "fantasy-pet-rule",
+                    "appJobId": "stardust-job-001"
+                  },
                   "assets": {
                     "previewPath": "previews/overall-showcase.png",
+                    "targetDownloadId": "artifact-34",
+                    "previewUrl": "/pet-generation-jobs/stardust-job-001/artifacts/artifact-34",
                     "motionSheetCount": 2,
                     "exportArtifactPath": "exports/stardust.zip"
                   },
@@ -80,6 +85,12 @@ class HttpCommunityApiClientTest {
         val response = HttpCommunityApiClient.decodeApprovedPets(json)
 
         assertEquals("Stardust Dragon", response.items[0].displayName)
+        assertEquals("stardust-job-001", response.items[0].source.appJobId)
+        assertEquals("artifact-34", response.items[0].assets.targetDownloadId)
+        assertEquals(
+            "/pet-generation-jobs/stardust-job-001/artifacts/artifact-34",
+            response.items[0].assets.previewUrl
+        )
         assertEquals(2, response.items[0].assets.motionSheetCount)
         assertEquals("exports/stardust.zip", response.items[0].assets.exportArtifactPath)
     }

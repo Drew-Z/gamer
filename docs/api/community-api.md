@@ -140,30 +140,37 @@ review trace panels.
 `approvedPets.items[].assets.exportArtifactPath` is the approved package archive
 path for loading, auditing, or later package download flows.
 
+`approvedPets.items[].assets.previewUrl` is the public preview artifact route.
+Clients should resolve relative preview URLs against the Community API base URL
+instead of reconstructing artifact routes from `petId` and `previewPath`.
+
 Example response:
 
 ```json
 {
   "items": [
     {
-      "petId": "pet-stardust-001",
-      "displayName": "Stardust Dragon",
+      "petId": "issue-1-fresh-timeout3600-20260610-1",
+      "displayName": "Generated pet issue-1-fresh-timeout3600-20260610-1",
       "ownerUserId": "user-demo-001",
       "source": {
         "kind": "fantasy-pet-rule",
-        "runId": "stardust-chinese-dragon-codex-02",
-        "statePath": "D:/workspace4Codex/fantasy-pet-rule/runs/stardust-chinese-dragon-codex-02/state.json"
+        "runId": "issue-1-fresh-timeout3600-20260610-1",
+        "appJobId": "issue-1-fresh-timeout3600-20260610-1",
+        "statePath": ""
       },
       "assets": {
-        "previewPath": "previews/overall-showcase.png",
-        "exportArtifactPath": "exports/stardust-package.zip",
-        "motionSheetCount": 2
+        "previewPath": "artifact-34",
+        "targetDownloadId": "artifact-34",
+        "previewUrl": "/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34",
+        "exportArtifactPath": "issue-1-fresh-timeout3600-20260610-1-package.zip",
+        "motionSheetCount": 1
       },
-      "submissionId": "submission-local-001",
+      "submissionId": "submission-local-002",
       "importDraftId": "import-draft-local-001",
       "scoreReportId": "score-import-draft-local-001",
-      "totalScore": 86,
-      "approvedAt": "2026-06-07T00:00:00.000Z"
+      "totalScore": 84,
+      "approvedAt": "2026-06-10T16:21:58.516Z"
     }
   ]
 }
@@ -190,13 +197,16 @@ Example response:
     "status": "available"
   },
   "assets": {
-    "previewPath": "previews/overall-showcase.png",
-    "motionSheetCount": 2
+    "previewPath": "artifact-34",
+    "targetDownloadId": "artifact-34",
+    "previewUrl": "/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34",
+    "motionSheetCount": 1
   },
   "source": {
     "kind": "fantasy-pet-rule",
-    "runId": "stardust-chinese-dragon-codex-02",
-    "statePath": "D:/workspace4Codex/fantasy-pet-rule/runs/stardust-chinese-dragon-codex-02/state.json"
+    "runId": "issue-1-fresh-timeout3600-20260610-1",
+    "appJobId": "issue-1-fresh-timeout3600-20260610-1",
+    "statePath": ""
   },
   "submissionId": "submission-local-001",
   "importDraftId": "import-draft-local-001",

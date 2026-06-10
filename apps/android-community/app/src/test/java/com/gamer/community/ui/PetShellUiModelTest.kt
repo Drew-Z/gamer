@@ -692,13 +692,43 @@ class PetShellUiModelTest {
         val pet = approvedPet(
             petId = "issue-1-fresh-timeout3600-20260610-1",
             displayName = "Generated pet",
-            previewPath = "artifact-34"
+            sourceAppJobId = "issue-1-fresh-timeout3600-20260610-1",
+            targetDownloadId = "artifact-34"
         )
 
         assertEquals(
             "http://olivia.hidencloud.com:24674/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34",
             approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674")
         )
+    }
+
+    @Test
+    fun approvedPetPreviewUrlPrefersExplicitApiPreviewUrl() {
+        val pet = approvedPet(
+            petId = "legacy-pet-id",
+            displayName = "Generated pet",
+            sourceAppJobId = "legacy-app-job",
+            targetDownloadId = "legacy-artifact",
+            previewPath = "legacy-artifact",
+            previewUrl = "/pet-generation-jobs/explicit-job/artifacts/artifact-34"
+        )
+
+        assertEquals(
+            "http://olivia.hidencloud.com:24674/pet-generation-jobs/explicit-job/artifacts/artifact-34",
+            approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674")
+        )
+    }
+
+    @Test
+    fun approvedPetPreviewUrlRejectsUnsafeExplicitPreviewUrl() {
+        val pet = approvedPet(
+            petId = "issue-1-fresh-timeout3600-20260610-1",
+            displayName = "Generated pet",
+            previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png",
+            previewUrl = "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+        )
+
+        assertEquals("", approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674"))
     }
 
     @Test
@@ -717,14 +747,20 @@ class PetShellUiModelTest {
         displayName: String,
         totalScore: Int = 86,
         motionSheetCount: Int = 2,
+        sourceAppJobId: String = "",
         previewPath: String = "previews/overall-showcase.png",
+        targetDownloadId: String = "",
+        previewUrl: String = "",
         exportArtifactPath: String = ""
     ): ApprovedPet =
         ApprovedPet(
             petId = petId,
             displayName = displayName,
             sourceKind = "fantasy-pet-rule",
+            sourceAppJobId = sourceAppJobId,
             previewPath = previewPath,
+            targetDownloadId = targetDownloadId,
+            previewUrl = previewUrl,
             exportArtifactPath = exportArtifactPath,
             motionSheetCount = motionSheetCount,
             totalScore = totalScore

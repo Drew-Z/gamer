@@ -4379,8 +4379,14 @@ internal fun approvedPetPreviewUrl(
         return ""
     }
 
-    val appJobId = pet.petId.trim()
-    val targetDownloadId = pet.previewPath.trim()
+    val explicitPreviewUrl = pet.previewUrl.trim()
+    val resolvedPreviewUrl = approvedPetExplicitPreviewUrl(explicitPreviewUrl, baseUrl)
+    if (resolvedPreviewUrl.isNotBlank()) {
+        return resolvedPreviewUrl
+    }
+
+    val appJobId = pet.sourceAppJobId.trim().ifBlank { pet.petId.trim() }
+    val targetDownloadId = pet.targetDownloadId.trim().ifBlank { pet.previewPath.trim() }
     if (
         appJobId.isBlank() ||
         !PUBLIC_ARTIFACT_ID.matches(targetDownloadId) ||
@@ -4390,6 +4396,26 @@ internal fun approvedPetPreviewUrl(
     }
 
     return "${baseUrl.trimEnd('/')}/pet-generation-jobs/${appJobId.pathSegment()}/artifacts/${targetDownloadId.pathSegment()}"
+}
+
+private fun approvedPetExplicitPreviewUrl(previewUrl: String, baseUrl: String): String {
+    if (previewUrl.isBlank()) {
+        return ""
+    }
+
+    if (previewUrl.startsWith("/") && previewUrl.isSafePublicArtifactRoute()) {
+        return "${baseUrl.trimEnd('/')}$previewUrl"
+    }
+
+    val normalizedBaseUrl = baseUrl.trimEnd('/')
+    if (
+        previewUrl.startsWith(normalizedBaseUrl) &&
+        previewUrl.removePrefix(normalizedBaseUrl).isSafePublicArtifactRoute()
+    ) {
+        return previewUrl
+    }
+
+    return ""
 }
 
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
@@ -4411,6 +4437,18 @@ private fun String.isSafeAssetDisplayText(): Boolean {
         !lower.startsWith("file:") &&
         !lower.startsWith("/") &&
         !lower.contains("\\") &&
+        INTERNAL_ASSET_MARKERS.none { marker -> lower.contains(marker) }
+}
+
+private fun String.isSafePublicArtifactRoute(): Boolean {
+    val trimmed = trim()
+    val lower = trimmed.lowercase()
+    return trimmed.startsWith("/pet-generation-jobs/") &&
+        trimmed.contains("/artifacts/") &&
+        !trimmed.contains("\\") &&
+        !trimmed.contains("..") &&
+        !lower.startsWith("file:") &&
+        !WINDOWS_ASSET_PATH.containsMatchIn(trimmed) &&
         INTERNAL_ASSET_MARKERS.none { marker -> lower.contains(marker) }
 }
 

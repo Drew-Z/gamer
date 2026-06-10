@@ -101,9 +101,14 @@ class CommunityApiMappersTest {
                     petId = "pet-stardust-001",
                     displayName = "Stardust Dragon",
                     ownerUserId = "user-demo-001",
-                    source = ApprovedPetSourceDto(kind = "fantasy-pet-rule"),
+                    source = ApprovedPetSourceDto(
+                        kind = "fantasy-pet-rule",
+                        appJobId = "stardust-job-001"
+                    ),
                     assets = ApprovedPetAssetsDto(
                         previewPath = "previews/overall-showcase.png",
+                        targetDownloadId = "artifact-34",
+                        previewUrl = "/pet-generation-jobs/stardust-job-001/artifacts/artifact-34",
                         motionSheetCount = 2,
                         exportArtifactPath = "exports/stardust.zip"
                     ),
@@ -118,7 +123,13 @@ class CommunityApiMappersTest {
         assertEquals("pet-stardust-001", pets[0].petId)
         assertEquals("Stardust Dragon", pets[0].displayName)
         assertEquals("fantasy-pet-rule", pets[0].sourceKind)
+        assertEquals("stardust-job-001", pets[0].sourceAppJobId)
         assertEquals("previews/overall-showcase.png", pets[0].previewPath)
+        assertEquals("artifact-34", pets[0].targetDownloadId)
+        assertEquals(
+            "/pet-generation-jobs/stardust-job-001/artifacts/artifact-34",
+            pets[0].previewUrl
+        )
         assertEquals("exports/stardust.zip", pets[0].exportArtifactPath)
         assertEquals(2, pets[0].motionSheetCount)
         assertEquals(86, pets[0].totalScore)

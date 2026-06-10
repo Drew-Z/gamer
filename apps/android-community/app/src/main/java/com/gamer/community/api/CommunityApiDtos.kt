@@ -80,12 +80,15 @@ data class ApprovedPetDto(
 
 @Serializable
 data class ApprovedPetSourceDto(
-    val kind: String = ""
+    val kind: String = "",
+    val appJobId: String = ""
 )
 
 @Serializable
 data class ApprovedPetAssetsDto(
     val previewPath: String = "",
+    val targetDownloadId: String = "",
+    val previewUrl: String = "",
     val exportArtifactPath: String = "",
     val motionSheetCount: Int = 0
 )
@@ -112,6 +115,8 @@ data class ApprovedPetPackageArtifactDto(
 @Serializable
 data class ApprovedPetPackageAssetsDto(
     val previewPath: String = "",
+    val targetDownloadId: String = "",
+    val previewUrl: String = "",
     val motionSheetCount: Int = 0
 )
 

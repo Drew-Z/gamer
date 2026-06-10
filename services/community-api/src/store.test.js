@@ -256,6 +256,27 @@ test("fantasy pet package manifest creates ready import draft without internal p
   ]);
   assert.equal(report.petId, "public-lifecycle-smoke");
   assert.equal(report.rewardRecommendation.amount, 80);
+
+  const submitted = store.submitImportDraft({
+    draftId: draft.id,
+    userId: "user-demo-001"
+  });
+  store.reviewSubmission({
+    submissionId: submitted.submission.id,
+    status: "approved",
+    reviewer: "admin-demo"
+  });
+
+  const approvedPet = store
+    .listApprovedPets()
+    .items.find((item) => item.petId === "public-lifecycle-smoke");
+
+  assert.equal(approvedPet.source.appJobId, "public-lifecycle-smoke");
+  assert.equal(approvedPet.assets.targetDownloadId, "artifact-1");
+  assert.equal(
+    approvedPet.assets.previewUrl,
+    "/pet-generation-jobs/public-lifecycle-smoke/artifacts/artifact-1"
+  );
 });
 
 test("fantasy pet package manifest rejects internal file paths", () => {
