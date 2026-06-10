@@ -198,7 +198,8 @@ fun PetShellApp(
     onStartDesktopPetOverlay: () -> Unit = {},
     onStopDesktopPetOverlay: () -> Unit = {},
     onResetDesktopPetOverlayPosition: () -> Unit = {},
-    onRefreshDesktopPetNotification: () -> Unit = {}
+    onRefreshDesktopPetNotification: () -> Unit = {},
+    onRefreshDesktopPetOverlayPreview: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val generationPrefs = remember(context) {
@@ -484,6 +485,9 @@ fun PetShellApp(
         uiPrefs.edit()
             .putString("desktopPetOverlayPreviewUrl", approvedPetPreviewUrl(selectedPet))
             .apply()
+        if (desktopPetOverlayRunning) {
+            onRefreshDesktopPetOverlayPreview()
+        }
     }
 
     LaunchedEffect(Unit) {

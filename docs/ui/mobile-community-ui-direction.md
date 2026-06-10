@@ -185,6 +185,7 @@ Project-local takeaway:
 - If the user changes language while the floating pet is running, refresh the existing foreground notification copy without recreating or unexpectedly showing a new overlay.
 - Desktop pet settings should show which approved pet is currently feeding the floating preview, render a compact public-preview thumbnail when available, and indicate whether a public remote preview is ready, without exposing URLs, artifact IDs, or internal paths.
 - Compact thumbnails should use image or mascot placeholders during loading; do not place long loading/error text inside icon-sized surfaces.
+- When the selected approved pet changes while the floating pet is already running, refresh the existing overlay preview from the stored public preview URL instead of waiting for a service restart.
 
 2026-06-11 emulator validation:
 
