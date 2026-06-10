@@ -179,6 +179,7 @@ Project-local takeaway:
 - If the "app icon opens the floating pet" setting is enabled and both overlay and notification permissions are granted, launching the app should start the floating pet service and move the main app to the background quickly.
 - The floating pet and its foreground notification must provide a full-app entry that bypasses auto-hide, so users can still reach community, generation, profile, and settings.
 - If overlay or notification permission is missing, fall back to the normal app flow and guide the user to the missing permission. Never hide the permission boundary.
+- The floating pet should remember its last dragged position across service restarts, while clamping restored coordinates so the pet stays reachable on the current screen.
 
 2026-06-11 emulator validation:
 

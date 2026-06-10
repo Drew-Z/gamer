@@ -76,6 +76,9 @@ class DesktopPetOverlayService : Service() {
 
         val density = resources.displayMetrics.density
         val sizePx = (132f * density).roundToInt()
+        val defaultX = (20f * density).roundToInt()
+        val defaultY = (118f * density).roundToInt()
+        val savedPosition = savedOverlayPosition(defaultX, defaultY, sizePx)
         val params = WindowManager.LayoutParams(
             sizePx,
             sizePx,
@@ -85,12 +88,19 @@ class DesktopPetOverlayService : Service() {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (20f * density).roundToInt()
-            y = (118f * density).roundToInt()
+            x = savedPosition.x
+            y = savedPosition.y
         }
         val view = DesktopPetOverlayView(this).apply {
             contentDescription = "gamer-system-desktop-pet"
-            setOnTouchListener(OverlayDragTouchListener(windowManager, params))
+            setOnTouchListener(
+                OverlayDragTouchListener(
+                    windowManager = windowManager,
+                    params = params,
+                    boundsProvider = { overlayBounds(sizePx) },
+                    onPositionSettled = { x, y -> persistOverlayPosition(x, y, sizePx) }
+                )
+            )
         }
         windowManager.addView(view, params)
         overlayView = view
@@ -113,6 +123,48 @@ class DesktopPetOverlayService : Service() {
             .edit()
             .putBoolean(DESKTOP_PET_OVERLAY_RUNNING_KEY, running)
             .apply()
+    }
+
+    private fun savedOverlayPosition(
+        defaultX: Int,
+        defaultY: Int,
+        sizePx: Int
+    ): OverlayPosition {
+        val prefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+        val savedX = if (prefs.contains(DESKTOP_PET_OVERLAY_X_KEY)) {
+            prefs.getInt(DESKTOP_PET_OVERLAY_X_KEY, defaultX)
+        } else {
+            defaultX
+        }
+        val savedY = if (prefs.contains(DESKTOP_PET_OVERLAY_Y_KEY)) {
+            prefs.getInt(DESKTOP_PET_OVERLAY_Y_KEY, defaultY)
+        } else {
+            defaultY
+        }
+        return overlayBounds(sizePx).clamp(savedX, savedY)
+    }
+
+    private fun persistOverlayPosition(x: Int, y: Int, sizePx: Int) {
+        val position = overlayBounds(sizePx).clamp(x, y)
+        getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putInt(DESKTOP_PET_OVERLAY_X_KEY, position.x)
+            .putInt(DESKTOP_PET_OVERLAY_Y_KEY, position.y)
+            .apply()
+    }
+
+    private fun overlayBounds(sizePx: Int): OverlayBounds {
+        val metrics = resources.displayMetrics
+        val minX = (-sizePx * 0.25f).roundToInt()
+        val maxX = (metrics.widthPixels - (sizePx * 0.75f)).roundToInt().coerceAtLeast(minX)
+        val minY = 0
+        val maxY = (metrics.heightPixels - sizePx).coerceAtLeast(minY)
+        return OverlayBounds(
+            minX = minX,
+            maxX = maxX,
+            minY = minY,
+            maxY = maxY
+        )
     }
 
     private fun loadOverlayPreviewIfAvailable(view: DesktopPetOverlayView) {
@@ -202,7 +254,9 @@ class DesktopPetOverlayService : Service() {
 
     private class OverlayDragTouchListener(
         private val windowManager: WindowManager,
-        private val params: WindowManager.LayoutParams
+        private val params: WindowManager.LayoutParams,
+        private val boundsProvider: () -> OverlayBounds,
+        private val onPositionSettled: (Int, Int) -> Unit
     ) : View.OnTouchListener {
         private var initialX = 0
         private var initialY = 0
@@ -224,20 +278,48 @@ class DesktopPetOverlayService : Service() {
                     val dx = event.rawX - initialTouchX
                     val dy = event.rawY - initialTouchY
                     moved = moved || abs(dx) > DRAG_SLOP || abs(dy) > DRAG_SLOP
-                    params.x = initialX + dx.roundToInt()
-                    params.y = initialY + dy.roundToInt()
+                    val bounds = boundsProvider()
+                    params.x = (initialX + dx.roundToInt()).coerceIn(bounds.minX, bounds.maxX)
+                    params.y = (initialY + dy.roundToInt()).coerceIn(bounds.minY, bounds.maxY)
                     windowManager.updateViewLayout(view, params)
                     return true
                 }
-                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_UP -> {
+                    if (moved) {
+                        onPositionSettled(params.x, params.y)
+                    } else {
+                        view.performClick()
+                    }
+                    return true
+                }
                 MotionEvent.ACTION_CANCEL -> {
-                    if (!moved) view.performClick()
+                    if (moved) {
+                        onPositionSettled(params.x, params.y)
+                    }
                     return true
                 }
             }
             return false
         }
     }
+
+    private data class OverlayBounds(
+        val minX: Int,
+        val maxX: Int,
+        val minY: Int,
+        val maxY: Int
+    ) {
+        fun clamp(x: Int, y: Int): OverlayPosition =
+            OverlayPosition(
+                x = x.coerceIn(minX, maxX),
+                y = y.coerceIn(minY, maxY)
+            )
+    }
+
+    private data class OverlayPosition(
+        val x: Int,
+        val y: Int
+    )
 
     private class DesktopPetOverlayView(context: Context) : View(context) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -359,6 +441,8 @@ class DesktopPetOverlayService : Service() {
         private const val UI_PREFS_NAME = "pet-shell-ui"
         private const val DESKTOP_PET_OVERLAY_RUNNING_KEY = "desktopPetOverlayRunning"
         private const val DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY = "desktopPetOverlayPreviewUrl"
+        private const val DESKTOP_PET_OVERLAY_X_KEY = "desktopPetOverlayX"
+        private const val DESKTOP_PET_OVERLAY_Y_KEY = "desktopPetOverlayY"
 
         fun startIntent(context: Context): Intent =
             Intent(context, DesktopPetOverlayService::class.java)
