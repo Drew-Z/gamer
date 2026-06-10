@@ -2558,9 +2558,8 @@ private fun DesktopPetActivePreviewStatus(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ApprovedPetPreviewArtwork(
+            CompactDesktopPetPreviewThumbnail(
                 pet = activeDesktopPet,
-                action = PetAction.Idle,
                 strings = strings,
                 modifier = Modifier
                     .size(42.dp)
@@ -2596,6 +2595,26 @@ private fun DesktopPetActivePreviewStatus(
             )
         }
     }
+}
+
+@Composable
+private fun CompactDesktopPetPreviewThumbnail(
+    pet: ApprovedPet?,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier
+) {
+    ApprovedPetPreviewArtwork(
+        pet = pet,
+        action = PetAction.Idle,
+        strings = strings,
+        modifier = modifier,
+        loading = {
+            PetArtworkBadge(
+                action = PetAction.Idle,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    )
 }
 
 @Composable
@@ -5070,7 +5089,8 @@ private fun ApprovedPetPreviewArtwork(
     pet: ApprovedPet?,
     action: PetAction,
     strings: PetShellStrings,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    loading: @Composable (() -> Unit)? = null
 ) {
     val previewUrl = approvedPetPreviewUrl(pet)
 
@@ -5084,6 +5104,7 @@ private fun ApprovedPetPreviewArtwork(
         strings = strings,
         modifier = modifier,
         cropFirstSpritesheetFrame = true,
+        loading = loading,
         fallback = {
             PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
         }
@@ -5096,6 +5117,7 @@ private fun RemotePreviewImage(
     strings: PetShellStrings,
     modifier: Modifier = Modifier,
     cropFirstSpritesheetFrame: Boolean = false,
+    loading: @Composable (() -> Unit)? = null,
     fallback: @Composable (() -> Unit)? = null
 ) {
     var image by remember(previewUrl) { mutableStateOf<ImageBitmap?>(null) }
@@ -5144,6 +5166,8 @@ private fun RemotePreviewImage(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
+        } else if (!failed && loading != null) {
+            loading()
         } else if (failed && fallback != null) {
             fallback()
         } else {

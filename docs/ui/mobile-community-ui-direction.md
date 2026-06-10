@@ -184,6 +184,7 @@ Project-local takeaway:
 - The foreground notification should follow the app language preference and expose clear open-app and stop actions, because it is the reliable system entry back to the full app.
 - If the user changes language while the floating pet is running, refresh the existing foreground notification copy without recreating or unexpectedly showing a new overlay.
 - Desktop pet settings should show which approved pet is currently feeding the floating preview, render a compact public-preview thumbnail when available, and indicate whether a public remote preview is ready, without exposing URLs, artifact IDs, or internal paths.
+- Compact thumbnails should use image or mascot placeholders during loading; do not place long loading/error text inside icon-sized surfaces.
 
 2026-06-11 emulator validation:
 
