@@ -240,10 +240,11 @@ class DesktopPetOverlayService : Service() {
     }
 
     private fun buildNotification(): Notification {
+        val copy = notificationCopy()
         val manager = getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Desktop pet",
+            copy.channelName,
             NotificationManager.IMPORTANCE_LOW
         )
         manager.createNotificationChannel(channel)
@@ -263,18 +264,49 @@ class DesktopPetOverlayService : Service() {
 
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_desktop_pet_notification)
-            .setContentTitle("Gamer desktop pet")
-            .setContentText("Desktop pet is showing over your screen.")
+            .setContentTitle(copy.title)
+            .setContentText(copy.text)
             .setContentIntent(openAppIntent)
             .addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, R.drawable.ic_desktop_pet_notification),
-                    "Stop",
+                    copy.openAction,
+                    openAppIntent
+                ).build()
+            )
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, R.drawable.ic_desktop_pet_notification),
+                    copy.stopAction,
                     stopIntent
                 ).build()
             )
+            .setCategory(Notification.CATEGORY_STATUS)
+            .setShowWhen(false)
             .setOngoing(true)
             .build()
+    }
+
+    private fun notificationCopy(): DesktopPetNotificationCopy {
+        val language = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+            .getString(LANGUAGE_PREF_KEY, DEFAULT_LANGUAGE)
+        return if (language == ENGLISH_LANGUAGE) {
+            DesktopPetNotificationCopy(
+                channelName = "Desktop pet",
+                title = "Gamer desktop pet",
+                text = "Your pet is showing over the launcher and other apps.",
+                openAction = "Open app",
+                stopAction = "Stop"
+            )
+        } else {
+            DesktopPetNotificationCopy(
+                channelName = "\u684c\u9762\u684c\u5ba0",
+                title = "Gamer \u684c\u9762\u684c\u5ba0",
+                text = "\u684c\u5ba0\u6b63\u5728\u663e\u793a\uff0c\u53ef\u4ee5\u968f\u65f6\u56de\u5230\u5b8c\u6574 App\u3002",
+                openAction = "\u6253\u5f00 App",
+                stopAction = "\u505c\u6b62"
+            )
+        }
     }
 
     private class OverlayDragTouchListener(
@@ -344,6 +376,14 @@ class DesktopPetOverlayService : Service() {
     private data class OverlayPosition(
         val x: Int,
         val y: Int
+    )
+
+    private data class DesktopPetNotificationCopy(
+        val channelName: String,
+        val title: String,
+        val text: String,
+        val openAction: String,
+        val stopAction: String
     )
 
     private class DesktopPetOverlayView(context: Context) : View(context) {
@@ -470,6 +510,9 @@ class DesktopPetOverlayService : Service() {
         private const val DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY = "desktopPetOverlayPreviewUrl"
         private const val DESKTOP_PET_OVERLAY_X_KEY = "desktopPetOverlayX"
         private const val DESKTOP_PET_OVERLAY_Y_KEY = "desktopPetOverlayY"
+        private const val LANGUAGE_PREF_KEY = "language"
+        private const val DEFAULT_LANGUAGE = "zh"
+        private const val ENGLISH_LANGUAGE = "en"
 
         fun startIntent(context: Context): Intent =
             Intent(context, DesktopPetOverlayService::class.java)

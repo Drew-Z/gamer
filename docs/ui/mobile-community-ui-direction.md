@@ -181,6 +181,7 @@ Project-local takeaway:
 - If overlay or notification permission is missing, fall back to the normal app flow and guide the user to the missing permission. Never hide the permission boundary.
 - The floating pet should remember its last dragged position across service restarts, while clamping restored coordinates so the pet stays reachable on the current screen.
 - Profile settings should provide a reset-position action so users can recover the floating pet's default placement without clearing app data.
+- The foreground notification should follow the app language preference and expose clear open-app and stop actions, because it is the reliable system entry back to the full app.
 
 2026-06-11 emulator validation:
 
