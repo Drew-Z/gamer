@@ -69,7 +69,7 @@ test("README exposes contract docs and phase verification commands", () => {
   assert.ok(readme.includes("docker compose config"));
   assert.ok(readme.includes("git diff --check"));
   assert.ok(readme.includes("FANTASY_PET_API_BASE_URL"));
-  assert.ok(readme.includes("D:\\workspace4Codex\\fantasy-pet-rule"));
+  assert.ok(readme.includes("D:\\workspace4Codex\\pet\\fantasy-pet-rule"));
   assert.ok(readme.includes("http://10.0.2.2:8765"));
   assert.ok(readme.includes("http://10.0.2.2:4000"));
   assert.ok(readme.includes("tools\\app_server.py --run-root runs --host 127.0.0.1 --port 8765"));
