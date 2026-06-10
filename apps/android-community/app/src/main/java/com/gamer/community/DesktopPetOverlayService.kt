@@ -67,6 +67,15 @@ class DesktopPetOverlayService : Service() {
                 startAsForegroundService()
                 return START_STICKY
             }
+            ACTION_REFRESH_PREVIEW -> {
+                val existingView = overlayView as? DesktopPetOverlayView
+                if (existingView == null) {
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                loadOverlayPreviewIfAvailable(existingView)
+                return START_STICKY
+            }
         }
         startAsForegroundService()
         showOverlayIfAllowed()
@@ -528,6 +537,8 @@ class DesktopPetOverlayService : Service() {
             "com.gamer.community.desktop_pet_overlay.RESET_POSITION"
         private const val ACTION_REFRESH_NOTIFICATION =
             "com.gamer.community.desktop_pet_overlay.REFRESH_NOTIFICATION"
+        private const val ACTION_REFRESH_PREVIEW =
+            "com.gamer.community.desktop_pet_overlay.REFRESH_PREVIEW"
         private const val CHANNEL_ID = "desktop_pet_overlay"
         private const val NOTIFICATION_ID = 7001
         private const val DRAG_SLOP = 4f
@@ -552,6 +563,9 @@ class DesktopPetOverlayService : Service() {
 
         fun refreshNotificationIntent(context: Context): Intent =
             Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_REFRESH_NOTIFICATION)
+
+        fun refreshPreviewIntent(context: Context): Intent =
+            Intent(context, DesktopPetOverlayService::class.java).setAction(ACTION_REFRESH_PREVIEW)
 
         fun clearSavedPosition(context: Context) {
             context.getSharedPreferences(UI_PREFS_NAME, Context.MODE_PRIVATE)

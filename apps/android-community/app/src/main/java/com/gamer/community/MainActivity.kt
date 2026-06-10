@@ -126,7 +126,7 @@ class MainActivity : ComponentActivity() {
     private fun refreshDesktopPetOverlayPreview() {
         val uiPrefs = getSharedPreferences("pet-shell-ui", MODE_PRIVATE)
         if (uiPrefs.getBoolean("desktopPetOverlayRunning", false)) {
-            startService(DesktopPetOverlayService.startIntent(this))
+            startService(DesktopPetOverlayService.refreshPreviewIntent(this))
         }
     }
 
