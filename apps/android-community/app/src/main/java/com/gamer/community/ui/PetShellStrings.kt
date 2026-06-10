@@ -57,6 +57,7 @@ class PetShellStrings internal constructor(
     val desktopPetOverlayPermissionContentDescription: String get() = "desktop-pet-overlay-permission-button"
     val desktopPetNotificationPermissionContentDescription: String get() = "desktop-pet-notification-permission-button"
     val desktopPetOverlayResetPositionContentDescription: String get() = "desktop-pet-overlay-reset-position-button"
+    val desktopPetOverlayActivePreviewContentDescription: String get() = "desktop-pet-overlay-active-preview"
     val desktopPetOverlayStartContentDescription: String get() = "desktop-pet-overlay-start-button"
     val desktopPetOverlayStopContentDescription: String get() = "desktop-pet-overlay-stop-button"
     val profileKeeperHeroContentDescription: String get() = "profile-keeper-hero"
@@ -140,6 +141,10 @@ class PetShellStrings internal constructor(
     val desktopPetNotificationRequestPermission: String get() = text("授权通知", "Grant notifications")
     val desktopPetNotificationManagePermission: String get() = text("通知已授权", "Notifications granted")
     val desktopPetOverlayResetPosition: String get() = text("恢复默认位置", "Reset position")
+    val desktopPetOverlayActivePreviewTitle: String get() = text("\u5f53\u524d\u684c\u9762\u684c\u5ba0", "Current desktop pet")
+    val desktopPetOverlayActivePreviewMissing: String get() = text("\u7b49\u5f85\u5df2\u901a\u8fc7\u684c\u5ba0", "Awaiting approved pet")
+    val desktopPetOverlayActivePreviewReady: String get() = text("\u8fdc\u7aef\u9884\u89c8\u53ef\u7528", "Remote preview ready")
+    val desktopPetOverlayActivePreviewPending: String get() = text("\u9884\u89c8\u5f85\u540c\u6b65", "Preview pending")
     val desktopPetOverlayShow: String get() = text("显示到桌面", "Show on desktop")
     val desktopPetOverlayHide: String get() = text("关闭桌面桌宠", "Hide desktop pet")
     fun communityCommandStatus(

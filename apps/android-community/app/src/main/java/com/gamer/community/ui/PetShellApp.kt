@@ -2146,6 +2146,7 @@ private fun ProfileWorkspace(
         )
         ProfileDesktopPetSettings(
             strings = strings,
+            activeDesktopPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex),
             directPetLaunchEnabled = directPetLaunchEnabled,
             desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
             desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
@@ -2472,6 +2473,7 @@ private fun ProfileActionDock(
 @Composable
 private fun ProfileDesktopPetSettings(
     strings: PetShellStrings,
+    activeDesktopPet: ApprovedPet?,
     directPetLaunchEnabled: Boolean,
     desktopPetOverlayAutoShowEnabled: Boolean,
     desktopPetOverlayPermissionGranted: Boolean,
@@ -2503,6 +2505,10 @@ private fun ProfileDesktopPetSettings(
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF101828)
             )
+            DesktopPetActivePreviewStatus(
+                strings = strings,
+                activeDesktopPet = activeDesktopPet
+            )
             DirectPetLaunchSetting(
                 strings = strings,
                 enabled = directPetLaunchEnabled,
@@ -2527,6 +2533,74 @@ private fun ProfileDesktopPetSettings(
             ) {
                 Text(strings.enterDesktopPetMode)
             }
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetActivePreviewStatus(
+    strings: PetShellStrings,
+    activeDesktopPet: ApprovedPet?
+) {
+    val previewReady = approvedPetPreviewUrl(activeDesktopPet).isNotBlank()
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.desktopPetOverlayActivePreviewContentDescription
+            },
+        color = Color(0xFFF0FDFA),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFF99F6E4))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0F766E)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "P",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = strings.desktopPetOverlayActivePreviewTitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F766E)
+                )
+                Text(
+                    text = activeDesktopPet?.displayName?.takeIf { it.isNotBlank() }
+                        ?: strings.desktopPetOverlayActivePreviewMissing,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            DesktopPetSettingPill(
+                label = if (previewReady) {
+                    strings.desktopPetOverlayActivePreviewReady
+                } else {
+                    strings.desktopPetOverlayActivePreviewPending
+                },
+                accent = if (previewReady) Color(0xFF0F766E) else Color(0xFF667085),
+                modifier = Modifier.weight(0.9f)
+            )
         }
     }
 }

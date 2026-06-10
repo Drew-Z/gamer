@@ -71,6 +71,10 @@ class PetShellUiModelTest {
             "desktop-pet-overlay-reset-position-button",
             zh.desktopPetOverlayResetPositionContentDescription
         )
+        assertEquals(
+            "desktop-pet-overlay-active-preview",
+            zh.desktopPetOverlayActivePreviewContentDescription
+        )
         assertEquals("desktop-pet-overlay-start-button", zh.desktopPetOverlayStartContentDescription)
         assertEquals("desktop-pet-overlay-stop-button", zh.desktopPetOverlayStopContentDescription)
         assertEquals("profile-keeper-hero", zh.profileKeeperHeroContentDescription)
