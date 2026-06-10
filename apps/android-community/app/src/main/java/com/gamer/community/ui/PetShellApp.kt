@@ -1954,30 +1954,8 @@ private fun PetCompanionStrip(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                CommunityCommandMetric(
-                    label = strings.profileWalletSummaryTitle,
-                    value = strings.walletBalance(state.walletBalance),
-                    accent = Color(0xFFFFB86B),
-                    modifier = Modifier.weight(1f)
-                )
-                CommunityCommandMetric(
-                    label = strings.dailyCheckIn,
-                    value = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckInDetail,
-                    accent = Color(0xFFACE4D9),
-                    modifier = Modifier.weight(1f)
-                )
-                CommunityCommandMetric(
-                    label = strings.profileApprovedPetsMetric,
-                    value = state.approvedPets.size.toString(),
-                    accent = Color(0xFF60A5FA),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 CommunityCommandButton(
                     label = strings.communityPetCommandNextPost,
@@ -1994,43 +1972,35 @@ private fun PetCompanionStrip(
                     modifier = Modifier.weight(1f)
                 )
             }
+            CommunityCommandStatus(
+                text = strings.communityCommandStatus(
+                    approvedPetCount = state.approvedPets.size,
+                    pendingSubmissionCount = state.pendingSubmissionCount,
+                    checkInClaimed = state.checkInClaimed
+                )
+            )
         }
     }
 }
 
 @Composable
-private fun CommunityCommandMetric(
-    label: String,
-    value: String,
-    accent: Color,
-    modifier: Modifier = Modifier
+private fun CommunityCommandStatus(
+    text: String
 ) {
     Surface(
-        modifier = modifier.height(48.dp),
-        color = Color.White.copy(alpha = 0.13f),
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White.copy(alpha = 0.16f),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.44f))
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.24f))
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFE8FFFA),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFFE8FFFA),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

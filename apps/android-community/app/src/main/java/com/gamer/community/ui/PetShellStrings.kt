@@ -67,6 +67,19 @@ class PetShellStrings internal constructor(
         )
     val communityPetCommandNextPost: String get() = text("\u770B\u4E0B\u4E00\u6761", "Next post")
     val communityPetCommandShowcase: String get() = text("\u53BB\u5C55\u793A", "Showcase")
+    fun communityCommandStatus(
+        approvedPetCount: Int,
+        pendingSubmissionCount: Int,
+        checkInClaimed: Boolean
+    ): String {
+        if (language == PetShellLanguage.English) {
+            val checkIn = if (checkInClaimed) "checked in" else "check-in ready"
+            return "$approvedPetCount approved / $pendingSubmissionCount pending / $checkIn"
+        }
+
+        val checkIn = if (checkInClaimed) "已签到" else "可签到"
+        return "$approvedPetCount 个已通过 / $pendingSubmissionCount 个待审 / $checkIn"
+    }
     val generationWorkspaceTitle: String get() = text("\u751F\u6210\u5DE5\u4F5C\u53F0", "Generation Workspace")
     val profileWorkspaceTitle: String get() = text("\u6211\u7684\u684C\u5BA0", "My Pets")
     val generationStudioHeroTitle: String get() = text("\u5B89\u5168\u751F\u6210\u53F0", "Safe Generation Desk")

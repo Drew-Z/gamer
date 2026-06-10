@@ -248,6 +248,14 @@ class PetShellUiModelTest {
         )
         assertEquals("\u770B\u4E0B\u4E00\u6761", zh.communityPetCommandNextPost)
         assertEquals("\u53BB\u5C55\u793A", zh.communityPetCommandShowcase)
+        assertEquals(
+            "1 个已通过 / 2 个待审 / 可签到",
+            zh.communityCommandStatus(
+                approvedPetCount = 1,
+                pendingSubmissionCount = 2,
+                checkInClaimed = false
+            )
+        )
         assertEquals("Pet navigator", en.communityPetCommandTitle)
         assertEquals(
             "Your desktop pet leads today's check-in, creation, review, and showcase loop.",
@@ -255,6 +263,14 @@ class PetShellUiModelTest {
         )
         assertEquals("Next post", en.communityPetCommandNextPost)
         assertEquals("Showcase", en.communityPetCommandShowcase)
+        assertEquals(
+            "1 approved / 2 pending / checked in",
+            en.communityCommandStatus(
+                approvedPetCount = 1,
+                pendingSubmissionCount = 2,
+                checkInClaimed = true
+            )
+        )
         assertEquals("\u684C\u5BA0\u89C6\u89D2", zh.communityFeedSignalTitle)
         assertEquals("\u4E92\u52A8", zh.feedReactionLabel)
         assertEquals("\u751F\u6210", zh.showcasePathGenerate)
