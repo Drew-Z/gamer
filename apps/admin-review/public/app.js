@@ -321,6 +321,15 @@ function renderApprovedPetList() {
     const previewPath = document.createElement("code");
     previewPath.textContent = row.previewPath || "No preview path";
 
+    const previewLink = document.createElement(row.canOpenPreview ? "a" : "span");
+    previewLink.className = "approved-pet-preview-link";
+    previewLink.textContent = row.previewLinkLabel;
+    if (row.canOpenPreview) {
+      previewLink.href = proxiedUrl(row.previewUrl);
+      previewLink.target = "_blank";
+      previewLink.rel = "noreferrer";
+    }
+
     const packageArtifact = document.createElement("code");
     packageArtifact.className = "approved-pet-package-path";
     packageArtifact.textContent = row.packageArtifactLabel;
@@ -362,6 +371,7 @@ function renderApprovedPetList() {
       petMeta,
       assetLabel,
       previewPath,
+      previewLink,
       packageArtifact,
       traceList,
       actions

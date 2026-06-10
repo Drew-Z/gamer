@@ -277,6 +277,18 @@ h1 {
   color: var(--accent-strong);
 }
 
+.approved-pet-preview-link {
+  width: fit-content;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.approved-pet-preview-link[href]:hover {
+  text-decoration: underline;
+}
+
 .approved-pet-asset {
   width: fit-content;
   border: 1px solid #b8d4d8;

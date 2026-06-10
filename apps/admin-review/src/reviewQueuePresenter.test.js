@@ -110,10 +110,13 @@ const approvedPetsFixture = {
       displayName: "Stardust Dragon",
       ownerUserId: "user-demo-001",
       source: {
-        kind: "fantasy-pet-rule"
+        kind: "fantasy-pet-rule",
+        appJobId: "pet-stardust-job-001"
       },
       assets: {
         previewPath: "previews/overall-showcase.png",
+        targetDownloadId: "artifact-34",
+        previewUrl: "/pet-generation-jobs/pet-stardust-job-001/artifacts/artifact-34",
         exportArtifactPath: "exports/stardust.zip",
         motionSheetCount: 2
       },
@@ -388,11 +391,19 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   assert.equal(model.rows[0].petId, "pet-stardust-001");
   assert.equal(model.rows[0].displayName, "Stardust Dragon");
   assert.equal(model.rows[0].ownerUserId, "user-demo-001");
+  assert.equal(model.rows[0].sourceAppJobId, "pet-stardust-job-001");
   assert.equal(
     model.rows[0].assetLabel,
     "fantasy-pet-rule / score 86 / 2 motion sheets"
   );
   assert.equal(model.rows[0].previewPath, "previews/overall-showcase.png");
+  assert.equal(model.rows[0].targetDownloadId, "artifact-34");
+  assert.equal(
+    model.rows[0].previewUrl,
+    "/pet-generation-jobs/pet-stardust-job-001/artifacts/artifact-34"
+  );
+  assert.equal(model.rows[0].canOpenPreview, true);
+  assert.equal(model.rows[0].previewLinkLabel, "Open preview");
   assert.equal(model.rows[0].exportArtifactPath, "exports/stardust.zip");
   assert.equal(model.rows[0].packageArtifactLabel, "Package exports/stardust.zip");
   assert.equal(model.rows[0].submissionLabel, "Submission submission-local-002");
@@ -424,10 +435,25 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
   assert.equal(missingSubmission.rows[0].canRevokeSubmission, false);
   assert.equal(missingSubmission.rows[0].revokeSubmissionLabel, "");
   assert.equal(missingSubmission.rows[0].exportArtifactPath, "");
+  assert.equal(missingSubmission.rows[0].canOpenPreview, false);
+  assert.equal(missingSubmission.rows[0].previewLinkLabel, "Preview link pending");
   assert.equal(
     missingSubmission.rows[0].packageArtifactLabel,
     "Package artifact pending"
   );
+
+  const unsafePreview = createApprovedPetRegistryModel({
+    items: [
+      {
+        petId: "pet-unsafe-001",
+        assets: {
+          previewUrl: "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+        }
+      }
+    ]
+  });
+  assert.equal(unsafePreview.rows[0].previewUrl, "");
+  assert.equal(unsafePreview.rows[0].canOpenPreview, false);
 
   const empty = createApprovedPetRegistryModel({});
   assert.equal(empty.summary.total, 0);

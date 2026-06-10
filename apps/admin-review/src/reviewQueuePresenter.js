@@ -190,15 +190,21 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
     const scoreReportId = item.scoreReportId ?? "";
     const approvedAt = item.approvedAt ?? "";
     const exportArtifactPath = item.assets?.exportArtifactPath ?? "";
+    const sourceAppJobId = item.source?.appJobId ?? "";
+    const targetDownloadId = item.assets?.targetDownloadId ?? "";
+    const previewUrl = safePublicArtifactRoute(item.assets?.previewUrl);
 
     return {
       petId: item.petId ?? "",
       displayName: item.displayName ?? item.petId ?? "Unnamed pet",
       ownerUserId: item.ownerUserId ?? "",
       sourceKind,
+      sourceAppJobId,
       totalScore,
       motionSheetCount,
       previewPath: item.assets?.previewPath ?? "",
+      targetDownloadId,
+      previewUrl,
       exportArtifactPath,
       submissionId,
       importDraftId,
@@ -212,6 +218,8 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
       focusSubmissionLabel: submissionId ? "View submission" : "",
       canRevokeSubmission: Boolean(submissionId),
       revokeSubmissionLabel: submissionId ? "Revoke publication" : "",
+      canOpenPreview: Boolean(previewUrl),
+      previewLinkLabel: previewUrl ? "Open preview" : "Preview link pending",
       packageArtifactLabel: exportArtifactPath
         ? `Package ${exportArtifactPath}`
         : "Package artifact pending",
@@ -225,6 +233,22 @@ export function createApprovedPetRegistryModel(response = { items: [] }) {
     },
     rows
   };
+}
+
+function safePublicArtifactRoute(value) {
+  const route = String(value ?? "").trim();
+
+  if (
+    !route.startsWith("/pet-generation-jobs/") ||
+    !route.includes("/artifacts/") ||
+    route.includes("\\") ||
+    route.includes("..") ||
+    route.toLowerCase().startsWith("file:")
+  ) {
+    return "";
+  }
+
+  return route;
 }
 
 export function createReviewDashboardModel(queue = { items: [] }) {
