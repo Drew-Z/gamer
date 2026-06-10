@@ -1,6 +1,8 @@
 # GitHub Label Setup
 
-This repo's agent workflow expects four workflow labels in addition to GitHub's default `wontfix` label.
+This repo's agent workflow uses four workflow labels in addition to GitHub's default `wontfix` label.
+
+These labels have been provisioned in `Drew-Z/gamer`.
 
 ## Required Labels
 
@@ -11,9 +13,9 @@ This repo's agent workflow expects four workflow labels in addition to GitHub's 
 | `ready-for-agent` | Fully specified, ready for an AFK agent |
 | `ready-for-human` | Requires human implementation |
 
-## Create With GitHub CLI
+## Maintain With GitHub CLI
 
-Install and authenticate `gh`, then run these commands from this repository:
+If labels are missing in a fresh clone or a new repository, install and authenticate `gh`, then run these commands from this repository:
 
 ```powershell
 gh label create "needs-triage" --description "Maintainer needs to evaluate this issue" --color "ededed"
@@ -33,6 +35,6 @@ gh label edit "ready-for-human" --description "Requires human implementation" --
 
 ## Notes
 
-- The current Windows workspace did not have `gh` on `PATH` when this file was written.
-- Unauthenticated GitHub API reads can hit rate limits, so prefer authenticated `gh` for label setup.
+- Codex may need a fresh terminal/session before `gh` appears on `PATH`; `C:\Program Files\GitHub CLI\gh.exe` is the expected Windows install path.
+- Unauthenticated GitHub API reads can hit rate limits, so prefer authenticated `gh` for label maintenance.
 - Keep `docs/agents/triage-labels.md` in sync if the remote label names change.

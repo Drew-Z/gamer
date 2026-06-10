@@ -12,6 +12,6 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role, use the corresponding label string from this table.
 
-`wontfix` already exists in the GitHub repository's default labels. The other four workflow labels should be created in GitHub before relying on remote triage automation.
+`wontfix` exists in the GitHub repository's default labels. The other four workflow labels have been provisioned in `Drew-Z/gamer`.
 
-See `docs/agents/github-label-setup.md` for the exact GitHub CLI commands.
+See `docs/agents/github-label-setup.md` for the exact GitHub CLI maintenance commands.
