@@ -185,3 +185,10 @@ Use these persistent traits:
 - Use color roles consistently: identity teal, reward orange, trust slate, review blue, warning red.
 - Keep text compact inside tool surfaces. Profile, generation, and feed cards should use smaller headings than launch or hero areas.
 - Verify emulator screenshots after meaningful visual changes.
+
+2026-06-11 Android main experience pass:
+
+- Community home now includes a compact status summary for wallet, daily check-in, approved pets, and pending review so the first viewport reads as a live HidenCloud-backed app surface.
+- Approved pet showcase and profile shelf share a remote-preview signal strip for score, motion sheets, preview readiness, and safe source trace. Keep this strip on public artifact IDs only.
+- Generation hero now repeats the safe loop as brief -> human review -> package delivery, reinforcing that the Android app creates and polls jobs but never bypasses human review or starts workers.
+- Chinese app copy should stay readable by default; do not reintroduce mojibake literals in `PetShellStrings.kt` or test assertions.

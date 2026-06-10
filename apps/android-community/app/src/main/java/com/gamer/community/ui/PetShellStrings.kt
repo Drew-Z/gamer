@@ -116,6 +116,11 @@ class PetShellStrings internal constructor(
     val profileKeeperRole: String get() = text("\u684C\u5BA0\u5B88\u62A4\u8005", "Desktop pet keeper")
     val profileWalletSummaryTitle: String get() = text("\u8D44\u4EA7\u6982\u89C8", "Asset overview")
     val profileApprovedPetsMetric: String get() = text("\u5DF2\u901A\u8FC7", "Approved")
+    val approvedPetScoreMetric: String get() = text("评分", "Score")
+    val approvedPetMotionMetric: String get() = text("动作表", "Sheets")
+    val approvedPetPreviewMetric: String get() = text("预览", "Preview")
+    val approvedPetPreviewReady: String get() = text("远端可看", "Remote ready")
+    val approvedPetPreviewPending: String get() = text("待生成", "Pending")
     val profilePetShelfTitle: String get() = text("\u684C\u5BA0\u5C55\u67B6", "Pet shelf")
     val profileActionDockTitle: String get() = text("\u5E38\u7528\u52A8\u4F5C", "Quick actions")
     val profileCreatePetAction: String get() = text("\u751F\u6210\u65B0\u684C\u5BA0", "Create new pet")
@@ -486,6 +491,29 @@ class PetShellStrings internal constructor(
         } else {
             "资源包 ${pet.exportArtifactPath}"
         }
+    }
+
+    fun approvedPetSourceLine(pet: ApprovedPet): String {
+        val source = pet.sourceKind.trim()
+            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+            ?: "unknown"
+        val appJobId = pet.sourceAppJobId.trim()
+            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+        val target = pet.targetDownloadId.trim()
+            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+        if (language == PetShellLanguage.English) {
+            return listOfNotNull(
+                "Source $source",
+                appJobId?.let { "job $it" },
+                target?.let { "preview $it" }
+            ).joinToString(" / ")
+        }
+
+        return listOfNotNull(
+            "来源 $source",
+            appJobId?.let { "任务 $it" },
+            target?.let { "预览 $it" }
+        ).joinToString(" / ")
     }
 
     private fun text(chinese: String, english: String): String =

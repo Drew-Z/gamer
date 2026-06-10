@@ -1054,6 +1054,10 @@ private fun CommunityHome(
             onNextPost = { onNavigate(FeedDirection.Next) },
             onShowcase = { onShowcaseNavigate(FeedDirection.Next) }
         )
+        CommunityStatusSummary(
+            state = state,
+            strings = strings
+        )
         CommunityChannelRail(strings = strings)
         CommunityQuickActions(
             state = state,
@@ -1077,6 +1081,99 @@ private fun CommunityHome(
             strings = strings,
             onNavigate = onNavigate
         )
+    }
+}
+
+@Composable
+private fun CommunityStatusSummary(
+    state: PetShellState,
+    strings: PetShellStrings
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White,
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CommunitySummaryToken(
+                    label = strings.profileWalletSummaryTitle,
+                    value = strings.walletBalance(state.walletBalance),
+                    accent = Color(0xFF0F766E),
+                    modifier = Modifier.weight(1f)
+                )
+                CommunitySummaryToken(
+                    label = strings.dailyCheckIn,
+                    value = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckInDetail,
+                    accent = Color(0xFFF97316),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CommunitySummaryToken(
+                    label = strings.profileApprovedPetsMetric,
+                    value = state.approvedPets.size.toString(),
+                    accent = Color(0xFF2F63D6),
+                    modifier = Modifier.weight(1f)
+                )
+                CommunitySummaryToken(
+                    label = strings.quickActionReview,
+                    value = strings.quickActionReviewStatus(state.pendingSubmissionCount),
+                    accent = Color(0xFF475467),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunitySummaryToken(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .height(44.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.10f))
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 4.dp, height = 24.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(accent)
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF667085),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF101828),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -1369,47 +1466,99 @@ private fun GenerationWorkspace(
                 }
                 .padding(10.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = Color.White.copy(alpha = 0.92f),
-                    shape = RoundedCornerShape(8.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.padding(6.dp)) {
-                        PetArtworkBadge(
-                            action = state.petAction,
-                            modifier = Modifier
-                                .size(78.dp)
-                                .semantics {
-                                    contentDescription = strings.petAvatarContentDescription
-                                }
+                    Surface(
+                        color = Color.White.copy(alpha = 0.92f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Box(modifier = Modifier.padding(6.dp)) {
+                            PetArtworkBadge(
+                                action = state.petAction,
+                                modifier = Modifier
+                                    .size(78.dp)
+                                    .semantics {
+                                        contentDescription = strings.petAvatarContentDescription
+                                    }
+                            )
+                        }
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text(
+                            text = strings.generationStudioHeroTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
+                        Text(
+                            text = strings.generationStudioHeroSubtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.86f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        SpeechBubble(text = strings.speechBubble(state.speechBubble))
                     }
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Text(
-                        text = strings.generationStudioHeroTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = strings.generationStudioHeroSubtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.86f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    SpeechBubble(text = strings.speechBubble(state.speechBubble))
-                }
+                GenerationSafetyStrip(strings = strings)
             }
         }
         generationContent()
+    }
+}
+
+@Composable
+private fun GenerationSafetyStrip(strings: PetShellStrings) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        GenerationSafetyStep(
+            label = strings.generationFlowBriefStep,
+            accent = Color(0xFFACE4D9),
+            modifier = Modifier.weight(1f)
+        )
+        GenerationSafetyStep(
+            label = strings.generationFlowReviewStep,
+            accent = Color(0xFF60A5FA),
+            modifier = Modifier.weight(1f)
+        )
+        GenerationSafetyStep(
+            label = strings.generationFlowPackageStep,
+            accent = Color(0xFFFFB86B),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun GenerationSafetyStep(
+    label: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(38.dp),
+        color = Color.White.copy(alpha = 0.16f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -1679,32 +1828,10 @@ private fun ProfilePetShelf(
                 }
             }
             if (hasApprovedPets) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFF8FAFC))
-                        .padding(10.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = strings.approvedPetShowcaseAsset(
-                                pets = state.approvedPets,
-                                selectedIndex = state.approvedPetIndex
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF667085)
-                        )
-                        Text(
-                            text = strings.approvedPetShowcasePackage(
-                                pets = state.approvedPets,
-                                selectedIndex = state.approvedPetIndex
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF667085)
-                        )
-                    }
-                }
+                ApprovedPetSignalStrip(
+                    pet = selectedPet,
+                    strings = strings
+                )
             }
             if (!hasApprovedPets) {
                 ShowcaseEmptyPath(strings = strings)
@@ -2001,22 +2128,10 @@ private fun ApprovedPetShowcaseBlock(
                     )
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = strings.approvedPetShowcaseAsset(
-                        pets = state.approvedPets,
-                        selectedIndex = state.approvedPetIndex
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085)
-                )
-                Text(
-                    text = strings.approvedPetShowcasePackage(
-                        pets = state.approvedPets,
-                        selectedIndex = state.approvedPetIndex
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085)
+            if (hasApprovedPets) {
+                ApprovedPetSignalStrip(
+                    pet = selectedPet,
+                    strings = strings
                 )
             }
             if (!hasApprovedPets) {
@@ -2049,6 +2164,93 @@ private fun ApprovedPetShowcaseBlock(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ApprovedPetSignalStrip(
+    pet: ApprovedPet?,
+    strings: PetShellStrings
+) {
+    val previewReady = pet?.let { approvedPetPreviewUrl(it).isNotBlank() } == true
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ApprovedPetSignalToken(
+                    label = strings.approvedPetScoreMetric,
+                    value = pet?.totalScore?.toString() ?: "-",
+                    accent = Color(0xFFF97316),
+                    modifier = Modifier.weight(1f)
+                )
+                ApprovedPetSignalToken(
+                    label = strings.approvedPetMotionMetric,
+                    value = pet?.motionSheetCount?.toString() ?: "-",
+                    accent = Color(0xFF2F63D6),
+                    modifier = Modifier.weight(1f)
+                )
+                ApprovedPetSignalToken(
+                    label = strings.approvedPetPreviewMetric,
+                    value = if (previewReady) {
+                        strings.approvedPetPreviewReady
+                    } else {
+                        strings.approvedPetPreviewPending
+                    },
+                    accent = if (previewReady) Color(0xFF0F766E) else Color(0xFF667085),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            if (pet != null) {
+                Text(
+                    text = strings.approvedPetSourceLine(pet),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApprovedPetSignalToken(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .height(54.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.10f))
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFF667085),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

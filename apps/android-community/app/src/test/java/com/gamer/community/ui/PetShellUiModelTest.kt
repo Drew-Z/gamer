@@ -419,9 +419,28 @@ class PetShellUiModelTest {
         assertEquals("桌宠 1 / 1", zh.approvedPetShowcasePosition(listOf(pet), selectedIndex = 0))
         assertEquals("预览 previews/moonfox.png", zh.approvedPetShowcaseAsset(listOf(pet), selectedIndex = 0))
         assertEquals("资源包 exports/moonfox.zip", zh.approvedPetShowcasePackage(listOf(pet), selectedIndex = 0))
+        assertEquals("评分", zh.approvedPetScoreMetric)
+        assertEquals("动作表", zh.approvedPetMotionMetric)
+        assertEquals("远端可看", zh.approvedPetPreviewReady)
 
         assertEquals("1 approved pet", en.approvedPetRegistrySummary(listOf(pet)))
         assertEquals("Pet 1 of 1", en.approvedPetShowcasePosition(listOf(pet), selectedIndex = 0))
+        assertEquals("Score", en.approvedPetScoreMetric)
+        assertEquals("Remote ready", en.approvedPetPreviewReady)
+        val tracedPet = approvedPet(
+            petId = "issue-1-fresh-timeout3600-20260610-1",
+            displayName = "Generated pet",
+            sourceAppJobId = "issue-1-fresh-timeout3600-20260610-1",
+            targetDownloadId = "artifact-34"
+        )
+        assertEquals(
+            "来源 fantasy-pet-rule / 任务 issue-1-fresh-timeout3600-20260610-1 / 预览 artifact-34",
+            zh.approvedPetSourceLine(tracedPet)
+        )
+        assertEquals(
+            "Source fantasy-pet-rule / job issue-1-fresh-timeout3600-20260610-1 / preview artifact-34",
+            en.approvedPetSourceLine(tracedPet)
+        )
     }
 
     @Test
