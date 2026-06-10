@@ -1,6 +1,7 @@
 package com.gamer.community.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
 import androidx.compose.foundation.BorderStroke
@@ -3835,6 +3836,7 @@ private fun ApprovedPetPreviewArtwork(
         previewUrl = previewUrl,
         strings = strings,
         modifier = modifier,
+        cropFirstSpritesheetFrame = true,
         fallback = {
             PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
         }
@@ -3846,6 +3848,7 @@ private fun RemotePreviewImage(
     previewUrl: String,
     strings: PetShellStrings,
     modifier: Modifier = Modifier,
+    cropFirstSpritesheetFrame: Boolean = false,
     fallback: @Composable (() -> Unit)? = null
 ) {
     var image by remember(previewUrl) { mutableStateOf<ImageBitmap?>(null) }
@@ -3862,11 +3865,17 @@ private fun RemotePreviewImage(
         image = when (val result = previewDownloader.download(previewUrl)) {
             is PetPreviewDownloadResult.Success -> {
                 withContext(Dispatchers.Default) {
-                    BitmapFactory.decodeByteArray(
+                    val decoded = BitmapFactory.decodeByteArray(
                         result.bytes,
                         0,
                         result.bytes.size
-                    )?.asImageBitmap()
+                    )
+                    val displayBitmap = if (cropFirstSpritesheetFrame) {
+                        decoded?.firstSpritesheetFrame()
+                    } else {
+                        decoded
+                    }
+                    displayBitmap?.asImageBitmap()
                 }
             }
             is PetPreviewDownloadResult.Failure -> null
@@ -3898,6 +3907,14 @@ private fun RemotePreviewImage(
             )
         }
     }
+}
+
+private fun Bitmap.firstSpritesheetFrame(): Bitmap {
+    if (width < 2 || height < 2) {
+        return this
+    }
+
+    return Bitmap.createBitmap(this, 0, 0, width / 2, height / 2)
 }
 
 @Composable
