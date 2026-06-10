@@ -570,6 +570,43 @@ h1 {
   justify-content: flex-end;
 }
 
+.generation-import {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 8px 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.generation-import label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.generation-import span,
+.generation-import p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.generation-import input {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 10px;
+}
+
+.generation-import p {
+  grid-column: 1 / -1;
+}
+
 .package-link {
   display: inline-flex;
   min-height: 36px;
@@ -804,9 +841,14 @@ h1 {
   }
 
   .generation-panel-heading,
-  .generation-job-form {
+  .generation-job-form,
+  .generation-import {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .generation-import {
+    grid-template-columns: 1fr;
   }
 
   .generation-candidate {

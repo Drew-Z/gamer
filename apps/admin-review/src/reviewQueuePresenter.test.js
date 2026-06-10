@@ -4,6 +4,7 @@ import {
   actionsForStatus,
   createApprovedPetRegistryModel,
   createFantasyPetJobModel,
+  createFantasyPetPackageImportPayload,
   createImportDraftListModel,
   createReviewDashboardModel,
   createFantasyPetImportPayload,
@@ -212,6 +213,29 @@ test("createFantasyPetImportPayload trims state path and ownership claim", () =>
   assert.deepEqual(payload, {
     statePath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/state.json",
     ownershipClaimId: "claim-pet-demo-001"
+  });
+});
+
+test("createFantasyPetPackageImportPayload keeps manifest and trims public ids", () => {
+  const packageManifest = {
+    schema: "fantasy-pet.package-manifest.v1",
+    appJobId: "job-123"
+  };
+  const payload = createFantasyPetPackageImportPayload({
+    packageManifest,
+    packageFileName: "  pet-job-123.zip  ",
+    packageByteCount: "140271",
+    targetDownloadId: "  artifact-34  ",
+    ownershipClaimId: "  claim-job-123  "
+  });
+
+  assert.equal(payload.packageManifest, packageManifest);
+  assert.deepEqual(payload, {
+    packageManifest,
+    packageFileName: "pet-job-123.zip",
+    packageByteCount: 140271,
+    targetDownloadId: "artifact-34",
+    ownershipClaimId: "claim-job-123"
   });
 });
 

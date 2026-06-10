@@ -31,6 +31,16 @@ export function createFantasyPetImportPayload(input = {}) {
   };
 }
 
+export function createFantasyPetPackageImportPayload(input = {}) {
+  return {
+    packageManifest: input.packageManifest ?? {},
+    packageFileName: String(input.packageFileName ?? "").trim(),
+    packageByteCount: Number(input.packageByteCount ?? 0),
+    targetDownloadId: String(input.targetDownloadId ?? "").trim(),
+    ownershipClaimId: String(input.ownershipClaimId ?? "").trim()
+  };
+}
+
 export function formatImportDraftStatus(draft = {}) {
   const status = draft.status ?? "unknown";
   const id = draft.id ?? "unknown draft";

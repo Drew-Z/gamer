@@ -2,6 +2,7 @@ import {
   createApprovedPetRegistryModel,
   createFantasyPetJobModel,
   createFantasyPetImportPayload,
+  createFantasyPetPackageImportPayload,
   createImportDraftListModel,
   createReviewDecisionPayload,
   createReviewDashboardModel,
@@ -37,6 +38,11 @@ const elements = {
   generationReviseButton: document.querySelector("#generation-revise-button"),
   generationRejectButton: document.querySelector("#generation-reject-button"),
   generationPackageLink: document.querySelector("#generation-package-link"),
+  generationImportClaimInput: document.querySelector("#generation-import-claim-input"),
+  generationImportPackageButton: document.querySelector(
+    "#generation-import-package-button"
+  ),
+  generationImportStatus: document.querySelector("#generation-import-status"),
   importForm: document.querySelector("#import-form"),
   importButton: document.querySelector("#import-button"),
   importStatus: document.querySelector("#import-status"),
@@ -64,6 +70,126 @@ const labelForAction = (action) => (action === "held" ? "hold" : action);
 const pathSegment = (value) => encodeURIComponent(String(value ?? "").trim());
 
 const proxiedUrl = (path) => `/api${path}`;
+
+const ZIP_SIGNATURES = {
+  endOfCentralDirectory: 0x06054b50,
+  centralDirectoryFileHeader: 0x02014b50,
+  localFileHeader: 0x04034b50
+};
+
+const zipTextDecoder = new TextDecoder();
+
+const safeZipFileName = (value) => {
+  const baseName = String(value ?? "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return `${baseName || "fantasy-pet-package"}.zip`;
+};
+
+function findZipEndOfCentralDirectory(view) {
+  const minimumSize = 22;
+  const maximumCommentSize = 0xffff;
+  const firstPossibleOffset = Math.max(
+    0,
+    view.byteLength - minimumSize - maximumCommentSize
+  );
+
+  for (let offset = view.byteLength - minimumSize; offset >= firstPossibleOffset; offset -= 1) {
+    if (view.getUint32(offset, true) === ZIP_SIGNATURES.endOfCentralDirectory) {
+      return offset;
+    }
+  }
+
+  throw new Error("Package manifest was not found in the zip.");
+}
+
+function readZipCentralDirectoryEntries(buffer) {
+  const view = new DataView(buffer);
+  const endOffset = findZipEndOfCentralDirectory(view);
+  const entryCount = view.getUint16(endOffset + 10, true);
+  let offset = view.getUint32(endOffset + 16, true);
+  const entries = [];
+
+  for (let index = 0; index < entryCount; index += 1) {
+    if (view.getUint32(offset, true) !== ZIP_SIGNATURES.centralDirectoryFileHeader) {
+      throw new Error("Package zip central directory is not readable.");
+    }
+
+    const compressionMethod = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const uncompressedSize = view.getUint32(offset + 24, true);
+    const fileNameLength = view.getUint16(offset + 28, true);
+    const extraFieldLength = view.getUint16(offset + 30, true);
+    const fileCommentLength = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+    const fileNameBytes = new Uint8Array(buffer, offset + 46, fileNameLength);
+
+    entries.push({
+      name: zipTextDecoder.decode(fileNameBytes),
+      compressionMethod,
+      compressedSize,
+      uncompressedSize,
+      localHeaderOffset
+    });
+
+    offset += 46 + fileNameLength + extraFieldLength + fileCommentLength;
+  }
+
+  return entries;
+}
+
+async function inflateRawZipEntry(compressedBytes) {
+  if (!globalThis.DecompressionStream) {
+    throw new Error("This browser cannot decompress zip entries.");
+  }
+
+  const stream = new Blob([compressedBytes])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate-raw"));
+
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function readZipTextEntry(buffer, entryName) {
+  const view = new DataView(buffer);
+  const entries = readZipCentralDirectoryEntries(buffer);
+  const entry =
+    entries.find((item) => item.name === entryName) ||
+    entries.find((item) => item.name.endsWith(`/${entryName}`));
+
+  if (!entry) {
+    throw new Error(`${entryName} was not found in the package.`);
+  }
+
+  if (
+    view.getUint32(entry.localHeaderOffset, true) !== ZIP_SIGNATURES.localFileHeader
+  ) {
+    throw new Error(`${entryName} has an unreadable zip entry header.`);
+  }
+
+  const fileNameLength = view.getUint16(entry.localHeaderOffset + 26, true);
+  const extraFieldLength = view.getUint16(entry.localHeaderOffset + 28, true);
+  const dataOffset = entry.localHeaderOffset + 30 + fileNameLength + extraFieldLength;
+  const compressedBytes = new Uint8Array(buffer, dataOffset, entry.compressedSize);
+  let bytes;
+
+  if (entry.compressionMethod === 0) {
+    bytes = compressedBytes;
+  } else if (entry.compressionMethod === 8) {
+    bytes = await inflateRawZipEntry(compressedBytes);
+  } else {
+    throw new Error(`${entryName} uses an unsupported zip compression method.`);
+  }
+
+  if (entry.uncompressedSize > 0 && bytes.byteLength !== entry.uncompressedSize) {
+    throw new Error(`${entryName} did not decompress to the expected size.`);
+  }
+
+  return zipTextDecoder.decode(bytes);
+}
 
 function setActiveFilter(filter) {
   state.filter = filter;
@@ -310,6 +436,10 @@ function renderGenerationJob() {
   const packageHref = model.packageLink ? proxiedUrl(model.packageLink) : "";
   elements.generationPackageLink.hidden = !model.downloadReady || !packageHref;
   elements.generationPackageLink.href = packageHref || "#";
+  elements.generationImportPackageButton.disabled = !model.downloadReady || !packageHref;
+  elements.generationImportClaimInput.placeholder = model.appJobId
+    ? `claim-${model.appJobId}`
+    : "claim-app-job-id";
 }
 
 function renderList() {
@@ -537,6 +667,82 @@ async function submitImportDraft(draftId) {
   await loadDashboard();
 }
 
+function targetDownloadIdForGenerationPackage(packageManifest) {
+  const manifestDownloadId = String(packageManifest?.sourceDownloadId ?? "").trim();
+  if (manifestDownloadId) {
+    return manifestDownloadId;
+  }
+
+  const selected = selectedGenerationCandidate();
+  if (selected?.downloadId) {
+    return selected.downloadId;
+  }
+
+  const accepted = state.generationJobModel.candidates.find(
+    (candidate) =>
+      candidate.status === "human-accepted" || candidate.reviewDecision === "accept"
+  );
+
+  return accepted?.downloadId ?? "";
+}
+
+async function importGenerationPackage() {
+  const model = state.generationJobModel;
+  if (!model.appJobId || !model.downloadReady || !model.packageLink) {
+    return;
+  }
+
+  elements.generationImportPackageButton.disabled = true;
+  elements.generationImportStatus.textContent = `Downloading package for ${model.appJobId}...`;
+
+  try {
+    const packageResponse = await fetch(proxiedUrl(model.packageLink));
+    if (!packageResponse.ok) {
+      throw new Error(`Package download failed: ${packageResponse.status}`);
+    }
+
+    const packageBuffer = await packageResponse.arrayBuffer();
+    const manifestText = await readZipTextEntry(
+      packageBuffer,
+      "package-manifest.json"
+    );
+    const packageManifest = JSON.parse(manifestText);
+    const targetDownloadId = targetDownloadIdForGenerationPackage(packageManifest);
+    const ownershipClaimId =
+      elements.generationImportClaimInput.value.trim() || `claim-${model.appJobId}`;
+
+    elements.generationImportStatus.textContent = "Creating import draft from package...";
+    const draft = await requestJson("/v1/import-drafts/from-fantasy-pet-package", {
+      method: "POST",
+      body: JSON.stringify(
+        createFantasyPetPackageImportPayload({
+          packageManifest,
+          packageFileName: safeZipFileName(model.appJobId),
+          packageByteCount: packageBuffer.byteLength,
+          targetDownloadId,
+          ownershipClaimId
+        })
+      )
+    });
+
+    let message = formatImportDraftStatus(draft);
+    if (draft.status === "ready") {
+      const result = await requestJson("/v1/import-drafts/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          draftId: draft.id
+        })
+      });
+      message = `${message} Submitted ${result.submission.id}.`;
+    }
+
+    elements.generationImportStatus.textContent = message;
+    await loadDashboard();
+  } finally {
+    elements.generationImportPackageButton.disabled = !model.downloadReady;
+  }
+}
+
 function focusSubmission(submissionId) {
   setActiveFilter("all");
   renderList();
@@ -644,6 +850,14 @@ elements.generationRejectButton.addEventListener("click", () => {
   reviewGenerationCandidate("reject").catch((error) => {
     elements.generationStatus.textContent =
       error instanceof Error ? error.message : "Unable to reject candidate";
+  });
+});
+
+elements.generationImportPackageButton.addEventListener("click", () => {
+  importGenerationPackage().catch((error) => {
+    elements.generationImportStatus.textContent =
+      error instanceof Error ? error.message : "Unable to import package";
+    renderGenerationJob();
   });
 });
 

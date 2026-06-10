@@ -131,6 +131,20 @@
               <button id="generation-reject-button" class="action-button danger" type="button">Reject</button>
               <a id="generation-package-link" class="package-link" href="#" download hidden>Download Package</a>
             </div>
+            <div class="generation-import">
+              <label>
+                <span>Ownership claim</span>
+                <input
+                  id="generation-import-claim-input"
+                  name="generationImportClaim"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="claim-app-job-id"
+                />
+              </label>
+              <button id="generation-import-package-button" class="secondary-button" type="button" disabled>Import Package</button>
+              <p id="generation-import-status">Package import waits for a ready download.</p>
+            </div>
           </div>
         </section>
 
