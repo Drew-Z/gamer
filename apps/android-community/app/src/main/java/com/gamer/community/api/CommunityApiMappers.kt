@@ -59,32 +59,32 @@ private fun FeedPostMetadataDto?.rewardLabel(): String? {
 
 private fun FeedPostMetadataDto?.importDraftLabel(): String? {
     val id = this?.importDraftId ?: return null
-    return if (id.isNotBlank()) "Draft $id" else null
+    return if (id.isNotBlank()) "Draft ready" else null
 }
 
 private fun FeedPostMetadataDto?.submissionLabel(): String? {
     val id = this?.submissionId ?: return null
-    return if (id.isNotBlank()) "Submission $id" else null
+    return if (id.isNotBlank()) "Review submitted" else null
 }
 
 private fun FeedPostMetadataDto?.scoreReportLabel(): String? {
     val id = this?.scoreReportId ?: return null
-    return if (id.isNotBlank()) "Score $id" else null
+    return if (id.isNotBlank()) "Score ready" else null
 }
 
 private fun FeedPostMetadataDto?.importSourceLabel(): String? {
     val kind = this?.importSourceKind ?: return null
-    return if (kind.isNotBlank()) "Source $kind" else null
+    return if (kind.isNotBlank()) "Reviewed source" else null
 }
 
 private fun FeedPostMetadataDto?.importPreviewLabel(): String? {
     val path = this?.importPreviewPath ?: return null
-    return if (path.isNotBlank()) "Preview $path" else null
+    return if (path.isNotBlank()) "Preview ready" else null
 }
 
 private fun FeedPostMetadataDto?.exportArtifactLabel(): String? {
     val path = this?.exportArtifactPath ?: return null
-    return if (path.isNotBlank()) "Package $path" else null
+    return if (path.isNotBlank()) "Package ready" else null
 }
 
 private fun FeedPostMetadataDto?.motionSheetLabel(): String? {

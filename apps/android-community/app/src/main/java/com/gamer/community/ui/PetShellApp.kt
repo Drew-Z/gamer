@@ -452,7 +452,7 @@ fun PetShellApp(
         val trimmedAppJobId = appJobId.trim()
         if (!canPollGenerationJob(trimmedAppJobId)) {
             generationMessage = pollGenerationJobValidationMessage(trimmedAppJobId)
-                .ifBlank { "Enter an app job id to poll." }
+                .ifBlank { "Enter a task name to poll." }
             return
         }
 
@@ -1059,6 +1059,11 @@ private fun DesktopPetScreen(
                 selectedPet = selectedPet,
                 strings = strings
             )
+            DesktopPetHomeSummary(
+                state = state,
+                selectedPet = selectedPet,
+                strings = strings
+            )
             if (selectedPet == null) {
                 DesktopPetRemoteSyncStrip(strings = strings)
             } else {
@@ -1129,6 +1134,133 @@ private fun DesktopPetStage(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetHomeSummary(
+    state: PetShellState,
+    selectedPet: ApprovedPet?,
+    strings: PetShellStrings
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = strings.desktopPetHomeTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = strings.desktopPetHomeDetail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF667085),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DesktopPetHomeMetric(
+                    label = strings.desktopPetActivePetMetric,
+                    value = approvedPetDisplayName(
+                        pet = selectedPet,
+                        fallback = if (selectedPet == null) {
+                            strings.desktopPetActivePetMissing
+                        } else {
+                            strings.desktopPetActivePetReady
+                        }
+                    ),
+                    accent = Color(0xFF0F766E),
+                    modifier = Modifier.weight(1f)
+                )
+                DesktopPetHomeMetric(
+                    label = strings.desktopPetWalletMetric,
+                    value = strings.walletBalance(state.walletBalance),
+                    accent = Color(0xFFF97316),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DesktopPetHomeMetric(
+                    label = strings.desktopPetCheckInMetric,
+                    value = if (state.checkInClaimed) {
+                        strings.desktopPetCheckInDone
+                    } else {
+                        strings.desktopPetCheckInReady
+                    },
+                    accent = Color(0xFF2F63D6),
+                    modifier = Modifier.weight(1f)
+                )
+                DesktopPetHomeMetric(
+                    label = strings.desktopPetPendingReviewMetric,
+                    value = state.pendingSubmissionCount.toString(),
+                    accent = Color(0xFF7C3AED),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopPetHomeMetric(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.1f))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 22.dp, height = 3.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(accent)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -2417,9 +2549,13 @@ private fun ProfilePetShelf(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = strings.approvedPetShowcaseTitle(
-                            pets = state.approvedPets,
-                            selectedIndex = state.approvedPetIndex
+                        text = approvedPetDisplayName(
+                            pet = selectedPet,
+                            fallback = if (selectedPet == null) {
+                                strings.desktopPetActivePetMissing
+                            } else {
+                                strings.desktopPetActivePetReady
+                            }
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF475467)
@@ -2604,8 +2740,14 @@ private fun DesktopPetActivePreviewStatus(
                     color = Color(0xFF0F766E)
                 )
                 Text(
-                    text = activeDesktopPet?.displayName?.takeIf { it.isNotBlank() }
-                        ?: strings.desktopPetOverlayActivePreviewMissing,
+                    text = approvedPetDisplayName(
+                        pet = activeDesktopPet,
+                        fallback = if (activeDesktopPet == null) {
+                            strings.desktopPetOverlayActivePreviewMissing
+                        } else {
+                            strings.desktopPetActivePetReady
+                        }
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF101828),
@@ -3094,9 +3236,13 @@ private fun ApprovedPetShowcaseBlock(
                     verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Text(
-                        text = strings.approvedPetShowcaseTitle(
-                            pets = state.approvedPets,
-                            selectedIndex = state.approvedPetIndex
+                        text = approvedPetDisplayName(
+                            pet = selectedPet,
+                            fallback = if (selectedPet == null) {
+                                strings.desktopPetActivePetMissing
+                            } else {
+                                strings.desktopPetActivePetReady
+                            }
                         ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
@@ -5685,14 +5831,17 @@ internal fun approvedPetShowcaseTitle(
     pets: List<ApprovedPet>,
     selectedIndex: Int
 ): String =
-    pets.selectedApprovedPet(selectedIndex)?.displayName ?: "Awaiting approved pet"
+    approvedPetDisplayName(
+        pet = pets.selectedApprovedPet(selectedIndex),
+        fallback = "Awaiting approved pet"
+    )
 
 internal fun approvedPetShowcaseDetail(
     pets: List<ApprovedPet>,
     selectedIndex: Int
 ): String {
     val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Approved imports will appear here."
-    return "${pet.sourceKind} / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
+    return "Reviewed / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
 }
 
 internal fun approvedPetShowcasePosition(
@@ -5708,22 +5857,27 @@ internal fun approvedPetShowcaseAsset(
     pets: List<ApprovedPet>,
     selectedIndex: Int
 ): String {
-    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Preview asset pending"
-    if (!pet.previewPath.isSafeAssetDisplayText()) {
-        return "Preview asset pending"
+    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Remote preview pending"
+    return if (
+        pet.previewUrl.isNotBlank() ||
+        pet.targetDownloadId.isNotBlank() ||
+        pet.previewPath.isNotBlank()
+    ) {
+        "Remote preview ready"
+    } else {
+        "Remote preview pending"
     }
-    return "Preview ${pet.previewPath}"
 }
 
 internal fun approvedPetShowcasePackage(
     pets: List<ApprovedPet>,
     selectedIndex: Int
 ): String {
-    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Package artifact pending"
-    return if (pet.exportArtifactPath.isBlank() || !pet.exportArtifactPath.isSafeAssetDisplayText()) {
-        "Package artifact pending"
+    val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Package pending"
+    return if (pet.exportArtifactPath.isBlank()) {
+        "Package pending"
     } else {
-        "Package ${pet.exportArtifactPath}"
+        "Package ready"
     }
 }
 
@@ -5785,13 +5939,20 @@ internal fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
         !displayName.startsWith("https://", ignoreCase = true) &&
         !displayName.isSafePublicArtifactRoute() &&
         displayName.isSafeAssetDisplayText() &&
-        !PUBLIC_ARTIFACT_DOWNLOAD_ID.matches(displayName)
+        !PUBLIC_ARTIFACT_DOWNLOAD_ID.matches(displayName) &&
+        !TECHNICAL_DISPLAY_NAME.containsMatchIn(displayName)
     ) {
         displayName.take(36)
     } else {
         ""
     }
 }
+
+private fun approvedPetDisplayName(
+    pet: ApprovedPet?,
+    fallback: String
+): String =
+    desktopPetOverlayDisplayName(pet).ifBlank { fallback }
 
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
     if (isEmpty()) return null
@@ -5831,6 +5992,10 @@ private val WINDOWS_ASSET_PATH = Regex("(^|\\s)[A-Za-z]:[\\\\/]")
 
 private val PUBLIC_ARTIFACT_ID = Regex("[A-Za-z0-9._-]{1,128}")
 private val PUBLIC_ARTIFACT_DOWNLOAD_ID = Regex("artifact-\\d+", RegexOption.IGNORE_CASE)
+private val TECHNICAL_DISPLAY_NAME = Regex(
+    "(issue-|job-|run-|draft-|submission-|artifact-|/artifacts/|pet-generation-jobs)",
+    RegexOption.IGNORE_CASE
+)
 private val WHITESPACE_RUN = Regex("\\s+")
 
 private val INTERNAL_ASSET_MARKERS = listOf(

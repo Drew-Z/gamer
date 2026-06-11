@@ -864,7 +864,7 @@ fun generationCreateValidationMessage(
         "invalid_body_shape" -> "Choose a supported body shape."
         "too_many_reference_urls" -> "Use at most 8 reference URLs."
         "reference_urls_must_be_http_or_https" -> "Reference URLs must use HTTP or HTTPS."
-        "invalid_app_job_id" -> "App job id can use letters, numbers, dot, underscore, or dash."
+        "invalid_app_job_id" -> "Task name can use letters, numbers, dot, underscore, or dash."
         else -> ""
     }
 
@@ -889,8 +889,8 @@ fun pollGenerationJobValidationFailureReason(appJobId: String): String {
 
 fun pollGenerationJobValidationMessage(appJobId: String): String =
     when (pollGenerationJobValidationFailureReason(appJobId)) {
-        "app_job_id_required" -> "Enter an app job id to poll."
-        "invalid_app_job_id" -> "App job id can use letters, numbers, dot, underscore, or dash."
+        "app_job_id_required" -> "Enter a task name to poll."
+        "invalid_app_job_id" -> "Task name can use letters, numbers, dot, underscore, or dash."
         else -> ""
     }
 

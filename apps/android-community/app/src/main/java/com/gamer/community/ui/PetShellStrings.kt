@@ -104,6 +104,20 @@ class PetShellStrings internal constructor(
             "已连接 HidenCloud，预览图和评分会在社区数据返回后显示。",
             "Connected to HidenCloud; preview and score appear after community data returns."
         )
+    val desktopPetHomeTitle: String get() = text("今日桌宠首页", "Today's pet home")
+    val desktopPetHomeDetail: String
+        get() = text(
+            "从这里确认当前桌宠、奖励和人审状态。",
+            "Check the active pet, rewards, and review state from here."
+        )
+    val desktopPetActivePetMetric: String get() = text("当前桌宠", "Active pet")
+    val desktopPetActivePetReady: String get() = text("已通过桌宠", "Approved pet")
+    val desktopPetActivePetMissing: String get() = text("等待已通过", "Awaiting approval")
+    val desktopPetWalletMetric: String get() = text("钱包", "Wallet")
+    val desktopPetCheckInMetric: String get() = text("签到", "Check-in")
+    val desktopPetCheckInReady: String get() = text("可领取", "Ready")
+    val desktopPetCheckInDone: String get() = text("已完成", "Done")
+    val desktopPetPendingReviewMetric: String get() = text("待审", "Review")
     val desktopPetRemoteStatus: String get() = text("远端同步", "Remote sync")
     val desktopPetReviewStatus: String get() = text("人审后展示", "Human reviewed")
     fun directPetLaunchStatus(enabled: Boolean): String =
@@ -199,8 +213,8 @@ class PetShellStrings internal constructor(
             "薄荷色守护者桌宠，待机轻轻漂浮，跑动时尾巴弹跳。",
             "Mint guardian pet, gentle idle bob, springy tail run."
         )
-    val generationTaskStageTitle: String get() = text("任务控制", "Job control")
-    val generationTaskStageHint: String get() = text("任务 ID 可选；参考图必须是 HTTP/HTTPS URL。", "App job id is optional; reference images must use HTTP/HTTPS URLs.")
+    val generationTaskStageTitle: String get() = text("任务设置", "Task setup")
+    val generationTaskStageHint: String get() = text("任务名称可选；参考图必须是 HTTP/HTTPS URL。", "Task name is optional; reference images must use HTTP/HTTPS URLs.")
     val generationBodyStageTitle: String get() = text("体型预设", "Body preset")
     val generationBodyStageHint: String get() = text("选择生成服务支持的桌宠体型。", "Choose a supported desktop pet body shape.")
     val generationRunStageTitle: String get() = text("运行操作", "Runtime actions")
@@ -276,7 +290,7 @@ class PetShellStrings internal constructor(
         )
     val descriptionLabel: String get() = text("文字描述", "Description")
     val requiredFieldSuffix: String get() = text("（必填）", " (required)")
-    val appJobIdLabel: String get() = text("任务 ID", "App job id")
+    val appJobIdLabel: String get() = text("任务名称", "Task name")
     val referenceUrlsLabel: String get() = text("参考图 URL", "Reference URLs")
     val createGenerationJob: String get() = text("创建生成任务", "Create generation job")
     val checkGenerationService: String get() = text("检查生成服务", "Check generation service")
@@ -424,9 +438,9 @@ class PetShellStrings internal constructor(
             "Choose a supported body shape." -> "请选择支持的体型。"
             "Use at most 8 reference URLs." -> "最多填写 8 个参考图 URL。"
             "Reference URLs must use HTTP or HTTPS." -> "参考图 URL 必须使用 HTTP 或 HTTPS。"
-            "App job id can use letters, numbers, dot, underscore, or dash." ->
-                "任务 ID 只能使用字母、数字、点、下划线或短横线。"
-            "Enter an app job id to poll." -> "请输入要刷新的任务 ID。"
+            "Task name can use letters, numbers, dot, underscore, or dash." ->
+                "任务名称只能使用字母、数字、点、下划线或短横线。"
+            "Enter a task name to poll." -> "请输入要刷新的任务名称。"
             "Revise and reject need specific visual notes." -> "修订或拒绝时需要填写具体视觉备注。"
             "Review notes cannot include internal paths or worker details." ->
                 "审核备注不能包含内部路径或 worker 细节。"
@@ -476,7 +490,7 @@ class PetShellStrings internal constructor(
         generationMessage(rawStatus).ifBlank { rawStatus }
 
     fun jobLabel(appJobId: String): String =
-        text("任务 $appJobId", "Job $appJobId")
+        text("最近任务", "Saved task")
 
     fun candidateTitle(rawTitle: String, index: Int): String =
         if (language == PetShellLanguage.English) rawTitle else "候选图 ${index + 1}"
@@ -501,17 +515,33 @@ class PetShellStrings internal constructor(
         text("$balance 宠物币", "$balance petcoin")
 
     fun feedMetadataLabel(label: String): String {
-        if (language == PetShellLanguage.English) return label
+        if (language == PetShellLanguage.English) {
+            return when {
+                label.startsWith("Draft ") -> "Draft ready"
+                label.startsWith("Submission ") -> "Review submitted"
+                label.startsWith("Score ") -> "Score ready"
+                label.startsWith("Source ") -> "Reviewed source"
+                label.startsWith("Preview ") -> "Preview ready"
+                label.startsWith("Package ") -> "Package ready"
+                else -> label
+            }
+        }
 
         return when {
             label == "Approved import" -> "已通过导入"
+            label == "Draft ready" -> "草稿已就绪"
+            label == "Review submitted" -> "已提交审核"
+            label == "Score ready" -> "评分已就绪"
+            label == "Reviewed source" -> "来源已审核"
+            label == "Preview ready" -> "预览可用"
+            label == "Package ready" -> "资源包可用"
             label.endsWith(" petcoin") -> label.replace(" petcoin", " 宠物币")
-            label.startsWith("Draft ") -> label.replaceFirst("Draft ", "草稿 ")
-            label.startsWith("Submission ") -> label.replaceFirst("Submission ", "提交 ")
-            label.startsWith("Score ") -> label.replaceFirst("Score ", "评分 ")
-            label.startsWith("Source ") -> label.replaceFirst("Source ", "来源 ")
-            label.startsWith("Preview ") -> label.replaceFirst("Preview ", "预览 ")
-            label.startsWith("Package ") -> label.replaceFirst("Package ", "资源包 ")
+            label.startsWith("Draft ") -> "草稿已就绪"
+            label.startsWith("Submission ") -> "已提交审核"
+            label.startsWith("Score ") -> "评分已就绪"
+            label.startsWith("Source ") -> "来源已审核"
+            label.startsWith("Preview ") -> "预览可用"
+            label.startsWith("Package ") -> "资源包可用"
             label.endsWith(" motion sheets") -> label.replace(" motion sheets", " 张动作表")
             else -> label
         }
@@ -543,9 +573,17 @@ class PetShellStrings internal constructor(
         selectedIndex: Int
     ): String {
         if (language == PetShellLanguage.English) {
-            return selectedApprovedPet(pets, selectedIndex)?.displayName ?: "Awaiting approved pet"
+            return if (selectedApprovedPet(pets, selectedIndex) == null) {
+                "Awaiting approved pet"
+            } else {
+                "Approved desktop pet"
+            }
         }
-        return selectedApprovedPet(pets, selectedIndex)?.displayName ?: "等待已通过桌宠"
+        return if (selectedApprovedPet(pets, selectedIndex) == null) {
+            "等待已通过桌宠"
+        } else {
+            "已通过桌宠"
+        }
     }
 
     fun approvedPetShowcaseDetail(
@@ -554,10 +592,10 @@ class PetShellStrings internal constructor(
     ): String {
         if (language == PetShellLanguage.English) {
             val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Approved imports will appear here."
-            return "${pet.sourceKind} / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
+            return "Reviewed / score ${pet.totalScore} / ${pet.motionSheetCount} motion sheets"
         }
         val pet = selectedApprovedPet(pets, selectedIndex) ?: return "通过审核的导入会显示在这里。"
-        return "${pet.sourceKind} / 评分 ${pet.totalScore} / ${pet.motionSheetCount} 张动作表"
+        return "已通过 / 评分 ${pet.totalScore} / ${pet.motionSheetCount} 张动作表"
     }
 
     fun approvedPetShowcasePosition(
@@ -579,17 +617,25 @@ class PetShellStrings internal constructor(
         selectedIndex: Int
     ): String {
         if (language == PetShellLanguage.English) {
-            val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Preview asset pending"
-            if (!pet.previewPath.isSafeAssetDisplayTextForStrings()) {
-                return "Preview asset pending"
+            val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Remote preview pending"
+            return if (pet.previewUrl.isNotBlank() ||
+                pet.targetDownloadId.isNotBlank() ||
+                pet.previewPath.isNotBlank()
+            ) {
+                "Remote preview ready"
+            } else {
+                "Remote preview pending"
             }
-            return "Preview ${pet.previewPath}"
         }
-        val pet = selectedApprovedPet(pets, selectedIndex) ?: return "预览资源待生成"
-        if (!pet.previewPath.isSafeAssetDisplayTextForStrings()) {
-            return "预览资源待生成"
+        val pet = selectedApprovedPet(pets, selectedIndex) ?: return "远端预览待同步"
+        return if (pet.previewUrl.isNotBlank() ||
+            pet.targetDownloadId.isNotBlank() ||
+            pet.previewPath.isNotBlank()
+        ) {
+            "远端预览可用"
+        } else {
+            "远端预览待同步"
         }
-        return "预览 ${pet.previewPath}"
     }
 
     fun approvedPetShowcasePackage(
@@ -597,33 +643,30 @@ class PetShellStrings internal constructor(
         selectedIndex: Int
     ): String {
         if (language == PetShellLanguage.English) {
-            val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Package artifact pending"
-            return if (pet.exportArtifactPath.isBlank() || !pet.exportArtifactPath.isSafeAssetDisplayTextForStrings()) {
-                "Package artifact pending"
+            val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Package pending"
+            return if (pet.exportArtifactPath.isBlank()) {
+                "Package pending"
             } else {
-                "Package ${pet.exportArtifactPath}"
+                "Package ready"
             }
         }
-        val pet = selectedApprovedPet(pets, selectedIndex) ?: return "资源包待生成"
-        return if (pet.exportArtifactPath.isBlank() || !pet.exportArtifactPath.isSafeAssetDisplayTextForStrings()) {
-            "资源包待生成"
+        val pet = selectedApprovedPet(pets, selectedIndex) ?: return "资源包待同步"
+        return if (pet.exportArtifactPath.isBlank()) {
+            "资源包待同步"
         } else {
-            "资源包 ${pet.exportArtifactPath}"
+            "资源包可用"
         }
     }
 
     fun approvedPetSourceLine(pet: ApprovedPet): String {
-        val source = pet.sourceKind.trim()
-            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
-            ?: if (language == PetShellLanguage.English) "reviewed import" else "人审导入"
         val previewReady = pet.previewUrl.trim().isNotBlank() ||
             pet.targetDownloadId.trim().isNotBlank() ||
             pet.previewPath.trim().isNotBlank()
         if (language == PetShellLanguage.English) {
-            return "Source $source / remote preview ${if (previewReady) "ready" else "pending"}"
+            return "Human reviewed / remote preview ${if (previewReady) "ready" else "pending"}"
         }
 
-        return "来源 $source / 远端预览${if (previewReady) "可用" else "待同步"}"
+        return "人审已通过 / 远端预览${if (previewReady) "可用" else "待同步"}"
     }
 
     private fun text(chinese: String, english: String): String =
