@@ -182,6 +182,21 @@ class PetShellStrings internal constructor(
             "\u521d\u59cb\u4e09\u53ea\u4f5c\u4e3a App \u672c\u5730\u8d44\u6e90\uff1b\u8fdc\u7aef\u5ba1\u6838\u684c\u5ba0\u4f1a\u5355\u72ec\u8fdb\u5165\u5c55\u67b6\u3002",
             "These three starters are packaged locally; reviewed remote pets stay in the shelf."
         )
+    val defaultDesktopPetOnboardingContentDescription: String get() = "default-desktop-pet-onboarding"
+    val defaultDesktopPetOnboardingTitle: String get() = text("\u9009\u62e9\u4f60\u7684\u7b2c\u4e00\u53ea\u684c\u5ba0", "Choose your first desktop pet")
+    val defaultDesktopPetOnboardingDetail: String
+        get() = text(
+            "\u8fd9\u53ea\u684c\u5ba0\u4f1a\u5148\u6210\u4e3a App \u5185\u548c\u684c\u9762\u60ac\u6d6e\u7684\u9ed8\u8ba4\u4f19\u4f34\uff0c\u4ee5\u540e\u53ef\u4ee5\u5728\u6211\u7684\u9875\u9762\u5207\u6362\u3002",
+            "This pet becomes your default in-app and floating companion; you can change it later in Profile."
+        )
+    val defaultDesktopPetOnboardingAction: String get() = text("\u5f00\u59cb\u517b\u6210", "Start with this pet")
+    val defaultDesktopPetOnboardingFootnote: String
+        get() = text(
+            "\u8fdc\u7aef\u751f\u6210\u548c\u4eba\u5ba1\u684c\u5ba0\u4f1a\u53e6\u5916\u8fdb\u5165\u793e\u533a\u5c55\u793a\u548c\u5ba0\u7269\u67b6\u3002",
+            "Generated and reviewed remote pets still enter the community showcase and shelf separately."
+        )
+    val defaultDesktopPetSelected: String get() = text("\u5df2\u9009", "Selected")
+    val defaultDesktopPetSelect: String get() = text("\u9009\u62e9", "Pick")
     val defaultDesktopPetElementMetric: String get() = text("\u5c5e\u6027", "Element")
     val defaultDesktopPetMotionMetric: String get() = text("\u52a8\u4f5c", "Motion")
     val defaultDesktopPetPreviewMetric: String get() = text("\u9884\u89c8", "Preview")
@@ -784,6 +799,14 @@ class PetShellStrings internal constructor(
         }
     }
 
+    fun defaultDesktopPetStarterLine(pet: DefaultDesktopPet): String {
+        if (language == PetShellLanguage.English) {
+            return "${defaultDesktopPetElementLabel(pet)} / ${pet.motionLabel} / local starter"
+        }
+
+        return "${pet.elementLabel} / ${pet.motionLabel} / \u672c\u5730\u521d\u59cb\u8d44\u6e90"
+    }
+
     private fun text(chinese: String, english: String): String =
         if (language == PetShellLanguage.Chinese) chinese else english
 
@@ -811,6 +834,15 @@ class PetShellStrings internal constructor(
     }
 
     private fun localizedSpeechBubble(rawMessage: String): String {
+        if (rawMessage.startsWith("Selected ") && rawMessage.endsWith(" as your desktop pet.")) {
+            val petName = rawMessage
+                .removePrefix("Selected ")
+                .removeSuffix(" as your desktop pet.")
+            return "\u5df2\u5c06 $petName \u8bbe\u4e3a\u4f60\u7684\u9ed8\u8ba4\u684c\u5ba0\u3002"
+        }
+        if (rawMessage == "Default desktop pet selection is waiting for local assets.") {
+            return "\u9ed8\u8ba4\u684c\u5ba0\u9009\u62e9\u6b63\u5728\u7b49\u5f85\u672c\u5730\u8d44\u6e90\u3002"
+        }
         if (rawMessage.startsWith("Daily reward claimed: +") && rawMessage.endsWith(" petcoin.")) {
             val amount = rawMessage
                 .removePrefix("Daily reward claimed: +")

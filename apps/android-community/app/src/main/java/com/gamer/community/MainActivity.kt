@@ -23,6 +23,9 @@ class MainActivity : ComponentActivity() {
         val openFullApp = intent.getBooleanExtra(EXTRA_OPEN_FULL_APP, false)
         val desktopPetAutoShowEnabled = uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false)
         val desktopPetAutoShowReady = canShowDesktopPetOverlay() && canPostDesktopPetNotification()
+        val defaultDesktopPetInitialized =
+            uiPrefs.getBoolean("defaultDesktopPetInitialized", false) ||
+                uiPrefs.getString("defaultDesktopPetId", "").orEmpty().isNotBlank()
 
         if (openFullApp) {
             stopDesktopPetOverlay()
@@ -30,6 +33,7 @@ class MainActivity : ComponentActivity() {
 
         if (
             !openFullApp &&
+            defaultDesktopPetInitialized &&
             desktopPetAutoShowEnabled &&
             desktopPetAutoShowReady
         ) {

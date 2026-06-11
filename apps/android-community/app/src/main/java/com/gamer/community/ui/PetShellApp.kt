@@ -276,6 +276,12 @@ fun PetShellApp(
     var desktopPetOverlayRunning by remember {
         mutableStateOf(uiPrefs.getBoolean("desktopPetOverlayRunning", false))
     }
+    var defaultDesktopPetInitialized by remember {
+        mutableStateOf(
+            uiPrefs.getBoolean("defaultDesktopPetInitialized", false) ||
+                uiPrefs.getString("defaultDesktopPetId", "").orEmpty().isNotBlank()
+        )
+    }
     var state by remember {
         val initialState = PetShellController.initialState(
             skipLaunchBubble = (directPetLaunchEnabled || openDesktopPetOnStart) &&
@@ -354,9 +360,22 @@ fun PetShellApp(
     }
 
     fun changeDefaultDesktopPet(petId: String) {
-        state = PetShellController.selectDefaultDesktopPet(state, petId)
+        val nextState = PetShellController.selectDefaultDesktopPet(state, petId)
+        state = nextState
+        defaultDesktopPetInitialized = true
         uiPrefs.edit()
-            .putString("defaultDesktopPetId", state.selectedDefaultDesktopPetId)
+            .putString("defaultDesktopPetId", nextState.selectedDefaultDesktopPetId)
+            .putBoolean("defaultDesktopPetInitialized", true)
+            .apply()
+    }
+
+    fun completeDefaultDesktopPetInitialization(petId: String) {
+        val nextState = PetShellController.selectDefaultDesktopPet(state, petId)
+        state = nextState
+        defaultDesktopPetInitialized = true
+        uiPrefs.edit()
+            .putString("defaultDesktopPetId", nextState.selectedDefaultDesktopPetId)
+            .putBoolean("defaultDesktopPetInitialized", true)
             .apply()
     }
 
@@ -627,7 +646,15 @@ fun PetShellApp(
 
     MaterialTheme(colorScheme = GamerColorScheme) {
         Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF7F8FA)) {
-            when (state.phase) {
+            if (!defaultDesktopPetInitialized) {
+                DefaultDesktopPetOnboardingScreen(
+                    state = state,
+                    language = language,
+                    strings = strings,
+                    onLanguageChange = ::changeLanguage,
+                    onComplete = ::completeDefaultDesktopPetInitialization
+                )
+            } else when (state.phase) {
                 ShellPhase.LaunchBubble -> LaunchBubbleScreen(
                     state = state,
                     language = language,
@@ -1036,6 +1063,200 @@ fun PetShellApp() {
         )
     }
     PetShellApp(repository = repository, generationService = generationService)
+}
+
+@Composable
+private fun DefaultDesktopPetOnboardingScreen(
+    state: PetShellState,
+    language: PetShellLanguage,
+    strings: PetShellStrings,
+    onLanguageChange: (PetShellLanguage) -> Unit,
+    onComplete: (String) -> Unit
+) {
+    var selectedPetId by remember(state.defaultDesktopPets) {
+        mutableStateOf(state.selectedDefaultDesktopPetId.ifBlank {
+            state.defaultDesktopPets.firstOrNull()?.id.orEmpty()
+        })
+    }
+    val selectedPet = state.defaultDesktopPets.firstOrNull { it.id == selectedPetId }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFEAFBF7),
+                        Color(0xFFFFF7EA),
+                        Color(0xFFF7FBFF)
+                    )
+                )
+            )
+            .semantics {
+                contentDescription = strings.defaultDesktopPetOnboardingContentDescription
+            }
+            .padding(18.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 64.dp, bottom = 42.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = strings.defaultDesktopPetOnboardingTitle,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = GamerUiTokens.ColorRole.Ink,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = strings.defaultDesktopPetOnboardingDetail,
+                style = MaterialTheme.typography.bodyMedium,
+                color = GamerUiTokens.ColorRole.Subtle,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shape = GamerUiTokens.Shape.Card,
+                tonalElevation = 2.dp,
+                shadowElevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    selectedPet?.let { pet ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.54f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            DefaultDesktopPetPreviewArtwork(
+                                pet = pet,
+                                action = PetAction.Idle,
+                                strings = strings,
+                                modifier = Modifier.size(170.dp)
+                            )
+                        }
+                    }
+                    for (pet in state.defaultDesktopPets) {
+                        DefaultDesktopPetStarterCard(
+                            pet = pet,
+                            selected = pet.id == selectedPetId,
+                            strings = strings,
+                            onClick = { selectedPetId = pet.id }
+                        )
+                    }
+                }
+            }
+            Button(
+                onClick = { onComplete(selectedPetId) },
+                enabled = selectedPetId.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(strings.defaultDesktopPetOnboardingAction)
+            }
+            Text(
+                text = strings.defaultDesktopPetOnboardingFootnote,
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Muted,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        LanguageToggle(
+            language = language,
+            strings = strings,
+            onLanguageChange = onLanguageChange,
+            modifier = Modifier.align(Alignment.TopEnd),
+            compact = true
+        )
+    }
+}
+
+@Composable
+private fun DefaultDesktopPetStarterCard(
+    pet: DefaultDesktopPet,
+    selected: Boolean,
+    strings: PetShellStrings,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 92.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
+        color = if (selected) {
+            GamerUiTokens.ColorRole.IdentitySoft
+        } else {
+            Color(0xFFF8FAFC)
+        },
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) {
+                GamerUiTokens.ColorRole.Identity
+            } else {
+                GamerUiTokens.ColorRole.Line
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            DefaultDesktopPetPreviewArtwork(
+                pet = pet,
+                action = PetAction.Idle,
+                strings = strings,
+                modifier = Modifier.size(72.dp)
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = strings.defaultDesktopPetName(pet),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = GamerUiTokens.ColorRole.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = strings.defaultDesktopPetStarterLine(pet),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = GamerUiTokens.ColorRole.Subtle,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            DesktopPetSettingPill(
+                label = if (selected) {
+                    strings.defaultDesktopPetSelected
+                } else {
+                    strings.defaultDesktopPetSelect
+                },
+                accent = if (selected) {
+                    GamerUiTokens.ColorRole.Identity
+                } else {
+                    GamerUiTokens.ColorRole.Muted
+                }
+            )
+        }
+    }
 }
 
 @Composable
