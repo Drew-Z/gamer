@@ -241,3 +241,4 @@ Use these persistent traits:
 
 - Desktop pet settings now show whether app-icon direct launch is off, permission-blocked, or ready for the next icon tap.
 - Keep this status near the floating-pet switch so users can tell the difference between "enabled but waiting on permission" and "ready to show on desktop".
+- If app-icon direct launch is enabled but system permissions are missing, launch the full app directly into Profile settings instead of leaving the user at the normal community entry.

@@ -191,6 +191,7 @@ fun PetShellApp(
     repository: CommunityRepository,
     generationService: FantasyPetGenerationService,
     initialGenerationDescription: String = "",
+    openProfileOnStart: Boolean = false,
     canShowDesktopPetOverlay: () -> Boolean = { false },
     canPostDesktopPetNotification: () -> Boolean = { true },
     onRequestDesktopPetOverlayPermission: () -> Unit = {},
@@ -224,8 +225,15 @@ fun PetShellApp(
         mutableStateOf(uiPrefs.getBoolean("desktopPetOverlayRunning", false))
     }
     var state by remember {
+        val initialState = PetShellController.initialState(
+            skipLaunchBubble = directPetLaunchEnabled && !openProfileOnStart
+        )
         mutableStateOf(
-            PetShellController.initialState(skipLaunchBubble = directPetLaunchEnabled)
+            if (openProfileOnStart) {
+                PetShellController.openCommunity(initialState)
+            } else {
+                initialState
+            }
         )
     }
     var language by remember {
@@ -234,7 +242,9 @@ fun PetShellApp(
     val strings = remember(language) {
         petShellStrings(language)
     }
-    var selectedTab by remember { mutableStateOf(PetShellTab.Community) }
+    var selectedTab by remember {
+        mutableStateOf(if (openProfileOnStart) PetShellTab.Profile else PetShellTab.Community)
+    }
     var generationDescription by remember(initialGenerationDescription) {
         mutableStateOf(initialGenerationDescription)
     }

@@ -20,12 +20,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         applyGamerSystemBars(window)
         val uiPrefs = getSharedPreferences("pet-shell-ui", MODE_PRIVATE)
+        val openFullApp = intent.getBooleanExtra(EXTRA_OPEN_FULL_APP, false)
+        val desktopPetAutoShowEnabled = uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false)
+        val desktopPetAutoShowReady = canShowDesktopPetOverlay() && canPostDesktopPetNotification()
 
         if (
-            !intent.getBooleanExtra(EXTRA_OPEN_FULL_APP, false) &&
-            uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false) &&
-            canShowDesktopPetOverlay() &&
-            canPostDesktopPetNotification()
+            !openFullApp &&
+            desktopPetAutoShowEnabled &&
+            desktopPetAutoShowReady
         ) {
             startDesktopPetOverlay()
             moveTaskToBack(true)
@@ -45,6 +47,9 @@ class MainActivity : ComponentActivity() {
             PetShellApp(
                 repository = repository,
                 generationService = generationService,
+                openProfileOnStart = !openFullApp &&
+                    desktopPetAutoShowEnabled &&
+                    !desktopPetAutoShowReady,
                 canShowDesktopPetOverlay = ::canShowDesktopPetOverlay,
                 canPostDesktopPetNotification = ::canPostDesktopPetNotification,
                 onRequestDesktopPetOverlayPermission = ::requestDesktopPetOverlayPermission,
