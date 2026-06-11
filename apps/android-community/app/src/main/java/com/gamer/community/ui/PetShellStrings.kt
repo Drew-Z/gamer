@@ -214,7 +214,7 @@ class PetShellStrings internal constructor(
     val hatcheryCustomTitle: String get() = text("自主孵化", "Custom hatch")
     val hatcheryCustomDetail: String get() = text("提示词、人审、资源包", "Prompt, review, package")
     val hatcheryModeActive: String get() = text("当前开放", "Available")
-    val hatcheryModeComingSoon: String get() = text("待服务端开放", "Server pending")
+    val hatcheryModeComingSoon: String get() = text("待开放", "Pending")
     val hatcheryFinePathNotice: String
         get() = text(
             "精细孵化占位：以后可逐步返回人工审核，目前先使用标准自主孵化。",

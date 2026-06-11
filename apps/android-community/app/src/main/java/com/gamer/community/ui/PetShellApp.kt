@@ -4373,24 +4373,38 @@ private fun HatcheryModeToken(
     onAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val container = if (active) accent.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.72f)
-    Box(
+    val container = if (active) Color.White.copy(alpha = 0.84f) else Color.White.copy(alpha = 0.58f)
+    val borderColor = if (active) accent.copy(alpha = 0.34f) else Color(0xFFE4E7EC)
+    Surface(
         modifier = modifier
-            .heightIn(min = 96.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(container)
-            .padding(8.dp)
+            .heightIn(min = 128.dp),
+        color = container,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, borderColor),
+        tonalElevation = if (active) 1.dp else 0.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 24.dp, height = 3.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(accent)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HatcheryModeIcon(
+                    accent = accent,
+                    active = active,
+                    modifier = Modifier.size(28.dp)
+                )
+                HatcheryModeStatusPill(
+                    status = status,
+                    accent = accent,
+                    active = active
+                )
+            }
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     text = title,
@@ -4407,35 +4421,88 @@ private fun HatcheryModeToken(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = status,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    maxLines = 1
-                )
-                if (actionLabel != null && onAction != null) {
-                    TextButton(
-                        onClick = onAction,
-                        modifier = Modifier
-                            .height(34.dp)
-                            .semantics {
-                                if (actionContentDescription.isNotBlank()) {
-                                    contentDescription = actionContentDescription
-                                }
-                            },
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
-                    ) {
-                        Text(
-                            text = actionLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+            }
+            if (actionLabel != null && onAction != null) {
+                TextButton(
+                    onClick = onAction,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(34.dp)
+                        .semantics {
+                            if (actionContentDescription.isNotBlank()) {
+                                contentDescription = actionContentDescription
+                            }
+                        },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = actionLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+            } else {
+                Spacer(modifier = Modifier.height(34.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun HatcheryModeStatusPill(
+    status: String,
+    accent: Color,
+    active: Boolean
+) {
+    val background = if (active) accent.copy(alpha = 0.12f) else Color(0xFFF2F4F7)
+    val textColor = if (active) accent else Color(0xFF667085)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(background)
+            .padding(horizontal = 6.dp, vertical = 3.dp)
+    ) {
+        Text(
+            text = status,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun HatcheryModeIcon(
+    accent: Color,
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val shellColor = if (active) accent.copy(alpha = 0.18f) else Color(0xFFEFF3F7)
+    Canvas(modifier = modifier) {
+        drawCircle(
+            color = shellColor,
+            radius = size.minDimension * 0.48f,
+            center = Offset(size.width * 0.5f, size.height * 0.5f)
+        )
+        drawOval(
+            color = if (active) accent.copy(alpha = 0.90f) else Color(0xFF98A2B3),
+            topLeft = Offset(size.width * 0.30f, size.height * 0.18f),
+            size = Size(size.width * 0.40f, size.height * 0.58f)
+        )
+        drawCircle(
+            color = Color.White.copy(alpha = 0.78f),
+            radius = size.minDimension * 0.07f,
+            center = Offset(size.width * 0.43f, size.height * 0.33f)
+        )
+        drawOval(
+            color = Color(0x26000000),
+            topLeft = Offset(size.width * 0.28f, size.height * 0.72f),
+            size = Size(size.width * 0.44f, size.height * 0.09f)
+        )
     }
 }
 
