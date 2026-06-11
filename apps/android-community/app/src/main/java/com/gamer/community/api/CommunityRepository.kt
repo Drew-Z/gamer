@@ -2,7 +2,6 @@ package com.gamer.community.api
 
 import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.FeedPost
-import com.gamer.community.petshell.fixtureFeedPosts
 
 data class InitialCommunityResult(
     val posts: List<FeedPost>,
@@ -61,7 +60,7 @@ class CommunityRepository(
                 )
         } else {
                 InitialCommunityResult(
-                    posts = remotePosts.ifEmpty { fixtureFeedPosts },
+                    posts = remotePosts,
                     approvedPets = approvedPets,
                     walletBalance = walletBalance,
                     message = "Local fallback active.",
@@ -141,7 +140,7 @@ private fun CommunityHomeResponseDto.toInitialCommunityResult(): InitialCommunit
         )
     } else {
         InitialCommunityResult(
-            posts = fixtureFeedPosts,
+            posts = remotePosts,
             approvedPets = approvedPets.toApprovedPets(),
             walletBalance = wallet.balance,
             message = "Local fallback active.",

@@ -67,26 +67,4 @@ data class PetShellState(
     val approvedPets: List<ApprovedPet>,
     val approvedPetIndex: Int,
     val posts: List<FeedPost>
-) {
-    val currentPost: FeedPost
-        get() = posts[feedIndex.coerceIn(posts.indices)]
-}
-
-val fixtureFeedPosts = listOf(
-    FeedPost(
-        id = "post-demo-001",
-        petId = "pet-stardust-001",
-        title = "Stardust dragon launch pose",
-        body = "First preview package imported from a gated fantasy-pet-rule run.",
-        authorName = "Demo Keeper",
-        reactionCount = 12
-    ),
-    FeedPost(
-        id = "post-demo-002",
-        petId = "pet-moonfox-001",
-        title = "Moon fox sleepy loop",
-        body = "A fixture post for testing pet-first feed navigation.",
-        authorName = "Demo Keeper",
-        reactionCount = 7
-    )
 )

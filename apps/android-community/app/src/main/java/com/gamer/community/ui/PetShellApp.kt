@@ -191,6 +191,7 @@ fun PetShellApp(
     repository: CommunityRepository,
     generationService: FantasyPetGenerationService,
     initialGenerationDescription: String = "",
+    openDesktopPetOnStart: Boolean = false,
     openProfileOnStart: Boolean = false,
     canShowDesktopPetOverlay: () -> Boolean = { false },
     canPostDesktopPetNotification: () -> Boolean = { true },
@@ -226,7 +227,8 @@ fun PetShellApp(
     }
     var state by remember {
         val initialState = PetShellController.initialState(
-            skipLaunchBubble = directPetLaunchEnabled && !openProfileOnStart
+            skipLaunchBubble = (directPetLaunchEnabled || openDesktopPetOnStart) &&
+                !openProfileOnStart
         )
         mutableStateOf(
             if (openProfileOnStart) {
@@ -1587,14 +1589,26 @@ private fun CommunityHome(
             onShowcaseNavigate = onShowcaseNavigate,
             onCreatePet = onCreatePet
         )
-        FeedPostBlock(
-            post = state.currentPost,
-            strings = strings
-        )
-        FeedControls(
-            strings = strings,
-            onNavigate = onNavigate
-        )
+        val currentPost = if (state.posts.isEmpty()) {
+            null
+        } else {
+            state.posts[state.feedIndex.coerceIn(state.posts.indices)]
+        }
+        if (currentPost == null) {
+            FeedEmptyBlock(
+                strings = strings,
+                onCreatePet = onCreatePet
+            )
+        } else {
+            FeedPostBlock(
+                post = currentPost,
+                strings = strings
+            )
+            FeedControls(
+                strings = strings,
+                onNavigate = onNavigate
+            )
+        }
     }
 }
 
@@ -3284,6 +3298,54 @@ private fun ShowcasePathStep(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun FeedEmptyBlock(
+    strings: PetShellStrings,
+    onCreatePet: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.communityPostCardContentDescription
+            },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PetArtworkBadge(
+                action = PetAction.Idle,
+                modifier = Modifier.size(52.dp)
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = strings.communityFeedEmptyTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828)
+                )
+                Text(
+                    text = strings.communityFeedEmptyDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            TextButton(onClick = onCreatePet) {
+                Text(strings.profileCreatePetAction)
+            }
         }
     }
 }

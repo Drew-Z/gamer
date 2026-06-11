@@ -47,7 +47,9 @@ class PetShellControllerTest {
 
     @Test
     fun feedNavigationUpdatesIndexAndPetAction() {
-        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+        val open = PetShellController.onBubbleTapped(
+            PetShellController.initialState().copy(posts = testFeedPosts)
+        )
         val next = PetShellController.navigateFeed(open, FeedDirection.Next)
         val previous = PetShellController.navigateFeed(next, FeedDirection.Previous)
         val skipped = PetShellController.navigateFeed(previous, FeedDirection.Skip)
@@ -58,6 +60,18 @@ class PetShellControllerTest {
         assertEquals(PetAction.FeedPrevious, previous.petAction)
         assertEquals(1, skipped.feedIndex)
         assertEquals(PetAction.FeedSkip, skipped.petAction)
+    }
+
+    @Test
+    fun feedNavigationDoesNotCreateFallbackPostsWhenFeedIsEmpty() {
+        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+
+        val next = PetShellController.navigateFeed(open, FeedDirection.Next)
+
+        assertEquals(0, next.feedIndex)
+        assertTrue(next.posts.isEmpty())
+        assertEquals(PetAction.Idle, next.petAction)
+        assertEquals("Community feed is waiting for remote posts.", next.speechBubble)
     }
 
     @Test
@@ -107,14 +121,14 @@ class PetShellControllerTest {
         assertEquals(123, loaded.walletBalance)
         assertEquals(1, loaded.approvedPets.size)
         assertEquals("Stardust Dragon", loaded.approvedPets[0].displayName)
-        assertEquals("Live feed", loaded.currentPost.title)
+        assertEquals("Live feed", loaded.posts[loaded.feedIndex].title)
         assertEquals(PetAction.Idle, loaded.petAction)
         assertEquals("Community ready.", loaded.speechBubble)
     }
 
     @Test
-    fun applyingFallbackCommunityLoadKeepsExistingPostsWhenInputIsEmpty() {
-        val state = PetShellController.initialState()
+    fun applyingFallbackCommunityLoadDoesNotCreatePlaceholderPosts() {
+        val state = PetShellController.initialState().copy(posts = testFeedPosts)
 
         val loaded = PetShellController.applyCommunityLoad(
             state = state,
@@ -125,7 +139,7 @@ class PetShellControllerTest {
             message = "Local fallback active."
         )
 
-        assertEquals("Stardust dragon launch pose", loaded.currentPost.title)
+        assertTrue(loaded.posts.isEmpty())
         assertEquals(PetAction.AppLoading, loaded.petAction)
         assertEquals("Local fallback active.", loaded.speechBubble)
     }
@@ -192,7 +206,7 @@ class PetShellControllerTest {
     fun applyingRemoteCommunityLoadSetsHomeSummaryState() {
         val loaded = PetShellController.applyCommunityLoad(
             state = PetShellController.initialState(),
-            posts = fixtureFeedPosts,
+            posts = testFeedPosts,
             approvedPets = emptyList(),
             walletBalance = 144,
             checkInClaimed = true,
@@ -258,4 +272,23 @@ class PetShellControllerTest {
             motionSheetCount = 2,
             totalScore = 86
         )
+
+    private val testFeedPosts = listOf(
+        FeedPost(
+            id = "post-test-001",
+            petId = "pet-test-001",
+            title = "Test feed one",
+            body = "Remote body one",
+            authorName = "Demo Keeper",
+            reactionCount = 3
+        ),
+        FeedPost(
+            id = "post-test-002",
+            petId = "pet-test-002",
+            title = "Test feed two",
+            body = "Remote body two",
+            authorName = "Demo Keeper",
+            reactionCount = 5
+        )
+    )
 }

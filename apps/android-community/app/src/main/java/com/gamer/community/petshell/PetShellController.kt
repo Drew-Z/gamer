@@ -12,7 +12,7 @@ object PetShellController {
             pendingSubmissionCount = 0,
             approvedPets = emptyList(),
             approvedPetIndex = 0,
-            posts = fixtureFeedPosts
+            posts = emptyList()
         )
 
     fun onBubbleTapped(state: PetShellState): PetShellState =
@@ -33,6 +33,14 @@ object PetShellController {
         )
 
     fun navigateFeed(state: PetShellState, direction: FeedDirection): PetShellState {
+        if (state.posts.isEmpty()) {
+            return state.copy(
+                feedIndex = 0,
+                petAction = PetAction.Idle,
+                speechBubble = "Community feed is waiting for remote posts."
+            )
+        }
+
         val skipStep = if (state.posts.size > 2) 2 else 1
         val nextIndex = when (direction) {
             FeedDirection.Next -> state.feedIndex + 1
@@ -107,7 +115,6 @@ object PetShellController {
         usedFallback: Boolean,
         message: String
     ): PetShellState {
-        val nextPosts = posts.ifEmpty { state.posts }
         return state.copy(
             petAction = if (usedFallback) state.petAction else PetAction.Idle,
             speechBubble = message,
@@ -117,7 +124,7 @@ object PetShellController {
             pendingSubmissionCount = pendingSubmissionCount,
             approvedPets = approvedPets,
             approvedPetIndex = 0,
-            posts = nextPosts
+            posts = posts
         )
     }
 

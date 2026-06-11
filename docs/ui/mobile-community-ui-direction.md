@@ -242,3 +242,6 @@ Use these persistent traits:
 - Desktop pet settings now show whether app-icon direct launch is off, permission-blocked, or ready for the next icon tap.
 - Keep this status near the floating-pet switch so users can tell the difference between "enabled but waiting on permission" and "ready to show on desktop".
 - If app-icon direct launch is enabled but system permissions are missing, launch the full app directly into Profile settings instead of leaving the user at the normal community entry.
+- Opening the full app from the floating pet or its foreground notification should land on the in-app desktop pet surface, not the launch bubble, so the desktop pet remains the user's continuity anchor.
+- Do not show fixture feed posts or placeholder approved pets as if they were real community data during tab switches or remote loading. Use empty/loading states until HidenCloud returns real app data.
+- Approved-pet public UI may show source category and preview readiness, but must not expose artifact ids, job ids, paths, or URLs.

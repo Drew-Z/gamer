@@ -81,6 +81,12 @@ class PetShellStrings internal constructor(
     val communityStatusRemoteSynced: String get() = text("远端同步", "Remote synced")
     val communityStatusLocalFallback: String get() = text("本地兜底", "Local fallback")
     val communityStatusHumanReview: String get() = text("人审展示", "Human review")
+    val communityFeedEmptyTitle: String get() = text("等待远端社区内容", "Waiting for remote community posts")
+    val communityFeedEmptyDetail: String
+        get() = text(
+            "没有展示假帖子；远端同步后会显示真实社区内容。",
+            "No placeholder posts are shown; real community content appears after remote sync."
+        )
     val desktopPetModeTitle: String get() = text("桌宠模式", "Desktop pet mode")
     val desktopPetModeSubtitle: String
         get() = text(
@@ -609,24 +615,15 @@ class PetShellStrings internal constructor(
     fun approvedPetSourceLine(pet: ApprovedPet): String {
         val source = pet.sourceKind.trim()
             .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
-            ?: "unknown"
-        val appJobId = pet.sourceAppJobId.trim()
-            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
-        val target = pet.targetDownloadId.trim()
-            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+            ?: if (language == PetShellLanguage.English) "reviewed import" else "人审导入"
+        val previewReady = pet.previewUrl.trim().isNotBlank() ||
+            pet.targetDownloadId.trim().isNotBlank() ||
+            pet.previewPath.trim().isNotBlank()
         if (language == PetShellLanguage.English) {
-            return listOfNotNull(
-                "Source $source",
-                appJobId?.let { "job $it" },
-                target?.let { "preview $it" }
-            ).joinToString(" / ")
+            return "Source $source / remote preview ${if (previewReady) "ready" else "pending"}"
         }
 
-        return listOfNotNull(
-            "来源 $source",
-            appJobId?.let { "任务 $it" },
-            target?.let { "预览 $it" }
-        ).joinToString(" / ")
+        return "来源 $source / 远端预览${if (previewReady) "可用" else "待同步"}"
     }
 
     private fun text(chinese: String, english: String): String =

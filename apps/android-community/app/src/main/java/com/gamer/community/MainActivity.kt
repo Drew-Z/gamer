@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
             PetShellApp(
                 repository = repository,
                 generationService = generationService,
+                openDesktopPetOnStart = openFullApp,
                 openProfileOnStart = !openFullApp &&
                     desktopPetAutoShowEnabled &&
                     !desktopPetAutoShowReady,
