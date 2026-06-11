@@ -478,6 +478,39 @@ fun PetShellApp(
         }
     }
 
+    fun startHatchJob(
+        descriptionOverride: String?,
+        appJobIdOverride: String? = null,
+        startMessage: String
+    ) {
+        val effectiveDescription = descriptionOverride ?: generationDescription
+        val effectiveAppJobId = appJobIdOverride ?: generationAppJobId
+        scope.launch {
+            generationMessage = startMessage
+            packageDownloadMessage = ""
+            packageImportCandidate = null
+            readyPackageImportDraft = null
+            clearPackageImportSubmissionTracking()
+            when (val result = generationService.createJob(
+                description = effectiveDescription,
+                appJobId = effectiveAppJobId,
+                bodyShape = generationBodyShape,
+                referencesText = generationReferences
+            )) {
+                is ApiCallResult.Success -> {
+                    applyGenerationJobUpdate(result.value)
+                    persistGenerationJobId(
+                        requestedAppJobId = effectiveAppJobId,
+                        job = result.value
+                    )
+                }
+                is ApiCallResult.Failure -> {
+                    generationMessage = "Generation request failed: ${result.reason}"
+                }
+            }
+        }
+    }
+
     LaunchedEffect(repository) {
         val result = repository.loadInitialCommunity()
         state = PetShellController.applyCommunityLoad(
@@ -672,31 +705,22 @@ fun PetShellApp(
                             canRefreshPackageImportSubmission = canRefreshPackageImportSubmission(
                                 packageImportSubmissionId
                             ),
+                            onMysteryHatch = {
+                                val mysteryPrompt = strings.hatcheryMysteryPrompt(hatcheryRandomSeed())
+                                generationDescription = mysteryPrompt
+                                generationAppJobId = ""
+                                generationReferences = ""
+                                startHatchJob(
+                                    descriptionOverride = mysteryPrompt,
+                                    appJobIdOverride = "",
+                                    startMessage = "Creating mystery hatch job..."
+                                )
+                            },
                             onCreateJob = {
-                                scope.launch {
-                                    generationMessage = "Creating generation job..."
-                                    packageDownloadMessage = ""
-                                    packageImportCandidate = null
-                                    readyPackageImportDraft = null
-                                    clearPackageImportSubmissionTracking()
-                                    when (val result = generationService.createJob(
-                                        description = generationDescription,
-                                        appJobId = generationAppJobId,
-                                        bodyShape = generationBodyShape,
-                                        referencesText = generationReferences
-                                    )) {
-                                        is ApiCallResult.Success -> {
-                                            applyGenerationJobUpdate(result.value)
-                                            persistGenerationJobId(
-                                                requestedAppJobId = generationAppJobId,
-                                                job = result.value
-                                            )
-                                        }
-                                        is ApiCallResult.Failure -> {
-                                            generationMessage = "Generation request failed: ${result.reason}"
-                                        }
-                                    }
-                                }
+                                startHatchJob(
+                                    descriptionOverride = null,
+                                    startMessage = "Creating generation job..."
+                                )
                             },
                             onClearJob = {
                                 val cleared = clearedGenerationJobUiState()
@@ -4164,7 +4188,8 @@ private fun HatcheryOverviewPanel(
     walletBalance: Int,
     job: PetGenerationJobResponseDto?,
     candidateCount: Int,
-    selectedCandidateDownloadId: String
+    selectedCandidateDownloadId: String,
+    onMysteryHatch: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -4230,9 +4255,12 @@ private fun HatcheryOverviewPanel(
                 HatcheryModeToken(
                     title = strings.hatcheryMysteryRandomTitle,
                     detail = strings.hatcheryMysteryRandomDetail,
-                    status = strings.hatcheryModeComingSoon,
+                    status = strings.hatcheryModeActive,
                     accent = Color(0xFF7C3AED),
-                    active = false,
+                    active = true,
+                    actionLabel = strings.hatcheryMysteryAction,
+                    actionContentDescription = strings.hatcheryMysteryActionContentDescription,
+                    onAction = onMysteryHatch,
                     modifier = Modifier.weight(1f)
                 )
                 HatcheryModeToken(
@@ -4340,6 +4368,9 @@ private fun HatcheryModeToken(
     status: String,
     accent: Color,
     active: Boolean,
+    actionLabel: String? = null,
+    actionContentDescription: String = "",
+    onAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val container = if (active) accent.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.72f)
@@ -4383,6 +4414,26 @@ private fun HatcheryModeToken(
                     color = accent,
                     maxLines = 1
                 )
+                if (actionLabel != null && onAction != null) {
+                    TextButton(
+                        onClick = onAction,
+                        modifier = Modifier
+                            .height(34.dp)
+                            .semantics {
+                                if (actionContentDescription.isNotBlank()) {
+                                    contentDescription = actionContentDescription
+                                }
+                            },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = actionLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
     }
@@ -4523,6 +4574,9 @@ private fun hatcheryActiveStep(
     }
 }
 
+private fun hatcheryRandomSeed(): Int =
+    (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+
 @Composable
 private fun GenerationPanel(
     strings: PetShellStrings,
@@ -4553,6 +4607,7 @@ private fun GenerationPanel(
     reviewNoteSuggestions: List<String>,
     onAppendReviewNoteSuggestion: (String) -> Unit,
     canClearJob: Boolean,
+    onMysteryHatch: () -> Unit,
     onCreateJob: () -> Unit,
     onClearJob: () -> Unit,
     onCheckWorkerReadiness: () -> Unit,
@@ -4573,7 +4628,8 @@ private fun GenerationPanel(
             walletBalance = walletBalance,
             job = job,
             candidateCount = candidates.size,
-            selectedCandidateDownloadId = selectedCandidateDownloadId
+            selectedCandidateDownloadId = selectedCandidateDownloadId,
+            onMysteryHatch = onMysteryHatch
         )
         Surface(
             modifier = Modifier
@@ -4623,7 +4679,7 @@ private fun GenerationPanel(
                 actionLabel = strings.generationPromptIdeaAction,
                 actionContentDescription = strings.generationPromptIdeaContentDescription,
                 onAction = {
-                    onDescriptionChange(strings.generationPromptIdeaText)
+                    onDescriptionChange(strings.hatcheryRandomPrompt(hatcheryRandomSeed()))
                 }
             )
             OutlinedTextField(

@@ -201,14 +201,16 @@ class PetShellStrings internal constructor(
     val hatcheryOverviewTitle: String get() = text("选择孵化方式", "Choose hatch mode")
     val hatcheryOverviewDetail: String
         get() = text(
-            "积分换蛋后可随机孵化或自主孵化；当前先开放自主孵化链路。",
-            "Spend petcoin for eggs, then hatch randomly or by prompt; custom hatch is available now."
+            "积分换蛋后可随机孵化或自主孵化；当前开放神秘蛋和自主孵化。",
+            "Spend petcoin for eggs, then hatch randomly or by prompt; mystery and custom hatch are available now."
         )
     val hatcheryWalletLabel: String get() = text("积分", "Petcoin")
     val hatcheryReserveRandomTitle: String get() = text("备用蛋", "Reserve egg")
     val hatcheryReserveRandomDetail: String get() = text("服务器备用桌宠，孵化短", "Server spare pet, short hatch")
     val hatcheryMysteryRandomTitle: String get() = text("神秘蛋", "Mystery egg")
-    val hatcheryMysteryRandomDetail: String get() = text("随机提示词生成，孵化长", "Random prompt, longer hatch")
+    val hatcheryMysteryRandomDetail: String get() = text("随机提示词孵化，耗时长", "Random prompt, longer hatch")
+    val hatcheryMysteryAction: String get() = text("随机孵化", "Random hatch")
+    val hatcheryMysteryActionContentDescription: String get() = "generation-mystery-hatch-button"
     val hatcheryCustomTitle: String get() = text("自主孵化", "Custom hatch")
     val hatcheryCustomDetail: String get() = text("提示词、人审、资源包", "Prompt, review, package")
     val hatcheryModeActive: String get() = text("当前开放", "Available")
@@ -241,13 +243,44 @@ class PetShellStrings internal constructor(
     val generationFlowPackageStep: String get() = text("入架", "Shelf")
     val generationPromptStageTitle: String get() = text("桌宠提示", "Pet prompt")
     val generationPromptStageHint: String get() = text("用一句话描述身份、动作和气质。", "Describe identity, motion, and mood in one concise brief.")
-    val generationPromptIdeaAction: String get() = text("灵感", "Idea")
+    val generationPromptIdeaAction: String get() = text("随机设定", "Random prompt")
     val generationPromptIdeaContentDescription: String get() = "generation-prompt-idea-button"
     val generationPromptIdeaText: String
         get() = text(
             "薄荷色守护者桌宠，待机轻轻漂浮，跑动时尾巴弹跳。",
             "Mint guardian pet, gentle idle bob, springy tail run."
         )
+    fun hatcheryMysteryPrompt(seed: Int): String = hatcheryRandomPrompt(seed)
+
+    fun hatcheryRandomPrompt(seed: Int): String {
+        val index = seed.coerceAtLeast(0) % 6
+        return listOf(
+            text(
+                "星蓝色猫头鹰守护蛋，idle 时眨眼发光，跑动时羽翼拖出金色星尘。",
+                "Star-blue owl guardian pet, glowing blink idle, golden stardust wing trail while running."
+            ),
+            text(
+                "琥珀色小龙桌宠，蜷在蛋壳边醒来，跳跃时尾巴点亮火花。",
+                "Amber baby dragon pet waking beside its shell, tail sparks during jumps."
+            ),
+            text(
+                "水晶鹿桌宠，半透明角发出柔光，待机时像月光一样轻轻漂浮。",
+                "Crystal deer pet with softly glowing antlers, moonlit floating idle."
+            ),
+            text(
+                "云朵企鹅桌宠，抱着小蛋左右摇摆，跑动时脚下出现软软云影。",
+                "Cloud penguin pet hugging a tiny egg, waddling with soft cloud shadows."
+            ),
+            text(
+                "机械狐桌宠，耳朵有青色能量环，idle 时尾巴像小雷达摆动。",
+                "Mechanical fox pet with cyan energy rings on ears and a radar-like tail idle."
+            ),
+            text(
+                "樱粉色果冻兔桌宠，身体弹性轻晃，受到关注时冒出小星星。",
+                "Cherry-pink jelly rabbit pet with bouncy body motion and tiny stars when noticed."
+            )
+        )[index]
+    }
     val generationTaskStageTitle: String get() = text("孵化设置", "Hatch setup")
     val generationTaskStageHint: String get() = text("任务名称可选；参考图必须是 HTTP/HTTPS URL。", "Task name is optional; reference images must use HTTP/HTTPS URLs.")
     val generationBodyStageTitle: String get() = text("体型预设", "Body preset")
@@ -448,7 +481,8 @@ class PetShellStrings internal constructor(
         if (language == PetShellLanguage.English) return englishGenerationMessage(rawMessage)
 
         return when (rawMessage) {
-            DEFAULT_GENERATION_MESSAGE -> "描述一个桌宠，开始生成。"
+            DEFAULT_GENERATION_MESSAGE -> "描述一个桌宠，开始孵化。"
+            "Creating mystery hatch job..." -> "正在创建神秘蛋孵化任务..."
             "Creating generation job..." -> "正在创建孵化任务..."
             "Resuming generation job..." -> "正在恢复孵化任务..."
             "Resuming recent generation job..." -> "正在继续最近的孵化任务..."
