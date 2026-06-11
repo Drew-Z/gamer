@@ -168,21 +168,62 @@ internal data class PetShellHeaderBackgroundSpec(
     val subtitleColor: Color
 )
 
+private object GamerUiTokens {
+    object ColorRole {
+        val Ink = Color(0xFF101828)
+        val Muted = Color(0xFF667085)
+        val Subtle = Color(0xFF475467)
+        val Line = Color(0xFFE4E7EC)
+        val Raised = Color(0xFFF8FAFC)
+        val Disabled = Color(0xFF98A2B3)
+        val Identity = Color(0xFF0F766E)
+        val IdentityDark = Color(0xFF0D3430)
+        val IdentitySoft = Color(0xFFD7F3EE)
+        val Reward = Color(0xFFF97316)
+        val RewardSoft = Color(0xFFFFE2C7)
+        val Review = Color(0xFF2F63D6)
+        val ReviewSoft = Color(0xFFE7F0FF)
+        val Mystery = Color(0xFF7C3AED)
+        val Success = Color(0xFF157A52)
+        val Warning = Color(0xFFB42318)
+        val HatchSurface = Color(0xFFFFFBF4)
+        val HatchLine = Color(0xFFFFD6A3)
+        val NeutralPill = Color(0xFFF2F4F7)
+        val EggShell = Color(0xFFFFE2B8)
+        val EggShellIdle = Color(0xFFFDF2E4)
+        val EggCrack = Color(0xFFB54708)
+    }
+
+    object Shape {
+        val Card = RoundedCornerShape(8.dp)
+        val Control = RoundedCornerShape(8.dp)
+        val Tight = RoundedCornerShape(6.dp)
+    }
+
+    object Space {
+        val Xs = 3.dp
+        val Sm = 6.dp
+        val Md = 8.dp
+        val Lg = 10.dp
+        val Xl = 12.dp
+    }
+}
+
 private val GamerColorScheme = lightColorScheme(
-    primary = Color(0xFF0F766E),
+    primary = GamerUiTokens.ColorRole.Identity,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD7F3EE),
-    onPrimaryContainer = Color(0xFF0D3430),
-    secondary = Color(0xFFF97316),
+    primaryContainer = GamerUiTokens.ColorRole.IdentitySoft,
+    onPrimaryContainer = GamerUiTokens.ColorRole.IdentityDark,
+    secondary = GamerUiTokens.ColorRole.Reward,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE2C7),
+    secondaryContainer = GamerUiTokens.ColorRole.RewardSoft,
     onSecondaryContainer = Color(0xFF4C2605),
     background = Color(0xFFF1F5F9),
-    onBackground = Color(0xFF101828),
+    onBackground = GamerUiTokens.ColorRole.Ink,
     surface = Color.White,
-    onSurface = Color(0xFF101828),
+    onSurface = GamerUiTokens.ColorRole.Ink,
     surfaceVariant = Color(0xFFEFF4F8),
-    onSurfaceVariant = Color(0xFF475467),
+    onSurfaceVariant = GamerUiTokens.ColorRole.Subtle,
     outline = Color(0xFF8C94A1)
 )
 
@@ -4197,18 +4238,18 @@ private fun HatcheryOverviewPanel(
             .semantics {
                 contentDescription = strings.hatcheryOverviewContentDescription
             },
-        color = Color(0xFFFFFBF4),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFFFD6A3)),
+        color = GamerUiTokens.ColorRole.HatchSurface,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.HatchLine),
         tonalElevation = 1.dp,
         shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(GamerUiTokens.Space.Xl),
+            verticalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Lg)
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Lg),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HatcheryEggBadge(
@@ -4217,20 +4258,20 @@ private fun HatcheryOverviewPanel(
                 )
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                    verticalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Xs)
                 ) {
                     Text(
                         text = strings.hatcheryOverviewTitle,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF101828),
+                        color = GamerUiTokens.ColorRole.Ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = strings.hatcheryOverviewDetail,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF667085),
+                        color = GamerUiTokens.ColorRole.Muted,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -4242,13 +4283,13 @@ private fun HatcheryOverviewPanel(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Md)
             ) {
                 HatcheryModeToken(
                     title = strings.hatcheryReserveRandomTitle,
                     detail = strings.hatcheryReserveRandomDetail,
                     status = strings.hatcheryModeComingSoon,
-                    accent = Color(0xFF0F766E),
+                    accent = GamerUiTokens.ColorRole.Identity,
                     active = false,
                     modifier = Modifier.weight(1f)
                 )
@@ -4256,7 +4297,7 @@ private fun HatcheryOverviewPanel(
                     title = strings.hatcheryMysteryRandomTitle,
                     detail = strings.hatcheryMysteryRandomDetail,
                     status = strings.hatcheryModeActive,
-                    accent = Color(0xFF7C3AED),
+                    accent = GamerUiTokens.ColorRole.Mystery,
                     active = true,
                     actionLabel = strings.hatcheryMysteryAction,
                     actionContentDescription = strings.hatcheryMysteryActionContentDescription,
@@ -4267,7 +4308,7 @@ private fun HatcheryOverviewPanel(
                     title = strings.hatcheryCustomTitle,
                     detail = strings.hatcheryCustomDetail,
                     status = strings.hatcheryModeActive,
-                    accent = Color(0xFFF97316),
+                    accent = GamerUiTokens.ColorRole.Reward,
                     active = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -4288,8 +4329,12 @@ private fun HatcheryEggBadge(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val shellColor = if (active) Color(0xFFFFE2B8) else Color(0xFFFDF2E4)
-    val crackColor = if (active) Color(0xFFB54708) else Color(0xFFD0D5DD)
+    val shellColor = if (active) {
+        GamerUiTokens.ColorRole.EggShell
+    } else {
+        GamerUiTokens.ColorRole.EggShellIdle
+    }
+    val crackColor = if (active) GamerUiTokens.ColorRole.EggCrack else GamerUiTokens.ColorRole.Line
     Canvas(modifier = modifier) {
         drawOval(
             color = Color(0x26000000),
@@ -4338,7 +4383,7 @@ private fun HatcheryWalletBadge(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Control)
             .background(Color.White.copy(alpha = 0.84f))
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
@@ -4346,14 +4391,14 @@ private fun HatcheryWalletBadge(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 maxLines = 1
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828),
+                color = GamerUiTokens.ColorRole.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -4374,19 +4419,19 @@ private fun HatcheryModeToken(
     modifier: Modifier = Modifier
 ) {
     val container = if (active) Color.White.copy(alpha = 0.84f) else Color.White.copy(alpha = 0.58f)
-    val borderColor = if (active) accent.copy(alpha = 0.34f) else Color(0xFFE4E7EC)
+    val borderColor = if (active) accent.copy(alpha = 0.34f) else GamerUiTokens.ColorRole.Line
     Surface(
         modifier = modifier
             .heightIn(min = 128.dp),
         color = container,
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         border = BorderStroke(1.dp, borderColor),
         tonalElevation = if (active) 1.dp else 0.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
+                .padding(GamerUiTokens.Space.Md),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Row(
@@ -4405,19 +4450,19 @@ private fun HatcheryModeToken(
                     active = active
                 )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Xs)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828),
+                    color = GamerUiTokens.ColorRole.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085),
+                    color = GamerUiTokens.ColorRole.Muted,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -4456,11 +4501,11 @@ private fun HatcheryModeStatusPill(
     accent: Color,
     active: Boolean
 ) {
-    val background = if (active) accent.copy(alpha = 0.12f) else Color(0xFFF2F4F7)
-    val textColor = if (active) accent else Color(0xFF667085)
+    val background = if (active) accent.copy(alpha = 0.12f) else GamerUiTokens.ColorRole.NeutralPill
+    val textColor = if (active) accent else GamerUiTokens.ColorRole.Muted
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Control)
             .background(background)
             .padding(horizontal = 6.dp, vertical = 3.dp)
     ) {
@@ -4481,7 +4526,7 @@ private fun HatcheryModeIcon(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val shellColor = if (active) accent.copy(alpha = 0.18f) else Color(0xFFEFF3F7)
+    val shellColor = if (active) accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
     Canvas(modifier = modifier) {
         drawCircle(
             color = shellColor,
@@ -4489,7 +4534,7 @@ private fun HatcheryModeIcon(
             center = Offset(size.width * 0.5f, size.height * 0.5f)
         )
         drawOval(
-            color = if (active) accent.copy(alpha = 0.90f) else Color(0xFF98A2B3),
+            color = if (active) accent.copy(alpha = 0.90f) else GamerUiTokens.ColorRole.Disabled,
             topLeft = Offset(size.width * 0.30f, size.height * 0.18f),
             size = Size(size.width * 0.40f, size.height * 0.58f)
         )
@@ -4511,14 +4556,14 @@ private fun HatcheryFinePathNotice(strings: PetShellStrings) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.72f),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
     ) {
         Text(
             text = strings.hatcheryFinePathNotice,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = Color(0xFF475467)
+            color = GamerUiTokens.ColorRole.Subtle
         )
     }
 }
@@ -4552,12 +4597,12 @@ private fun HatcheryProgressRail(
                 text = strings.hatcheryProgressTitle,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828)
+                color = GamerUiTokens.ColorRole.Ink
             )
             Text(
                 text = strings.hatcheryProgressStatus(activeStep),
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 maxLines = 1
             )
         }
@@ -4565,18 +4610,18 @@ private fun HatcheryProgressRail(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFE4E7EC))
+                .clip(GamerUiTokens.Shape.Control)
+                .background(GamerUiTokens.ColorRole.Line)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(progress)
                     .height(8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF0F766E))
+                    .clip(GamerUiTokens.Shape.Control)
+                    .background(GamerUiTokens.ColorRole.Identity)
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Sm)) {
             for ((index, label) in steps.withIndex()) {
                 HatcheryProgressStep(
                     label = label,
@@ -4597,9 +4642,9 @@ private fun HatcheryProgressStep(
     modifier: Modifier = Modifier
 ) {
     val color = when {
-        active -> Color(0xFF0F766E)
-        completed -> Color(0xFF157A52)
-        else -> Color(0xFF667085)
+        active -> GamerUiTokens.ColorRole.Identity
+        completed -> GamerUiTokens.ColorRole.Success
+        else -> GamerUiTokens.ColorRole.Muted
     }
     Text(
         text = label,
