@@ -170,36 +170,36 @@ internal data class PetShellHeaderBackgroundSpec(
 
 private object GamerUiTokens {
     object ColorRole {
-        val Ink = Color(0xFF101828)
-        val Muted = Color(0xFF667085)
-        val Subtle = Color(0xFF475467)
-        val Line = Color(0xFFE4E7EC)
-        val Raised = Color(0xFFF8FAFC)
-        val Disabled = Color(0xFF98A2B3)
-        val ShellBackground = Color(0xFFF1F5F9)
-        val DarkSurface = Color(0xFF101828)
-        val DarkRaised = Color(0xFF1D2939)
-        val DarkLine = Color(0xFF24314A)
-        val Identity = Color(0xFF0F766E)
-        val IdentityDark = Color(0xFF0D3430)
-        val IdentitySoft = Color(0xFFD7F3EE)
-        val Reward = Color(0xFFF97316)
-        val RewardDark = Color(0xFF7A3E00)
-        val RewardSoft = Color(0xFFFFE2C7)
-        val Review = Color(0xFF2F63D6)
-        val ReviewDark = Color(0xFF173B73)
+        val Ink = Color(0xFF172033)
+        val Muted = Color(0xFF66738A)
+        val Subtle = Color(0xFF4E5D73)
+        val Line = Color(0xFFE7EDF5)
+        val Raised = Color(0xFFFFFCF7)
+        val Disabled = Color(0xFFA7B1C2)
+        val ShellBackground = Color(0xFFF7FBFF)
+        val DarkSurface = Color(0xFF075C72)
+        val DarkRaised = Color(0xFF0D7891)
+        val DarkLine = Color(0xFF4DB7C8)
+        val Identity = Color(0xFF08A99D)
+        val IdentityDark = Color(0xFF064E4A)
+        val IdentitySoft = Color(0xFFD9FBF4)
+        val Reward = Color(0xFFFF8A1C)
+        val RewardDark = Color(0xFF8A4200)
+        val RewardSoft = Color(0xFFFFE7C7)
+        val Review = Color(0xFF3B82F6)
+        val ReviewDark = Color(0xFF1D4ED8)
         val ReviewSoft = Color(0xFFE7F0FF)
-        val Mystery = Color(0xFF7C3AED)
-        val Success = Color(0xFF157A52)
-        val Warning = Color(0xFFB42318)
-        val WarningSoft = Color(0xFFFFF1D6)
-        val ChannelText = Color(0xFFEFF4F8)
-        val HatchSurface = Color(0xFFFFFBF4)
-        val HatchLine = Color(0xFFFFD6A3)
-        val NeutralPill = Color(0xFFF2F4F7)
-        val EggShell = Color(0xFFFFE2B8)
-        val EggShellIdle = Color(0xFFFDF2E4)
-        val EggCrack = Color(0xFFB54708)
+        val Mystery = Color(0xFFA855F7)
+        val Success = Color(0xFF10A66B)
+        val Warning = Color(0xFFE03B2D)
+        val WarningSoft = Color(0xFFFFF3D6)
+        val ChannelText = Color(0xFFFFFFFF)
+        val HatchSurface = Color(0xFFFFFCF2)
+        val HatchLine = Color(0xFFFFCA79)
+        val NeutralPill = Color(0xFFF2F7FB)
+        val EggShell = Color(0xFFFFD38A)
+        val EggShellIdle = Color(0xFFFFF1D9)
+        val EggCrack = Color(0xFFD66A00)
     }
 
     object Shape {
@@ -226,7 +226,7 @@ private val GamerColorScheme = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = GamerUiTokens.ColorRole.RewardSoft,
     onSecondaryContainer = Color(0xFF4C2605),
-    background = Color(0xFFF1F5F9),
+    background = GamerUiTokens.ColorRole.ShellBackground,
     onBackground = GamerUiTokens.ColorRole.Ink,
     surface = Color.White,
     onSurface = GamerUiTokens.ColorRole.Ink,
@@ -1066,7 +1066,7 @@ private fun LaunchBubbleScreen(
             Text(
                 text = strings.launchEnterHint,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF667085)
+                            color = GamerUiTokens.ColorRole.Muted
             )
         }
     }
@@ -1221,7 +1221,7 @@ private fun DesktopPetHomeSummary(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         border = BorderStroke(1.dp, Color(0xFFE4E7EC))
     ) {
         Column(
@@ -3327,7 +3327,7 @@ private fun ApprovedPetShowcaseBlock(
                             selectedIndex = state.approvedPetIndex
                         ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF667085)
+                        color = GamerUiTokens.ColorRole.Muted
                     )
                     MetadataPill(
                         label = strings.approvedPetShowcasePosition(
@@ -3384,9 +3384,9 @@ private fun ApprovedPetSignalStrip(
     val previewReady = pet?.let { approvedPetPreviewUrl(it).isNotBlank() } == true
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+        color = GamerUiTokens.ColorRole.Raised,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -3396,13 +3396,13 @@ private fun ApprovedPetSignalStrip(
                 ApprovedPetSignalToken(
                     label = strings.approvedPetScoreMetric,
                     value = pet?.totalScore?.toString() ?: "-",
-                    accent = Color(0xFFF97316),
+                    accent = GamerUiTokens.ColorRole.Reward,
                     modifier = Modifier.weight(1f)
                 )
                 ApprovedPetSignalToken(
                     label = strings.approvedPetMotionMetric,
                     value = pet?.motionSheetCount?.toString() ?: "-",
-                    accent = Color(0xFF2F63D6),
+                    accent = GamerUiTokens.ColorRole.Review,
                     modifier = Modifier.weight(1f)
                 )
                 ApprovedPetSignalToken(
@@ -3412,7 +3412,7 @@ private fun ApprovedPetSignalStrip(
                     } else {
                         strings.approvedPetPreviewPending
                     },
-                    accent = if (previewReady) Color(0xFF0F766E) else Color(0xFF667085),
+                    accent = if (previewReady) GamerUiTokens.ColorRole.Identity else GamerUiTokens.ColorRole.Muted,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -3420,7 +3420,7 @@ private fun ApprovedPetSignalStrip(
                 Text(
                     text = strings.approvedPetSourceLine(pet),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085),
+                    color = GamerUiTokens.ColorRole.Muted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3439,7 +3439,7 @@ private fun ApprovedPetSignalToken(
     Column(
         modifier = modifier
             .height(54.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Card)
             .background(accent.copy(alpha = 0.10f))
             .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalArrangement = Arrangement.Center,
@@ -3448,7 +3448,7 @@ private fun ApprovedPetSignalToken(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = Color(0xFF667085),
+            color = GamerUiTokens.ColorRole.Muted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -3471,17 +3471,17 @@ private fun ShowcaseEmptyPath(strings: PetShellStrings) {
     ) {
         ShowcasePathStep(
             label = strings.showcasePathGenerate,
-            accent = Color(0xFF0F766E),
+            accent = GamerUiTokens.ColorRole.Identity,
             modifier = Modifier.weight(1f)
         )
         ShowcasePathStep(
             label = strings.showcasePathReview,
-            accent = Color(0xFF2F63D6),
+            accent = GamerUiTokens.ColorRole.Review,
             modifier = Modifier.weight(1f)
         )
         ShowcasePathStep(
             label = strings.showcasePathPublish,
-            accent = Color(0xFFF97316),
+            accent = GamerUiTokens.ColorRole.Reward,
             modifier = Modifier.weight(1f)
         )
     }
@@ -3496,7 +3496,7 @@ private fun ShowcasePathStep(
     Surface(
         modifier = modifier.height(42.dp),
         color = accent.copy(alpha = 0.11f),
-        shape = RoundedCornerShape(8.dp)
+        shape = GamerUiTokens.Shape.Card
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -3506,7 +3506,7 @@ private fun ShowcasePathStep(
             Box(
                 modifier = Modifier
                     .size(width = 4.dp, height = 22.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(GamerUiTokens.Shape.Control)
                     .background(accent)
             )
             Text(
@@ -3514,7 +3514,7 @@ private fun ShowcasePathStep(
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828),
+                color = GamerUiTokens.ColorRole.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -3534,7 +3534,7 @@ private fun FeedEmptyBlock(
                 contentDescription = strings.communityPostCardContentDescription
             },
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(8.dp)
+        shape = GamerUiTokens.Shape.Card
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -3553,12 +3553,12 @@ private fun FeedEmptyBlock(
                     text = strings.communityFeedEmptyTitle,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828)
+                    color = GamerUiTokens.ColorRole.Ink
                 )
                 Text(
                     text = strings.communityFeedEmptyDetail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085),
+                    color = GamerUiTokens.ColorRole.Muted,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3582,7 +3582,7 @@ private fun FeedPostBlock(
                 contentDescription = strings.communityPostCardContentDescription
             },
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(8.dp)
+        shape = GamerUiTokens.Shape.Card
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -3590,9 +3590,9 @@ private fun FeedPostBlock(
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFFF8FAFC),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+                color = GamerUiTokens.ColorRole.Raised,
+                shape = GamerUiTokens.Shape.Card,
+                border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
             ) {
                 Row(
                     modifier = Modifier.padding(10.dp),
@@ -3611,21 +3611,21 @@ private fun FeedPostBlock(
                             text = post.authorName,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF101828),
+                            color = GamerUiTokens.ColorRole.Ink,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = post.petId,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF667085),
+                            color = GamerUiTokens.ColorRole.Muted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = strings.communityFeedSignalTitle,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF0F766E),
+                            color = GamerUiTokens.ColorRole.Identity,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1
                         )
@@ -3651,14 +3651,14 @@ private fun FeedPostBlock(
                 text = post.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828),
+                color = GamerUiTokens.ColorRole.Ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = post.body,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF344054),
+                color = GamerUiTokens.ColorRole.Subtle,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -3677,8 +3677,8 @@ private fun FeedReactionPill(
     label: String
 ) {
     Surface(
-        color = Color(0xFFE7F8F2),
-        shape = RoundedCornerShape(8.dp)
+        color = GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.62f),
+        shape = GamerUiTokens.Shape.Control
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -3687,12 +3687,12 @@ private fun FeedReactionPill(
         ) {
             Canvas(modifier = Modifier.size(14.dp)) {
                 drawCircle(
-                    color = Color(0xFF0F766E),
+                    color = GamerUiTokens.ColorRole.Identity,
                     radius = size.minDimension * 0.28f,
                     center = Offset(size.width * 0.5f, size.height * 0.42f)
                 )
                 drawRoundRect(
-                    color = Color(0xFF0F766E),
+                    color = GamerUiTokens.ColorRole.Identity,
                     topLeft = Offset(size.width * 0.27f, size.height * 0.62f),
                     size = Size(size.width * 0.46f, size.height * 0.18f),
                     cornerRadius = CornerRadius(size.width * 0.08f, size.width * 0.08f)
@@ -3703,13 +3703,13 @@ private fun FeedReactionPill(
                     text = count.toString(),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F766E),
+                    color = GamerUiTokens.ColorRole.Identity,
                     maxLines = 1
                 )
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF0F766E),
+                    color = GamerUiTokens.ColorRole.Identity,
                     maxLines = 1
                 )
             }
@@ -3721,8 +3721,8 @@ private fun FeedReactionPill(
 private fun FeedPerspectiveHint(strings: PetShellStrings) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF101828),
-        shape = RoundedCornerShape(8.dp)
+        color = GamerUiTokens.ColorRole.DarkSurface,
+        shape = GamerUiTokens.Shape.Card
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -3732,8 +3732,8 @@ private fun FeedPerspectiveHint(strings: PetShellStrings) {
             Box(
                 modifier = Modifier
                     .size(width = 4.dp, height = 28.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFFFA24D))
+                    .clip(GamerUiTokens.Shape.Control)
+                    .background(GamerUiTokens.ColorRole.Reward)
             )
             Column(
                 modifier = Modifier.weight(1f),
@@ -3765,9 +3765,9 @@ private fun FeedArtifactSummary(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+        color = GamerUiTokens.ColorRole.Raised,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -3777,7 +3777,7 @@ private fun FeedArtifactSummary(
                 Text(
                     text = strings.feedMetadataLabel(label),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085),
+                    color = GamerUiTokens.ColorRole.Muted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3787,7 +3787,7 @@ private fun FeedArtifactSummary(
                     text = "+${labels.size - 3}",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F766E)
+                    color = GamerUiTokens.ColorRole.Identity
                 )
             }
         }
@@ -4042,25 +4042,25 @@ internal fun petShellTabHeaderSubtitle(tab: PetShellTab, strings: PetShellString
 internal fun petShellHeaderBackgroundSpec(tab: PetShellTab): PetShellHeaderBackgroundSpec =
     when (tab) {
         PetShellTab.Community -> PetShellHeaderBackgroundSpec(
-            startColor = Color(0xFF0F766E),
-            endColor = Color(0xFF173B73),
-            accentColor = Color(0xFFF97316),
+            startColor = GamerUiTokens.ColorRole.Identity,
+            endColor = GamerUiTokens.ColorRole.Review,
+            accentColor = GamerUiTokens.ColorRole.Reward,
             titleColor = Color.White,
-            subtitleColor = Color(0xFFD7F3EE)
+            subtitleColor = GamerUiTokens.ColorRole.IdentitySoft
         )
         PetShellTab.Generate -> PetShellHeaderBackgroundSpec(
-            startColor = Color(0xFF173B73),
-            endColor = Color(0xFF0D3430),
-            accentColor = Color(0xFF60A5FA),
+            startColor = GamerUiTokens.ColorRole.Review,
+            endColor = GamerUiTokens.ColorRole.Mystery,
+            accentColor = GamerUiTokens.ColorRole.IdentitySoft,
             titleColor = Color.White,
-            subtitleColor = Color(0xFFE7F0FF)
+            subtitleColor = GamerUiTokens.ColorRole.ReviewSoft
         )
         PetShellTab.Profile -> PetShellHeaderBackgroundSpec(
-            startColor = Color(0xFF7A3E00),
-            endColor = Color(0xFF0F766E),
-            accentColor = Color(0xFFFFB86B),
+            startColor = GamerUiTokens.ColorRole.Reward,
+            endColor = GamerUiTokens.ColorRole.Identity,
+            accentColor = GamerUiTokens.ColorRole.RewardSoft,
             titleColor = Color.White,
-            subtitleColor = Color(0xFFFFF1D6)
+            subtitleColor = GamerUiTokens.ColorRole.WarningSoft
         )
     }
 
@@ -4072,8 +4072,8 @@ private fun PetArtworkBadge(
     val palette = petAvatarPalette(action)
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF8FAFC)),
+            .clip(GamerUiTokens.Shape.Card)
+            .background(GamerUiTokens.ColorRole.Raised),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -4758,7 +4758,7 @@ private fun GenerationPanel(
                     contentDescription = strings.generationBriefPanelContentDescription
                 },
             color = Color.White,
-            shape = RoundedCornerShape(8.dp),
+            shape = GamerUiTokens.Shape.Card,
             tonalElevation = 1.dp,
             shadowElevation = 1.dp
         ) {
@@ -4779,13 +4779,13 @@ private fun GenerationPanel(
                     contentDescription = strings.generationPublicApiBoundaryContentDescription
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085)
+                color = GamerUiTokens.ColorRole.Muted
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF8FAFC))
+                    .clip(GamerUiTokens.Shape.Card)
+                    .background(GamerUiTokens.ColorRole.Raised)
                     .semantics {
                         contentDescription = strings.generationPromptCanvasContentDescription
                     }
@@ -4795,7 +4795,7 @@ private fun GenerationPanel(
             GenerationBriefStageHeader(
                 title = strings.generationPromptStageTitle,
                 detail = strings.generationPromptStageHint,
-                accent = Color(0xFF0F766E),
+                accent = GamerUiTokens.ColorRole.Identity,
                 actionLabel = strings.generationPromptIdeaAction,
                 actionContentDescription = strings.generationPromptIdeaContentDescription,
                 onAction = {
@@ -4818,7 +4818,7 @@ private fun GenerationPanel(
             GenerationBriefStageHeader(
                 title = strings.generationTaskStageTitle,
                 detail = strings.generationTaskStageHint,
-                accent = Color(0xFF2F63D6)
+                accent = GamerUiTokens.ColorRole.Review
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -4847,7 +4847,7 @@ private fun GenerationPanel(
             GenerationBriefStageHeader(
                 title = strings.generationBodyStageTitle,
                 detail = strings.generationBodyStageHint,
-                accent = Color(0xFFF97316)
+                accent = GamerUiTokens.ColorRole.Reward
             )
             BodyShapeSegmentedControl(
                 selectedBodyShape = bodyShape,
@@ -4863,8 +4863,8 @@ private fun GenerationPanel(
             if (createValidationMessage.isNotBlank() && description.isNotBlank()) {
                 GenerationInlineNotice(
                     text = strings.generationMessage(createValidationMessage),
-                    accent = Color(0xFFB42318),
-                    container = Color(0xFFFFF3F0)
+                    accent = GamerUiTokens.ColorRole.Warning,
+                    container = GamerUiTokens.ColorRole.WarningSoft
                 )
             }
             Button(
@@ -4884,7 +4884,7 @@ private fun GenerationPanel(
             GenerationBriefStageHeader(
                 title = strings.generationRunStageTitle,
                 detail = strings.generationRunStageHint,
-                accent = Color(0xFF475467)
+                accent = GamerUiTokens.ColorRole.Subtle
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
@@ -4920,7 +4920,7 @@ private fun GenerationPanel(
                 Text(
                     text = strings.generationMessage(pollValidationMessage),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFB42318)
+                    color = GamerUiTokens.ColorRole.Warning
                 )
             }
             if (recentAppJobIds.isNotEmpty()) {
@@ -4985,8 +4985,8 @@ private fun GenerationPanel(
                 .semantics {
                     contentDescription = strings.generationRuntimeConsoleContentDescription
                 },
-            color = Color(0xFFF7FBFA),
-            shape = RoundedCornerShape(8.dp),
+            color = GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.38f),
+            shape = GamerUiTokens.Shape.Card,
             tonalElevation = 1.dp,
             shadowElevation = 1.dp
         ) {
@@ -5004,14 +5004,14 @@ private fun GenerationPanel(
                     }
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF475467)
+                color = GamerUiTokens.ColorRole.Subtle
             )
             val summaryLine = job?.let { generationProgressSummaryLine(it) }.orEmpty()
             if (summaryLine.isNotBlank() && summaryLine != message) {
                 Text(
                     text = strings.generationMessage(summaryLine),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF157A52)
+                    color = GamerUiTokens.ColorRole.Success
                 )
             }
             val serverWorkerWaitNotice = job?.let { generationServerWorkerWaitNotice(it) }.orEmpty()
@@ -5022,7 +5022,7 @@ private fun GenerationPanel(
                         contentDescription = strings.serverWorkerWaitNoticeContentDescription
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFB54708)
+                    color = GamerUiTokens.ColorRole.EggCrack
                 )
             }
             val contractDemoNotice = job?.let { generationContractDemoNotice(it) }.orEmpty()
@@ -5033,14 +5033,14 @@ private fun GenerationPanel(
                         contentDescription = strings.contractDemoNoticeContentDescription
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFB42318)
+                    color = GamerUiTokens.ColorRole.Warning
                 )
             }
             if (workerReadinessMessage.isNotBlank()) {
                 Text(
                     text = strings.generationMessage(workerReadinessMessage),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085)
+                    color = GamerUiTokens.ColorRole.Muted
                 )
             }
             if (progressSteps.isNotEmpty()) {
@@ -5049,13 +5049,13 @@ private fun GenerationPanel(
                         Text(
                             text = "${strings.progressLabel(step.label)}: ${strings.progressStatus(step.status)}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF475467)
+                            color = GamerUiTokens.ColorRole.Subtle
                         )
                         if (step.message.isNotBlank()) {
                             Text(
                                 text = strings.generationMessage(step.message),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF667085)
+                                color = GamerUiTokens.ColorRole.Muted
                             )
                         }
                     }
@@ -5065,7 +5065,7 @@ private fun GenerationPanel(
                 Text(
                     text = strings.jobLabel(job.appJobId),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085)
+                    color = GamerUiTokens.ColorRole.Muted
                 )
             }
             }
@@ -5078,7 +5078,7 @@ private fun GenerationPanel(
                     contentDescription = strings.generationReviewDeskContentDescription
                 },
             color = Color.White,
-            shape = RoundedCornerShape(8.dp),
+            shape = GamerUiTokens.Shape.Card,
             tonalElevation = 1.dp,
             shadowElevation = 1.dp
         ) {
@@ -5100,7 +5100,7 @@ private fun GenerationPanel(
                 } else {
                     strings.candidateWaitingForInspection
                 },
-                accent = Color(0xFF2F63D6)
+                accent = GamerUiTokens.ColorRole.Review
             )
             if (candidates.isNotEmpty()) {
                 for ((index, candidate) in candidates.withIndex()) {
@@ -5120,13 +5120,13 @@ private fun GenerationPanel(
                 GenerationReviewStageHeader(
                     title = strings.reviewNotesStageTitle,
                     detail = strings.reviewNotesPlaceholder,
-                    accent = Color(0xFFF97316)
+                    accent = GamerUiTokens.ColorRole.Reward
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFFF8FAFC),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+                    color = GamerUiTokens.ColorRole.Raised,
+                    shape = GamerUiTokens.Shape.Card,
+                    border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
                 ) {
                     Column(
                         modifier = Modifier.padding(10.dp),
@@ -5155,7 +5155,7 @@ private fun GenerationPanel(
             GenerationReviewStageHeader(
                 title = strings.deliveryActionsTitle,
                 detail = strings.deliveryActionsHint,
-                accent = Color(0xFF0F766E)
+                accent = GamerUiTokens.ColorRole.Identity
             )
             Surface(
                 modifier = Modifier
@@ -5163,9 +5163,9 @@ private fun GenerationPanel(
                     .semantics {
                         contentDescription = strings.generationReviewActionDockContentDescription
                     },
-                color = Color(0xFFF8FAFC),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+                color = GamerUiTokens.ColorRole.Raised,
+                shape = GamerUiTokens.Shape.Card,
+                border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Line)
             ) {
                 Column(
                     modifier = Modifier.padding(10.dp),
@@ -5249,7 +5249,7 @@ private fun GenerationPanel(
                             Text(
                                 text = strings.generationMessage(reviewNotesMessage),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF667085)
+                                color = GamerUiTokens.ColorRole.Muted
                             )
                         }
                     }
@@ -5269,14 +5269,14 @@ private fun GenerationPanel(
                         Text(
                             text = strings.generationMessage(packageDownloadMessage),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF475467)
+                            color = GamerUiTokens.ColorRole.Subtle
                         )
                     }
                     if (packageImportCandidateMessage.isNotBlank()) {
                         Text(
                             text = strings.generationMessage(packageImportCandidateMessage),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF157A52)
+                            color = GamerUiTokens.ColorRole.Success
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -5317,7 +5317,7 @@ private fun GenerationPanel(
                         Text(
                             text = strings.generationMessage(packageImportSubmissionMessage),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF475467)
+                            color = GamerUiTokens.ColorRole.Subtle
                         )
                     }
                 }
@@ -5345,7 +5345,7 @@ private fun GenerationDeliveryStatusStrip(
             } else {
                 strings.deliveryStatusSelected
             },
-            accent = Color(0xFF2F63D6),
+            accent = GamerUiTokens.ColorRole.Review,
             active = selectedCandidateDownloadId.isNotBlank(),
             modifier = Modifier.weight(1f)
         )
@@ -5356,7 +5356,7 @@ private fun GenerationDeliveryStatusStrip(
             } else {
                 strings.deliveryStatusPackageLocked
             },
-            accent = Color(0xFFF97316),
+            accent = GamerUiTokens.ColorRole.Reward,
             active = packageReady,
             modifier = Modifier.weight(1f)
         )
@@ -5367,7 +5367,7 @@ private fun GenerationDeliveryStatusStrip(
             } else {
                 strings.deliveryStatusCommunityWaiting
             },
-            accent = Color(0xFF0F766E),
+            accent = GamerUiTokens.ColorRole.Identity,
             active = communityDraftReady,
             modifier = Modifier.weight(1f)
         )
@@ -5382,12 +5382,12 @@ private fun GenerationDeliveryStatusToken(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = if (active) accent else Color(0xFF667085)
+    val contentColor = if (active) accent else GamerUiTokens.ColorRole.Muted
     Surface(
         modifier = modifier.height(52.dp),
         color = if (active) accent.copy(alpha = 0.12f) else Color.White,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (active) accent.copy(alpha = 0.30f) else Color(0xFFE4E7EC))
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, if (active) accent.copy(alpha = 0.30f) else GamerUiTokens.ColorRole.Line)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
@@ -5397,7 +5397,7 @@ private fun GenerationDeliveryStatusToken(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -5432,7 +5432,7 @@ private fun GenerationBriefStageHeader(
         Box(
             modifier = Modifier
                 .size(width = 4.dp, height = 24.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(GamerUiTokens.Shape.Control)
                 .background(accent)
         )
         Column(
@@ -5443,12 +5443,12 @@ private fun GenerationBriefStageHeader(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828)
+                color = GamerUiTokens.ColorRole.Ink
             )
             Text(
                 text = detail,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -5477,7 +5477,7 @@ private fun GenerationInlineNotice(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = container,
-        shape = RoundedCornerShape(8.dp)
+        shape = GamerUiTokens.Shape.Card
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -5487,7 +5487,7 @@ private fun GenerationInlineNotice(
             Box(
                 modifier = Modifier
                     .size(width = 4.dp, height = 24.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(GamerUiTokens.Shape.Control)
                     .background(accent)
             )
             Text(
@@ -5517,7 +5517,7 @@ private fun GenerationReviewStageHeader(
         Box(
             modifier = Modifier
                 .size(width = 4.dp, height = 36.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(GamerUiTokens.Shape.Control)
                 .background(accent)
         )
         Column(
@@ -5528,12 +5528,12 @@ private fun GenerationReviewStageHeader(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828)
+                color = GamerUiTokens.ColorRole.Ink
             )
             Text(
                 text = detail,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -5550,11 +5550,11 @@ private fun CandidateInspectionCard(
     onSelectCandidate: (String) -> Unit
 ) {
     Surface(
-        color = if (selected) Color(0xFFE7F0FF) else Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(8.dp),
+        color = if (selected) GamerUiTokens.ColorRole.ReviewSoft else GamerUiTokens.ColorRole.Raised,
+        shape = GamerUiTokens.Shape.Card,
         border = BorderStroke(
             1.dp,
-            if (selected) Color(0xFF9DBBFF) else Color(0xFFE4E7EC)
+            if (selected) GamerUiTokens.ColorRole.Review.copy(alpha = 0.38f) else GamerUiTokens.ColorRole.Line
         )
     ) {
         Column(
@@ -5573,7 +5573,7 @@ private fun CandidateInspectionCard(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828)
+                    color = GamerUiTokens.ColorRole.Ink
                 )
                 ReviewStatePill(
                     text = if (selected) {
@@ -5617,14 +5617,14 @@ private fun ReviewStatePill(
     selected: Boolean
 ) {
     Surface(
-        color = if (selected) Color(0xFF2F63D6) else Color(0xFFEFF3F7),
-        shape = RoundedCornerShape(8.dp)
+        color = if (selected) GamerUiTokens.ColorRole.Review else GamerUiTokens.ColorRole.NeutralPill,
+        shape = GamerUiTokens.Shape.Control
     ) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = if (selected) Color.White else Color(0xFF667085),
+            color = if (selected) Color.White else GamerUiTokens.ColorRole.Muted,
             fontWeight = FontWeight.Bold
         )
     }
@@ -5638,9 +5638,9 @@ private fun GenerationWaitingCandidateNotice(strings: PetShellStrings) {
             .semantics {
                 contentDescription = strings.generationReviewWaitingContentDescription
             },
-        color = Color(0xFFFFF7ED),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFFED7AA))
+        color = GamerUiTokens.ColorRole.RewardSoft.copy(alpha = 0.62f),
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Reward.copy(alpha = 0.30f))
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -5655,7 +5655,7 @@ private fun GenerationWaitingCandidateNotice(strings: PetShellStrings) {
                 text = strings.generationReviewWaitingForCandidate,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF7A3B07)
+                color = GamerUiTokens.ColorRole.RewardDark
             )
         }
     }
