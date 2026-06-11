@@ -176,16 +176,24 @@ private object GamerUiTokens {
         val Line = Color(0xFFE4E7EC)
         val Raised = Color(0xFFF8FAFC)
         val Disabled = Color(0xFF98A2B3)
+        val ShellBackground = Color(0xFFF1F5F9)
+        val DarkSurface = Color(0xFF101828)
+        val DarkRaised = Color(0xFF1D2939)
+        val DarkLine = Color(0xFF24314A)
         val Identity = Color(0xFF0F766E)
         val IdentityDark = Color(0xFF0D3430)
         val IdentitySoft = Color(0xFFD7F3EE)
         val Reward = Color(0xFFF97316)
+        val RewardDark = Color(0xFF7A3E00)
         val RewardSoft = Color(0xFFFFE2C7)
         val Review = Color(0xFF2F63D6)
+        val ReviewDark = Color(0xFF173B73)
         val ReviewSoft = Color(0xFFE7F0FF)
         val Mystery = Color(0xFF7C3AED)
         val Success = Color(0xFF157A52)
         val Warning = Color(0xFFB42318)
+        val WarningSoft = Color(0xFFFFF1D6)
+        val ChannelText = Color(0xFFEFF4F8)
         val HatchSurface = Color(0xFFFFFBF4)
         val HatchLine = Color(0xFFFFD6A3)
         val NeutralPill = Color(0xFFF2F4F7)
@@ -1173,7 +1181,7 @@ private fun DesktopPetStage(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.94f),
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 2.dp,
         shadowElevation = 2.dp
     ) {
@@ -1296,7 +1304,7 @@ private fun DesktopPetHomeMetric(
     Box(
         modifier = modifier
             .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Card)
             .background(accent.copy(alpha = 0.1f))
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
@@ -1538,7 +1546,7 @@ private fun CommunityScreen(
     generationContent: @Composable () -> Unit
 ) {
     Scaffold(
-        containerColor = Color(0xFFF1F5F9),
+        containerColor = GamerUiTokens.ColorRole.ShellBackground,
         bottomBar = {
             PetShellBottomNavigation(
                 selectedTab = selectedTab,
@@ -1621,11 +1629,11 @@ private fun PetShellBottomNavigation(
                 },
                 label = { Text(tab.label(strings)) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF0F766E),
-                    selectedTextColor = Color(0xFF0F766E),
-                    indicatorColor = Color(0xFFD7F3EE),
-                    unselectedIconColor = Color(0xFF667085),
-                    unselectedTextColor = Color(0xFF667085)
+                    selectedIconColor = GamerUiTokens.ColorRole.Identity,
+                    selectedTextColor = GamerUiTokens.ColorRole.Identity,
+                    indicatorColor = GamerUiTokens.ColorRole.IdentitySoft,
+                    unselectedIconColor = GamerUiTokens.ColorRole.Muted,
+                    unselectedTextColor = GamerUiTokens.ColorRole.Muted
                 )
             )
         }
@@ -1637,13 +1645,13 @@ private fun PetShellTabIcon(
     tab: PetShellTab,
     selected: Boolean
 ) {
-    val ink = if (selected) Color(0xFF0F766E) else Color(0xFF667085)
+    val ink = if (selected) GamerUiTokens.ColorRole.Identity else GamerUiTokens.ColorRole.Muted
     Surface(
         modifier = Modifier.size(width = 46.dp, height = 32.dp),
-        color = if (selected) Color(0xFFD7F3EE) else Color(0xFFF2F4F7),
+        color = if (selected) GamerUiTokens.ColorRole.IdentitySoft else GamerUiTokens.ColorRole.NeutralPill,
         contentColor = ink,
-        shape = RoundedCornerShape(8.dp),
-        border = if (selected) BorderStroke(1.dp, Color(0xFFACE4D9)) else null
+        shape = GamerUiTokens.Shape.Card,
+        border = if (selected) BorderStroke(1.dp, GamerUiTokens.ColorRole.Identity.copy(alpha = 0.30f)) else null
     ) {
         Box(contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.size(24.dp)) {
@@ -1671,7 +1679,7 @@ private fun CommunityHeader(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 104.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Card)
             .background(
                 Brush.linearGradient(
                     colors = listOf(
@@ -1840,7 +1848,7 @@ private fun CommunityStatusSummary(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828)
+                    color = GamerUiTokens.ColorRole.Ink
                 )
                 CommunityStatusPill(
                     label = if (remoteSynced) {
@@ -1848,36 +1856,36 @@ private fun CommunityStatusSummary(
                     } else {
                         strings.communityStatusLocalFallback
                     },
-                    accent = if (remoteSynced) Color(0xFF0F766E) else Color(0xFFF97316)
+                    accent = if (remoteSynced) GamerUiTokens.ColorRole.Identity else GamerUiTokens.ColorRole.Reward
                 )
                 CommunityStatusPill(
                     label = strings.communityStatusHumanReview,
-                    accent = Color(0xFF2F63D6)
+                    accent = GamerUiTokens.ColorRole.Review
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 CommunitySummaryToken(
                     label = strings.profileWalletSummaryTitle,
                     value = strings.walletBalance(state.walletBalance),
-                    accent = Color(0xFF0F766E),
+                    accent = GamerUiTokens.ColorRole.Identity,
                     modifier = Modifier.weight(1f)
                 )
                 CommunitySummaryToken(
                     label = strings.dailyCheckIn,
                     value = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckInDetail,
-                    accent = Color(0xFFF97316),
+                    accent = GamerUiTokens.ColorRole.Reward,
                     modifier = Modifier.weight(1f)
                 )
                 CommunitySummaryToken(
                     label = strings.profileApprovedPetsMetric,
                     value = state.approvedPets.size.toString(),
-                    accent = Color(0xFF2F63D6),
+                    accent = GamerUiTokens.ColorRole.Review,
                     modifier = Modifier.weight(1f)
                 )
                 CommunitySummaryToken(
                     label = strings.quickActionReview,
                     value = strings.quickActionReviewStatus(state.pendingSubmissionCount),
-                    accent = Color(0xFF475467),
+                    accent = GamerUiTokens.ColorRole.Subtle,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -1892,7 +1900,7 @@ private fun CommunityStatusPill(
 ) {
     Surface(
         color = accent.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Control,
         border = BorderStroke(1.dp, accent.copy(alpha = 0.26f))
     ) {
         Text(
@@ -1917,7 +1925,7 @@ private fun CommunitySummaryToken(
     Row(
         modifier = modifier
             .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Control)
             .background(accent.copy(alpha = 0.10f))
             .padding(horizontal = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -1926,7 +1934,7 @@ private fun CommunitySummaryToken(
         Box(
             modifier = Modifier
                 .size(width = 4.dp, height = 24.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(GamerUiTokens.Shape.Control)
                 .background(accent)
         )
         Column(
@@ -1936,7 +1944,7 @@ private fun CommunitySummaryToken(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF667085),
+                color = GamerUiTokens.ColorRole.Muted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1944,7 +1952,7 @@ private fun CommunitySummaryToken(
                 text = value,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828),
+                color = GamerUiTokens.ColorRole.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1960,8 +1968,8 @@ private fun CommunityChannelRail(strings: PetShellStrings) {
             .semantics {
                 contentDescription = strings.communityChannelRailContentDescription
             },
-        color = Color(0xFF101828),
-        shape = RoundedCornerShape(8.dp),
+        color = GamerUiTokens.ColorRole.DarkSurface,
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 2.dp,
         shadowElevation = 2.dp
     ) {
@@ -1980,15 +1988,15 @@ private fun CommunityChannelRail(strings: PetShellStrings) {
                     modifier = Modifier
                         .weight(1f)
                         .height(42.dp),
-                    color = if (index == 0) Color(0xFFD7F3EE) else Color(0xFF1D2939),
-                    shape = RoundedCornerShape(7.dp)
+                    color = if (index == 0) GamerUiTokens.ColorRole.IdentitySoft else GamerUiTokens.ColorRole.DarkRaised,
+                    shape = GamerUiTokens.Shape.Tight
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (index == 0) FontWeight.Bold else FontWeight.SemiBold,
-                            color = if (index == 0) Color(0xFF0D3430) else Color(0xFFEFF4F8),
+                            color = if (index == 0) GamerUiTokens.ColorRole.IdentityDark else GamerUiTokens.ColorRole.ChannelText,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -2019,8 +2027,8 @@ private fun CommunityQuickActions(
             icon = CommunityQuickActionIcon.CheckIn,
             title = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckIn,
             detail = strings.quickActionCheckInDetail,
-            container = Color(0xFFFFF1D6),
-            content = Color(0xFF7A3E00),
+            container = GamerUiTokens.ColorRole.WarningSoft,
+            content = GamerUiTokens.ColorRole.RewardDark,
             enabled = !state.checkInClaimed,
             onClick = onCheckIn,
             modifier = Modifier.weight(1f)
@@ -2029,8 +2037,8 @@ private fun CommunityQuickActions(
             icon = CommunityQuickActionIcon.Generate,
             title = strings.quickActionGenerate,
             detail = strings.quickActionGenerateDetail,
-            container = Color(0xFFD7F3EE),
-            content = Color(0xFF0D3430),
+            container = GamerUiTokens.ColorRole.IdentitySoft,
+            content = GamerUiTokens.ColorRole.IdentityDark,
             onClick = onCreatePet,
             modifier = Modifier.weight(1f)
         )
@@ -2038,8 +2046,8 @@ private fun CommunityQuickActions(
             icon = CommunityQuickActionIcon.Review,
             title = strings.quickActionReview,
             detail = strings.quickActionReviewStatus(state.pendingSubmissionCount),
-            container = Color(0xFFE7F0FF),
-            content = Color(0xFF173B73),
+            container = GamerUiTokens.ColorRole.ReviewSoft,
+            content = GamerUiTokens.ColorRole.ReviewDark,
             onClick = onReview,
             modifier = Modifier.weight(1f)
         )
@@ -2047,8 +2055,8 @@ private fun CommunityQuickActions(
             icon = CommunityQuickActionIcon.Showcase,
             title = strings.quickActionShowcase,
             detail = strings.quickActionShowcaseDetail,
-            container = Color(0xFFFFE2C7),
-            content = Color(0xFF6F2F00),
+            container = GamerUiTokens.ColorRole.RewardSoft,
+            content = GamerUiTokens.ColorRole.RewardDark,
             onClick = onShowcase,
             modifier = Modifier.weight(1f)
         )
@@ -2069,10 +2077,10 @@ private fun CommunityQuickActionTile(
     Surface(
         modifier = modifier
             .height(78.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Card)
             .clickable(enabled = enabled, onClick = onClick),
-        color = if (enabled) container else Color(0xFFE4E7EC),
-        shape = RoundedCornerShape(8.dp),
+        color = if (enabled) container else GamerUiTokens.ColorRole.Line,
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 1.dp,
         shadowElevation = 1.dp
     ) {
@@ -2083,14 +2091,14 @@ private fun CommunityQuickActionTile(
         ) {
             QuickActionGlyph(
                 icon = icon,
-                color = if (enabled) content else Color(0xFF98A2B3)
+                color = if (enabled) content else GamerUiTokens.ColorRole.Disabled
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (enabled) content else Color(0xFF98A2B3),
+                color = if (enabled) content else GamerUiTokens.ColorRole.Disabled,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -2098,7 +2106,7 @@ private fun CommunityQuickActionTile(
             Text(
                 text = detail,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (enabled) content.copy(alpha = 0.72f) else Color(0xFF98A2B3),
+                color = if (enabled) content.copy(alpha = 0.72f) else GamerUiTokens.ColorRole.Disabled,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -2115,7 +2123,7 @@ private fun QuickActionGlyph(
     Box(
         modifier = Modifier
             .size(26.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Control)
             .background(Color.White.copy(alpha = 0.46f)),
         contentAlignment = Alignment.Center
     ) {
@@ -2414,8 +2422,8 @@ private fun ProfileKeeperHero(
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF101828),
-                        Color(0xFF0F766E),
+                        GamerUiTokens.ColorRole.DarkSurface,
+                        GamerUiTokens.ColorRole.Identity,
                         Color(0xFFFFA24D)
                     )
                 )
@@ -2431,7 +2439,7 @@ private fun ProfileKeeperHero(
         ) {
             Surface(
                 color = Color.White.copy(alpha = 0.92f),
-                shape = RoundedCornerShape(8.dp)
+                shape = GamerUiTokens.Shape.Card
             ) {
                 Box(modifier = Modifier.padding(6.dp)) {
                     PetArtworkBadge(
@@ -2477,7 +2485,7 @@ private fun ProfileWalletSummary(
                 contentDescription = strings.profileWalletSummaryContentDescription
             },
         color = Color.White,
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 2.dp,
         shadowElevation = 2.dp
     ) {
@@ -2504,19 +2512,19 @@ private fun ProfileWalletSummary(
                 ProfileMetricToken(
                     label = strings.profileWalletSummaryTitle,
                     value = strings.walletBalance(state.walletBalance),
-                    accent = Color(0xFF0F766E),
+                    accent = GamerUiTokens.ColorRole.Identity,
                     modifier = Modifier.weight(1f)
                 )
                 ProfileMetricToken(
                     label = strings.profileApprovedPetsMetric,
                     value = state.approvedPets.size.toString(),
-                    accent = Color(0xFF2F63D6),
+                    accent = GamerUiTokens.ColorRole.Review,
                     modifier = Modifier.weight(1f)
                 )
                 ProfileMetricToken(
                     label = strings.quickActionCheckIn,
                     value = if (state.checkInClaimed) strings.checkedIn else strings.quickActionCheckInDetail,
-                    accent = Color(0xFFF97316),
+                    accent = GamerUiTokens.ColorRole.Reward,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -2534,7 +2542,7 @@ private fun ProfileMetricToken(
     Box(
         modifier = modifier
             .height(72.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(GamerUiTokens.Shape.Card)
             .background(accent.copy(alpha = 0.11f))
             .padding(horizontal = 10.dp, vertical = 9.dp)
     ) {
@@ -2545,21 +2553,21 @@ private fun ProfileMetricToken(
             Box(
                 modifier = Modifier
                     .size(width = 26.dp, height = 3.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(GamerUiTokens.Shape.Control)
                     .background(accent)
             )
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF667085),
+                    color = GamerUiTokens.ColorRole.Muted,
                     maxLines = 1
                 )
                 Text(
                     text = value,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828),
+                    color = GamerUiTokens.ColorRole.Ink,
                     maxLines = 2
                 )
             }
@@ -2582,7 +2590,7 @@ private fun ProfilePetShelf(
                 contentDescription = strings.profilePetShelfContentDescription
             },
         color = Color.White,
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 2.dp,
         shadowElevation = 2.dp
     ) {
@@ -2624,7 +2632,7 @@ private fun ProfilePetShelf(
                             }
                         ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF475467)
+                        color = GamerUiTokens.ColorRole.Subtle
                     )
                     Text(
                         text = strings.approvedPetShowcaseDetail(
@@ -2632,7 +2640,7 @@ private fun ProfilePetShelf(
                             selectedIndex = state.approvedPetIndex
                         ),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF667085)
+                        color = GamerUiTokens.ColorRole.Muted
                     )
                 }
             }
@@ -2668,9 +2676,9 @@ private fun ProfileActionDock(
             .semantics {
                 contentDescription = strings.profileActionDockContentDescription
             },
-        color = Color(0xFF101828),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFF24314A))
+        color = GamerUiTokens.ColorRole.DarkSurface,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.DarkLine)
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -2722,7 +2730,7 @@ private fun ProfileDesktopPetSettings(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
-        shape = RoundedCornerShape(8.dp),
+        shape = GamerUiTokens.Shape.Card,
         tonalElevation = 1.dp,
         shadowElevation = 1.dp
     ) {
@@ -2734,7 +2742,7 @@ private fun ProfileDesktopPetSettings(
                 text = strings.desktopPetSettingsTitle,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF101828)
+                color = GamerUiTokens.ColorRole.Ink
             )
             DesktopPetActivePreviewStatus(
                 strings = strings,
@@ -2780,9 +2788,9 @@ private fun DesktopPetActivePreviewStatus(
             .semantics {
                 contentDescription = strings.desktopPetOverlayActivePreviewContentDescription
             },
-        color = Color(0xFFF0FDFA),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFF99F6E4))
+        color = GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.54f),
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Identity.copy(alpha = 0.28f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
@@ -2803,7 +2811,7 @@ private fun DesktopPetActivePreviewStatus(
                     text = strings.desktopPetOverlayActivePreviewTitle,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F766E)
+                    color = GamerUiTokens.ColorRole.Identity
                 )
                 Text(
                     text = approvedPetDisplayName(
@@ -2816,7 +2824,7 @@ private fun DesktopPetActivePreviewStatus(
                     ),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF101828),
+                    color = GamerUiTokens.ColorRole.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
