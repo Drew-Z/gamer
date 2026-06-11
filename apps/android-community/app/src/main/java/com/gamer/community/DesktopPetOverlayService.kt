@@ -38,7 +38,7 @@ class DesktopPetOverlayService : Service() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var overlayView: View? = null
     private var overlayParams: WindowManager.LayoutParams? = null
-    private var lastPreviewUrl: String = ""
+    private var lastPreviewSourceKey: String = ""
 
     override fun onCreate() {
         super.onCreate()
@@ -210,33 +210,51 @@ class DesktopPetOverlayService : Service() {
     }
 
     private fun loadOverlayPreviewIfAvailable(view: DesktopPetOverlayView) {
-        val previewUrl = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+        val prefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+        val previewAssetPath = prefs
+            .getString(DESKTOP_PET_OVERLAY_PREVIEW_ASSET_PATH_KEY, "")
+            .orEmpty()
+            .trim()
+        val previewUrl = prefs
             .getString(DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY, "")
             .orEmpty()
             .trim()
+        val previewSourceKey = when {
+            previewAssetPath.isNotBlank() -> "asset:$previewAssetPath"
+            previewUrl.isNotBlank() -> "url:$previewUrl"
+            else -> ""
+        }
 
-        if (previewUrl.isBlank()) {
-            lastPreviewUrl = ""
+        if (previewSourceKey.isBlank()) {
+            lastPreviewSourceKey = ""
             view.setPreviewBitmap(null)
             return
         }
 
-        if (previewUrl == lastPreviewUrl) {
+        if (previewSourceKey == lastPreviewSourceKey) {
             return
         }
 
-        lastPreviewUrl = previewUrl
-        val requestedPreviewUrl = previewUrl
+        lastPreviewSourceKey = previewSourceKey
+        val requestedPreviewSourceKey = previewSourceKey
         Thread {
-            val bitmap = when (val result = FantasyPetPreviewDownloader().downloadBlocking(requestedPreviewUrl)) {
-                is PetPreviewDownloadResult.Success -> {
-                    BitmapFactory.decodeByteArray(result.bytes, 0, result.bytes.size)
-                        ?.firstSpritesheetFrame()
+            val bitmap = if (previewAssetPath.isNotBlank()) {
+                runCatching {
+                    assets.open(previewAssetPath).use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                }.getOrNull()
+            } else {
+                when (val result = FantasyPetPreviewDownloader().downloadBlocking(previewUrl)) {
+                    is PetPreviewDownloadResult.Success -> {
+                        BitmapFactory.decodeByteArray(result.bytes, 0, result.bytes.size)
+                            ?.firstSpritesheetFrame()
+                    }
+                    is PetPreviewDownloadResult.Failure -> null
                 }
-                is PetPreviewDownloadResult.Failure -> null
             }
             mainHandler.post {
-                if (overlayView === view && lastPreviewUrl == requestedPreviewUrl) {
+                if (overlayView === view && lastPreviewSourceKey == requestedPreviewSourceKey) {
                     view.setPreviewBitmap(bitmap)
                 }
             }
@@ -544,6 +562,7 @@ class DesktopPetOverlayService : Service() {
         private const val DRAG_SLOP = 4f
         private const val UI_PREFS_NAME = "pet-shell-ui"
         private const val DESKTOP_PET_OVERLAY_RUNNING_KEY = "desktopPetOverlayRunning"
+        private const val DESKTOP_PET_OVERLAY_PREVIEW_ASSET_PATH_KEY = "desktopPetOverlayPreviewAssetPath"
         private const val DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY = "desktopPetOverlayPreviewUrl"
         private const val DESKTOP_PET_OVERLAY_PET_NAME_KEY = "desktopPetOverlayPetName"
         private const val DESKTOP_PET_OVERLAY_X_KEY = "desktopPetOverlayX"

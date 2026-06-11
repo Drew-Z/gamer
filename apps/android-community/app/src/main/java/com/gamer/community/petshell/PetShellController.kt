@@ -1,8 +1,15 @@
 package com.gamer.community.petshell
 
 object PetShellController {
-    fun initialState(skipLaunchBubble: Boolean = false): PetShellState =
-        PetShellState(
+    fun initialState(
+        skipLaunchBubble: Boolean = false,
+        selectedDefaultDesktopPetId: String = ""
+    ): PetShellState {
+        val defaultPets = defaultDesktopPets()
+        val safeDefaultPetId = selectedDefaultDesktopPetId
+            .takeIf { requestedId -> defaultPets.any { it.id == requestedId } }
+            ?: defaultPets.firstOrNull()?.id.orEmpty()
+        return PetShellState(
             phase = if (skipLaunchBubble) ShellPhase.DesktopPet else ShellPhase.LaunchBubble,
             petAction = if (skipLaunchBubble) PetAction.Idle else PetAction.AppLoading,
             speechBubble = if (skipLaunchBubble) "Desktop pet ready." else "Loading community...",
@@ -12,8 +19,11 @@ object PetShellController {
             pendingSubmissionCount = 0,
             approvedPets = emptyList(),
             approvedPetIndex = 0,
+            defaultDesktopPets = defaultPets,
+            selectedDefaultDesktopPetId = safeDefaultPetId,
             posts = emptyList()
         )
+    }
 
     fun onBubbleTapped(state: PetShellState): PetShellState =
         openCommunity(state)
@@ -125,6 +135,20 @@ object PetShellController {
             approvedPets = approvedPets,
             approvedPetIndex = 0,
             posts = posts
+        )
+    }
+
+    fun selectDefaultDesktopPet(state: PetShellState, petId: String): PetShellState {
+        val safePet = state.defaultDesktopPets.firstOrNull { it.id == petId }
+            ?: state.selectedDefaultDesktopPet()
+        return state.copy(
+            selectedDefaultDesktopPetId = safePet?.id.orEmpty(),
+            petAction = PetAction.Idle,
+            speechBubble = if (safePet == null) {
+                "Default desktop pet selection is waiting for local assets."
+            } else {
+                "Selected ${safePet.displayName} as your desktop pet."
+            }
         )
     }
 

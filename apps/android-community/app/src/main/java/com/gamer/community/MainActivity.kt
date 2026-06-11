@@ -24,6 +24,10 @@ class MainActivity : ComponentActivity() {
         val desktopPetAutoShowEnabled = uiPrefs.getBoolean("desktopPetOverlayAutoShowEnabled", false)
         val desktopPetAutoShowReady = canShowDesktopPetOverlay() && canPostDesktopPetNotification()
 
+        if (openFullApp) {
+            stopDesktopPetOverlay()
+        }
+
         if (
             !openFullApp &&
             desktopPetAutoShowEnabled &&

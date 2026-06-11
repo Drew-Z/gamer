@@ -2,6 +2,7 @@ package com.gamer.community.ui
 
 import com.gamer.community.generation.DEFAULT_GENERATION_MESSAGE
 import com.gamer.community.petshell.ApprovedPet
+import com.gamer.community.petshell.DefaultDesktopPet
 import com.gamer.community.petshell.PetAction
 
 enum class PetShellLanguage(val preferenceValue: String) {
@@ -172,9 +173,20 @@ class PetShellStrings internal constructor(
     val desktopPetNotificationManagePermission: String get() = text("通知已授权", "Notifications granted")
     val desktopPetOverlayResetPosition: String get() = text("恢复默认位置", "Reset position")
     val desktopPetOverlayActivePreviewTitle: String get() = text("\u5f53\u524d\u684c\u9762\u684c\u5ba0", "Current desktop pet")
-    val desktopPetOverlayActivePreviewMissing: String get() = text("\u7b49\u5f85\u5df2\u901a\u8fc7\u684c\u5ba0", "Awaiting approved pet")
-    val desktopPetOverlayActivePreviewReady: String get() = text("\u8fdc\u7aef\u9884\u89c8\u53ef\u7528", "Remote preview ready")
+    val desktopPetOverlayActivePreviewMissing: String get() = text("\u7b49\u5f85\u672c\u5730\u9ed8\u8ba4\u684c\u5ba0", "Awaiting default pet")
+    val desktopPetOverlayActivePreviewReady: String get() = text("\u672c\u5730\u9884\u89c8\u53ef\u7528", "Local preview ready")
     val desktopPetOverlayActivePreviewPending: String get() = text("\u9884\u89c8\u5f85\u540c\u6b65", "Preview pending")
+    val defaultDesktopPetSelectorTitle: String get() = text("\u9ed8\u8ba4\u684c\u5ba0", "Default desktop pet")
+    val defaultDesktopPetSelectorDetail: String
+        get() = text(
+            "\u521d\u59cb\u4e09\u53ea\u4f5c\u4e3a App \u672c\u5730\u8d44\u6e90\uff1b\u8fdc\u7aef\u5ba1\u6838\u684c\u5ba0\u4f1a\u5355\u72ec\u8fdb\u5165\u5c55\u67b6\u3002",
+            "These three starters are packaged locally; reviewed remote pets stay in the shelf."
+        )
+    val defaultDesktopPetElementMetric: String get() = text("\u5c5e\u6027", "Element")
+    val defaultDesktopPetMotionMetric: String get() = text("\u52a8\u4f5c", "Motion")
+    val defaultDesktopPetPreviewMetric: String get() = text("\u9884\u89c8", "Preview")
+    val defaultDesktopPetPreviewReady: String get() = text("\u672c\u5730\u53ef\u7528", "Local ready")
+    val defaultDesktopPetPreviewPending: String get() = text("\u5f85\u6253\u5305", "Pending")
     val desktopPetOverlayShow: String get() = text("显示到桌面", "Show on desktop")
     val desktopPetOverlayHide: String get() = text("关闭桌面桌宠", "Hide desktop pet")
     fun communityCommandStatus(
@@ -736,6 +748,40 @@ class PetShellStrings internal constructor(
         }
 
         return "人审已通过 / 远端预览${if (previewReady) "可用" else "待同步"}"
+    }
+
+    fun defaultDesktopPetSourceLine(pet: DefaultDesktopPet): String {
+        if (language == PetShellLanguage.English) {
+            return "Local starter / ${pet.motionLabel}"
+        }
+
+        return "${pet.sourceLabel} / ${pet.motionLabel}"
+    }
+
+    fun defaultDesktopPetName(pet: DefaultDesktopPet): String {
+        if (language == PetShellLanguage.Chinese) {
+            return pet.displayName
+        }
+
+        return when (pet.id) {
+            "electric-dormouse-hd" -> "Electric Dormouse"
+            "moon-dew-fox-v0" -> "Moon Dew Fox"
+            "fire-spirit-cat-demo" -> "Fire Spirit Cat"
+            else -> pet.displayName
+        }
+    }
+
+    fun defaultDesktopPetElementLabel(pet: DefaultDesktopPet): String {
+        if (language == PetShellLanguage.Chinese) {
+            return pet.elementLabel
+        }
+
+        return when (pet.id) {
+            "electric-dormouse-hd" -> "Electric"
+            "moon-dew-fox-v0" -> "Moon"
+            "fire-spirit-cat-demo" -> "Fire"
+            else -> pet.elementLabel
+        }
     }
 
     private fun text(chinese: String, english: String): String =

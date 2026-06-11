@@ -127,12 +127,14 @@ import com.gamer.community.generation.serializedGenerationJobHistory
 import com.gamer.community.generation.generationServerWorkerWaitNotice
 import com.gamer.community.generation.effectiveProgressStatus
 import com.gamer.community.petshell.ApprovedPet
+import com.gamer.community.petshell.DefaultDesktopPet
 import com.gamer.community.petshell.FeedDirection
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
 import com.gamer.community.petshell.ShellPhase
+import com.gamer.community.petshell.selectedDefaultDesktopPet
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -277,7 +279,8 @@ fun PetShellApp(
     var state by remember {
         val initialState = PetShellController.initialState(
             skipLaunchBubble = (directPetLaunchEnabled || openDesktopPetOnStart) &&
-                !openProfileOnStart
+                !openProfileOnStart,
+            selectedDefaultDesktopPetId = uiPrefs.getString("defaultDesktopPetId", "").orEmpty()
         )
         mutableStateOf(
             if (openProfileOnStart) {
@@ -347,6 +350,13 @@ fun PetShellApp(
         directPetLaunchEnabled = enabled
         uiPrefs.edit()
             .putBoolean("directPetLaunchEnabled", enabled)
+            .apply()
+    }
+
+    fun changeDefaultDesktopPet(petId: String) {
+        state = PetShellController.selectDefaultDesktopPet(state, petId)
+        uiPrefs.edit()
+            .putString("defaultDesktopPetId", state.selectedDefaultDesktopPetId)
             .apply()
     }
 
@@ -574,10 +584,11 @@ fun PetShellApp(
         )
     }
 
-    LaunchedEffect(state.approvedPets, state.approvedPetIndex) {
-        val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
+    LaunchedEffect(state.selectedDefaultDesktopPetId, state.defaultDesktopPets) {
+        val selectedPet = state.selectedDefaultDesktopPet()
         uiPrefs.edit()
-            .putString("desktopPetOverlayPreviewUrl", approvedPetPreviewUrl(selectedPet))
+            .putString("desktopPetOverlayPreviewAssetPath", selectedPet?.previewAssetPath.orEmpty())
+            .putString("desktopPetOverlayPreviewUrl", "")
             .putString("desktopPetOverlayPetName", desktopPetOverlayDisplayName(selectedPet))
             .apply()
         if (desktopPetOverlayRunning) {
@@ -660,6 +671,7 @@ fun PetShellApp(
                     onStartDesktopPetOverlay = ::startDesktopPetOverlay,
                     onStopDesktopPetOverlay = ::stopDesktopPetOverlay,
                     onResetDesktopPetOverlayPosition = ::resetDesktopPetOverlayPosition,
+                    onDefaultDesktopPetSelected = ::changeDefaultDesktopPet,
                     onEnterDesktopPet = {
                         state = PetShellController.openDesktopPet(state)
                     },
@@ -1084,7 +1096,7 @@ private fun DesktopPetScreen(
     onOpenGenerate: () -> Unit,
     onOpenProfile: () -> Unit
 ) {
-    val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
+    val selectedPet = state.selectedDefaultDesktopPet()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1106,7 +1118,7 @@ private fun DesktopPetScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 58.dp, bottom = 18.dp),
+                .padding(top = 58.dp, bottom = 96.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -1141,13 +1153,9 @@ private fun DesktopPetScreen(
             if (selectedPet == null) {
                 DesktopPetRemoteSyncStrip(strings = strings)
             } else {
-                ApprovedPetSignalStrip(
+                DefaultDesktopPetSignalStrip(
                     pet = selectedPet,
                     strings = strings
-                )
-                DesktopPetBrowseControls(
-                    strings = strings,
-                    onPetNavigate = onPetNavigate
                 )
             }
             DesktopPetActionDock(
@@ -1175,7 +1183,7 @@ private fun DesktopPetScreen(
 @Composable
 private fun DesktopPetStage(
     state: PetShellState,
-    selectedPet: ApprovedPet?,
+    selectedPet: DefaultDesktopPet?,
     strings: PetShellStrings
 ) {
     Surface(
@@ -1190,7 +1198,7 @@ private fun DesktopPetStage(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            ApprovedPetPreviewArtwork(
+            DefaultDesktopPetPreviewArtwork(
                 pet = selectedPet,
                 action = state.petAction,
                 strings = strings,
@@ -1215,7 +1223,7 @@ private fun DesktopPetStage(
 @Composable
 private fun DesktopPetHomeSummary(
     state: PetShellState,
-    selectedPet: ApprovedPet?,
+    selectedPet: DefaultDesktopPet?,
     strings: PetShellStrings
 ) {
     Surface(
@@ -1251,14 +1259,8 @@ private fun DesktopPetHomeSummary(
             ) {
                 DesktopPetHomeMetric(
                     label = strings.desktopPetActivePetMetric,
-                    value = approvedPetDisplayName(
-                        pet = selectedPet,
-                        fallback = if (selectedPet == null) {
-                            strings.desktopPetActivePetMissing
-                        } else {
-                            strings.desktopPetActivePetReady
-                        }
-                    ),
+                    value = selectedPet?.let(strings::defaultDesktopPetName)
+                        ?: strings.desktopPetActivePetMissing,
                     accent = Color(0xFF0F766E),
                     modifier = Modifier.weight(1f)
                 )
@@ -1332,6 +1334,59 @@ private fun DesktopPetHomeMetric(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF101828),
                     maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DefaultDesktopPetSignalStrip(
+    pet: DefaultDesktopPet?,
+    strings: PetShellStrings
+) {
+    val previewReady = pet?.previewAssetPath?.isNotBlank() == true
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White.copy(alpha = 0.92f),
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.42f))
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ApprovedPetSignalToken(
+                    label = strings.defaultDesktopPetElementMetric,
+                    value = pet?.let(strings::defaultDesktopPetElementLabel) ?: "-",
+                    accent = GamerUiTokens.ColorRole.Identity,
+                    modifier = Modifier.weight(1f)
+                )
+                ApprovedPetSignalToken(
+                    label = strings.defaultDesktopPetMotionMetric,
+                    value = pet?.motionLabel ?: "-",
+                    accent = GamerUiTokens.ColorRole.Review,
+                    modifier = Modifier.weight(1f)
+                )
+                ApprovedPetSignalToken(
+                    label = strings.defaultDesktopPetPreviewMetric,
+                    value = if (previewReady) {
+                        strings.defaultDesktopPetPreviewReady
+                    } else {
+                        strings.defaultDesktopPetPreviewPending
+                    },
+                    accent = if (previewReady) GamerUiTokens.ColorRole.Reward else GamerUiTokens.ColorRole.Muted,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            if (pet != null) {
+                Text(
+                    text = strings.defaultDesktopPetSourceLine(pet),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GamerUiTokens.ColorRole.Muted,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -1539,6 +1594,7 @@ private fun CommunityScreen(
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onResetDesktopPetOverlayPosition: () -> Unit,
+    onDefaultDesktopPetSelected: (String) -> Unit,
     onEnterDesktopPet: () -> Unit,
     onNavigate: (FeedDirection) -> Unit,
     onShowcaseNavigate: (FeedDirection) -> Unit,
@@ -1599,6 +1655,7 @@ private fun CommunityScreen(
                     onStartDesktopPetOverlay = onStartDesktopPetOverlay,
                     onStopDesktopPetOverlay = onStopDesktopPetOverlay,
                     onResetDesktopPetOverlayPosition = onResetDesktopPetOverlayPosition,
+                    onDefaultDesktopPetSelected = onDefaultDesktopPetSelected,
                     onCheckIn = onCheckIn,
                     onCreatePet = { onTabSelected(PetShellTab.Generate) },
                     onEnterDesktopPet = onEnterDesktopPet
@@ -2361,6 +2418,7 @@ private fun ProfileWorkspace(
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onResetDesktopPetOverlayPosition: () -> Unit,
+    onDefaultDesktopPetSelected: (String) -> Unit,
     onCheckIn: () -> Unit,
     onCreatePet: () -> Unit,
     onEnterDesktopPet: () -> Unit
@@ -2381,7 +2439,9 @@ private fun ProfileWorkspace(
         )
         ProfileDesktopPetSettings(
             strings = strings,
-            activeDesktopPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex),
+            activeDesktopPet = state.selectedDefaultDesktopPet(),
+            defaultDesktopPets = state.defaultDesktopPets,
+            selectedDefaultDesktopPetId = state.selectedDefaultDesktopPetId,
             directPetLaunchEnabled = directPetLaunchEnabled,
             desktopPetOverlayAutoShowEnabled = desktopPetOverlayAutoShowEnabled,
             desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
@@ -2394,6 +2454,7 @@ private fun ProfileWorkspace(
             onStartDesktopPetOverlay = onStartDesktopPetOverlay,
             onStopDesktopPetOverlay = onStopDesktopPetOverlay,
             onResetDesktopPetOverlayPosition = onResetDesktopPetOverlayPosition,
+            onDefaultDesktopPetSelected = onDefaultDesktopPetSelected,
             onEnterDesktopPet = onEnterDesktopPet
         )
         ProfilePetShelf(
@@ -2712,7 +2773,9 @@ private fun ProfileActionDock(
 @Composable
 private fun ProfileDesktopPetSettings(
     strings: PetShellStrings,
-    activeDesktopPet: ApprovedPet?,
+    activeDesktopPet: DefaultDesktopPet?,
+    defaultDesktopPets: List<DefaultDesktopPet>,
+    selectedDefaultDesktopPetId: String,
     directPetLaunchEnabled: Boolean,
     desktopPetOverlayAutoShowEnabled: Boolean,
     desktopPetOverlayPermissionGranted: Boolean,
@@ -2725,6 +2788,7 @@ private fun ProfileDesktopPetSettings(
     onStartDesktopPetOverlay: () -> Unit,
     onStopDesktopPetOverlay: () -> Unit,
     onResetDesktopPetOverlayPosition: () -> Unit,
+    onDefaultDesktopPetSelected: (String) -> Unit,
     onEnterDesktopPet: () -> Unit
 ) {
     Surface(
@@ -2747,6 +2811,12 @@ private fun ProfileDesktopPetSettings(
             DesktopPetActivePreviewStatus(
                 strings = strings,
                 activeDesktopPet = activeDesktopPet
+            )
+            DefaultDesktopPetSelector(
+                strings = strings,
+                defaultDesktopPets = defaultDesktopPets,
+                selectedDefaultDesktopPetId = selectedDefaultDesktopPetId,
+                onDefaultDesktopPetSelected = onDefaultDesktopPetSelected
             )
             DirectPetLaunchSetting(
                 strings = strings,
@@ -2779,9 +2849,9 @@ private fun ProfileDesktopPetSettings(
 @Composable
 private fun DesktopPetActivePreviewStatus(
     strings: PetShellStrings,
-    activeDesktopPet: ApprovedPet?
+    activeDesktopPet: DefaultDesktopPet?
 ) {
-    val previewReady = approvedPetPreviewUrl(activeDesktopPet).isNotBlank()
+    val previewReady = activeDesktopPet?.previewAssetPath?.isNotBlank() == true
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -2814,14 +2884,8 @@ private fun DesktopPetActivePreviewStatus(
                     color = GamerUiTokens.ColorRole.Identity
                 )
                 Text(
-                    text = approvedPetDisplayName(
-                        pet = activeDesktopPet,
-                        fallback = if (activeDesktopPet == null) {
-                            strings.desktopPetOverlayActivePreviewMissing
-                        } else {
-                            strings.desktopPetActivePetReady
-                        }
-                    ),
+                    text = activeDesktopPet?.let(strings::defaultDesktopPetName)
+                        ?: strings.desktopPetOverlayActivePreviewMissing,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = GamerUiTokens.ColorRole.Ink,
@@ -2844,11 +2908,11 @@ private fun DesktopPetActivePreviewStatus(
 
 @Composable
 private fun CompactDesktopPetPreviewThumbnail(
-    pet: ApprovedPet?,
+    pet: DefaultDesktopPet?,
     strings: PetShellStrings,
     modifier: Modifier = Modifier
 ) {
-    ApprovedPetPreviewArtwork(
+    DefaultDesktopPetPreviewArtwork(
         pet = pet,
         action = PetAction.Idle,
         strings = strings,
@@ -2860,6 +2924,105 @@ private fun CompactDesktopPetPreviewThumbnail(
             )
         }
     )
+}
+
+@Composable
+private fun DefaultDesktopPetSelector(
+    strings: PetShellStrings,
+    defaultDesktopPets: List<DefaultDesktopPet>,
+    selectedDefaultDesktopPetId: String,
+    onDefaultDesktopPetSelected: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFF8FAFC),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = strings.defaultDesktopPetSelectorTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = GamerUiTokens.ColorRole.Ink
+                )
+                Text(
+                    text = strings.defaultDesktopPetSelectorDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GamerUiTokens.ColorRole.Muted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (pet in defaultDesktopPets) {
+                    val selected = pet.id == selectedDefaultDesktopPetId
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 118.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onDefaultDesktopPetSelected(pet.id) },
+                        color = if (selected) {
+                            GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.72f)
+                        } else {
+                            Color.White
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (selected) {
+                                GamerUiTokens.ColorRole.Identity
+                            } else {
+                                GamerUiTokens.ColorRole.Line
+                            }
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(7.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            DefaultDesktopPetPreviewArtwork(
+                                pet = pet,
+                                action = PetAction.Idle,
+                                strings = strings,
+                                modifier = Modifier.size(58.dp)
+                            )
+                            Text(
+                                text = strings.defaultDesktopPetName(pet),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = GamerUiTokens.ColorRole.Ink,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = strings.defaultDesktopPetElementLabel(pet),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (selected) {
+                                    GamerUiTokens.ColorRole.Identity
+                                } else {
+                                    GamerUiTokens.ColorRole.Muted
+                                },
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -5899,6 +6062,90 @@ private fun ApprovedPetPreviewArtwork(
 }
 
 @Composable
+private fun DefaultDesktopPetPreviewArtwork(
+    pet: DefaultDesktopPet?,
+    action: PetAction,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier,
+    loading: @Composable (() -> Unit)? = null
+) {
+    val previewAssetPath = pet?.previewAssetPath.orEmpty()
+
+    if (previewAssetPath.isBlank()) {
+        PetArtworkBadge(action = action, modifier = modifier)
+        return
+    }
+
+    LocalAssetPreviewImage(
+        assetPath = previewAssetPath,
+        strings = strings,
+        modifier = modifier,
+        loading = loading,
+        fallback = {
+            PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
+        }
+    )
+}
+
+@Composable
+private fun LocalAssetPreviewImage(
+    assetPath: String,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier,
+    loading: @Composable (() -> Unit)? = null,
+    fallback: @Composable (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+    var image by remember(assetPath) { mutableStateOf<ImageBitmap?>(null) }
+    var failed by remember(assetPath) { mutableStateOf(false) }
+
+    LaunchedEffect(context, assetPath) {
+        image = null
+        failed = false
+        if (assetPath.isBlank()) {
+            failed = true
+            return@LaunchedEffect
+        }
+        image = withContext(Dispatchers.Default) {
+            runCatching {
+                context.assets.open(assetPath).use { stream ->
+                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                }
+            }.getOrNull()
+        }
+        failed = image == null
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFEFF3F7)),
+        contentAlignment = Alignment.Center
+    ) {
+        val bitmap = image
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = strings.candidatePreviewContentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        } else if (!failed && loading != null) {
+            loading()
+        } else if (failed && fallback != null) {
+            fallback()
+        } else {
+            Text(
+                text = if (failed) strings.previewUnavailable else strings.loadingPreview,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF667085),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun RemotePreviewImage(
     previewUrl: String,
     strings: PetShellStrings,
@@ -6490,6 +6737,22 @@ internal fun desktopPetOverlayDisplayName(pet: ApprovedPet?): String {
         !displayName.isSafePublicArtifactRoute() &&
         displayName.isSafeAssetDisplayText() &&
         !PUBLIC_ARTIFACT_DOWNLOAD_ID.matches(displayName) &&
+        !TECHNICAL_DISPLAY_NAME.containsMatchIn(displayName)
+    ) {
+        displayName.take(36)
+    } else {
+        ""
+    }
+}
+
+internal fun desktopPetOverlayDisplayName(pet: DefaultDesktopPet?): String {
+    val displayName = pet?.displayName
+        ?.trim()
+        ?.replace(WHITESPACE_RUN, " ")
+        .orEmpty()
+    return if (
+        displayName.isNotBlank() &&
+        displayName.isSafeAssetDisplayText() &&
         !TECHNICAL_DISPLAY_NAME.containsMatchIn(displayName)
     ) {
         displayName.take(36)
