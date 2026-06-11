@@ -26,7 +26,7 @@ class PetShellStrings internal constructor(
     val language: PetShellLanguage
 ) {
     val communityTabLabel: String get() = text("\u793E\u533A", "Community")
-    val generateTabLabel: String get() = text("\u751F\u6210", "Generate")
+    val generateTabLabel: String get() = text("孵化", "Hatch")
     val profileTabLabel: String get() = text("\u6211\u7684", "Mine")
     val communityTabContentDescription: String get() = "gamer-tab-community"
     val generateTabContentDescription: String get() = "gamer-tab-generate"
@@ -49,6 +49,7 @@ class PetShellStrings internal constructor(
     val generationStudioHeroContentDescription: String get() = "generation-studio-hero"
     val generationStudioStatusDockContentDescription: String get() = "generation-studio-status-dock"
     val generationPromptCanvasContentDescription: String get() = "generation-prompt-canvas"
+    val hatcheryOverviewContentDescription: String get() = "generation-hatchery-overview"
     val generationRuntimeConsoleContentDescription: String get() = "generation-runtime-console"
     val generationReviewActionDockContentDescription: String get() = "generation-review-action-dock"
     val desktopPetModeContentDescription: String get() = "gamer-desktop-pet-mode"
@@ -127,7 +128,7 @@ class PetShellStrings internal constructor(
             text("常规开屏", "Bubble first")
         }
     val desktopPetOpenCommunity: String get() = text("进入社区", "Community")
-    val desktopPetOpenGenerate: String get() = text("生成桌宠", "Generate")
+    val desktopPetOpenGenerate: String get() = text("孵化桌宠", "Hatch")
     val desktopPetOpenProfile: String get() = text("我的主页", "Profile")
     val desktopPetActionDockTitle: String get() = text("快速入口", "Quick entry")
     val desktopPetSettingsTitle: String get() = text("启动与桌宠设置", "Launch and pet settings")
@@ -189,21 +190,55 @@ class PetShellStrings internal constructor(
         val checkIn = if (checkInClaimed) "已签到" else "可签到"
         return "$approvedPetCount 个已通过 / $pendingSubmissionCount 个待审 / $checkIn"
     }
-    val generationWorkspaceTitle: String get() = text("\u751F\u6210\u5DE5\u4F5C\u53F0", "Generation Workspace")
+    val generationWorkspaceTitle: String get() = text("桌宠孵化室", "Pet Hatchery")
     val profileWorkspaceTitle: String get() = text("\u6211\u7684\u684C\u5BA0", "My Pets")
-    val generationStudioHeroTitle: String get() = text("\u5B89\u5168\u751F\u6210\u53F0", "Safe Generation Desk")
+    val generationStudioHeroTitle: String get() = text("桌宠孵化室", "Pet Hatchery")
     val generationStudioHeroSubtitle: String
         get() = text(
-            "\u5019\u9009\u56FE\u3001\u4EBA\u5BA1\u548C pet.zip \u4EA4\u4ED8\u90FD\u5728\u8FD9\u91CC\u3002",
-            "Candidates, human review, and pet.zip delivery stay together."
+            "从获得蛋、提示词孵化到人审入架，都在这里完成。",
+            "Hatch an egg from prompt to human review and shelf delivery."
         )
-    val generationFlowRailTitle: String get() = text("创作流程", "Creation flow")
-    val generationBriefPanelTitle: String get() = text("创作简报", "Creation brief")
-    val generationReviewDeskTitle: String get() = text("审核交付", "Review and delivery")
-    val generationFlowBriefStep: String get() = text("描述", "Brief")
+    val hatcheryOverviewTitle: String get() = text("选择孵化方式", "Choose hatch mode")
+    val hatcheryOverviewDetail: String
+        get() = text(
+            "积分换蛋后可随机孵化或自主孵化；当前先开放自主孵化链路。",
+            "Spend petcoin for eggs, then hatch randomly or by prompt; custom hatch is available now."
+        )
+    val hatcheryWalletLabel: String get() = text("积分", "Petcoin")
+    val hatcheryReserveRandomTitle: String get() = text("备用蛋", "Reserve egg")
+    val hatcheryReserveRandomDetail: String get() = text("服务器备用桌宠，孵化短", "Server spare pet, short hatch")
+    val hatcheryMysteryRandomTitle: String get() = text("神秘蛋", "Mystery egg")
+    val hatcheryMysteryRandomDetail: String get() = text("随机提示词生成，孵化长", "Random prompt, longer hatch")
+    val hatcheryCustomTitle: String get() = text("自主孵化", "Custom hatch")
+    val hatcheryCustomDetail: String get() = text("提示词、人审、资源包", "Prompt, review, package")
+    val hatcheryModeActive: String get() = text("当前开放", "Available")
+    val hatcheryModeComingSoon: String get() = text("待服务端开放", "Server pending")
+    val hatcheryFinePathNotice: String
+        get() = text(
+            "精细孵化占位：以后可逐步返回人工审核，目前先使用标准自主孵化。",
+            "Fine hatch placeholder: step-by-step review will come later; use standard custom hatch now."
+        )
+    val hatcheryProgressTitle: String get() = text("孵化进度", "Hatch progress")
+    val hatcheryStepEgg: String get() = text("蛋", "Egg")
+    val hatcheryStepPrompt: String get() = text("设定", "Prompt")
+    val hatcheryStepIncubating: String get() = text("孵化", "Hatch")
+    val hatcheryStepReview: String get() = text("人审", "Review")
+    val hatcheryStepShelf: String get() = text("入架", "Shelf")
+    fun hatcheryProgressStatus(activeStep: Int): String =
+        when (activeStep) {
+            0 -> text("等待选择孵化方式", "Choose a hatch mode")
+            1 -> text("正在准备提示词", "Preparing prompt")
+            2 -> text("服务端孵化中", "Server hatching")
+            3 -> text("等待人工审核", "Waiting for review")
+            else -> text("资源包就绪后入架", "Shelf after package is ready")
+        }
+    val generationFlowRailTitle: String get() = text("孵化流程", "Hatch flow")
+    val generationBriefPanelTitle: String get() = text("自主孵化", "Custom hatch")
+    val generationReviewDeskTitle: String get() = text("人审与入架", "Review and shelf")
+    val generationFlowBriefStep: String get() = text("设定", "Prompt")
     val generationFlowCandidateStep: String get() = text("候选", "Candidate")
     val generationFlowReviewStep: String get() = text("人审", "Review")
-    val generationFlowPackageStep: String get() = text("下载", "Package")
+    val generationFlowPackageStep: String get() = text("入架", "Shelf")
     val generationPromptStageTitle: String get() = text("桌宠提示", "Pet prompt")
     val generationPromptStageHint: String get() = text("用一句话描述身份、动作和气质。", "Describe identity, motion, and mood in one concise brief.")
     val generationPromptIdeaAction: String get() = text("灵感", "Idea")
@@ -213,21 +248,21 @@ class PetShellStrings internal constructor(
             "薄荷色守护者桌宠，待机轻轻漂浮，跑动时尾巴弹跳。",
             "Mint guardian pet, gentle idle bob, springy tail run."
         )
-    val generationTaskStageTitle: String get() = text("任务设置", "Task setup")
+    val generationTaskStageTitle: String get() = text("孵化设置", "Hatch setup")
     val generationTaskStageHint: String get() = text("任务名称可选；参考图必须是 HTTP/HTTPS URL。", "Task name is optional; reference images must use HTTP/HTTPS URLs.")
     val generationBodyStageTitle: String get() = text("体型预设", "Body preset")
-    val generationBodyStageHint: String get() = text("选择生成服务支持的桌宠体型。", "Choose a supported desktop pet body shape.")
-    val generationRunStageTitle: String get() = text("运行操作", "Runtime actions")
-    val generationRunStageHint: String get() = text("App 只创建和轮询任务，不启动生成 worker。", "The app only creates and polls jobs; it never starts generation workers.")
+    val generationBodyStageHint: String get() = text("选择孵化服务支持的桌宠体型。", "Choose a supported desktop pet body shape.")
+    val generationRunStageTitle: String get() = text("开始孵化", "Start hatch")
+    val generationRunStageHint: String get() = text("App 只创建和轮询孵化任务，不启动生成 worker。", "The app only creates and polls hatch jobs; it never starts generation workers.")
     val generationReviewWaitingForCandidate: String
         get() = text(
-            "候选图会在生成完成后出现在这里，选择 candidate 后才能提交人审。",
-            "Candidates appear here when generation reaches review; select a candidate before review."
+            "候选图会在孵化完成后出现在这里，选择 candidate 后才能提交人审。",
+            "Candidates appear here when hatching reaches review; select a candidate before review."
         )
     val generationWorkspaceSubtitle: String
         get() = text(
-            "\u4ECE\u6587\u5B57\u63CF\u8FF0\u5230\u4EBA\u5BA1\u4E0B\u8F7D\u7684 public API \u95ED\u73AF\u3002",
-            "Public API loop from prompt to human review and package download."
+            "从蛋、提示词到人审入架的 public API 闭环。",
+            "Public API loop from egg and prompt to review and shelf."
         )
     val profileWorkspaceSubtitle: String
         get() = text(
@@ -245,8 +280,8 @@ class PetShellStrings internal constructor(
     val approvedPetPreviewPending: String get() = text("待生成", "Pending")
     val profilePetShelfTitle: String get() = text("\u684C\u5BA0\u5C55\u67B6", "Pet shelf")
     val profileActionDockTitle: String get() = text("\u5E38\u7528\u52A8\u4F5C", "Quick actions")
-    val profileCreatePetAction: String get() = text("\u751F\u6210\u65B0\u684C\u5BA0", "Create new pet")
-    val showcasePathGenerate: String get() = text("\u751F\u6210", "Generate")
+    val profileCreatePetAction: String get() = text("孵化新桌宠", "Hatch new pet")
+    val showcasePathGenerate: String get() = text("孵化", "Hatch")
     val showcasePathReview: String get() = text("\u4EBA\u5BA1", "Review")
     val showcasePathPublish: String get() = text("\u5C55\u793A", "Showcase")
     val chineseLanguageLabel: String = "中文"
@@ -269,7 +304,7 @@ class PetShellStrings internal constructor(
     val feedReactionLabel: String get() = text("\u4E92\u52A8", "Reactions")
     val quickActionCheckIn: String get() = text("签到", "Check in")
     val quickActionCheckInDetail: String get() = text("+10 宠物币", "+10 petcoin")
-    val quickActionGenerate: String get() = text("生成", "Create")
+    val quickActionGenerate: String get() = text("孵化", "Hatch")
     val quickActionGenerateDetail: String get() = text("新桌宠", "New pet")
     val quickActionReview: String get() = text("审核", "Review")
     val quickActionReviewDetail: String get() = text("候选图", "Candidates")
@@ -282,19 +317,19 @@ class PetShellStrings internal constructor(
     val quickActionShowcase: String get() = text("展示", "Showcase")
     val quickActionShowcaseDetail: String get() = text("广场", "Gallery")
     val launchEnterHint: String get() = text("点击气泡进入", "Tap the bubble to enter")
-    val generatePanelTitle: String get() = text("生成桌宠", "Generate Desktop Pet")
+    val generatePanelTitle: String get() = text("孵化桌宠", "Hatch Desktop Pet")
     val generationPublicApiBoundaryNotice: String
         get() = text(
-            "公共 API 只创建和轮询任务；真实生成 worker 需要在服务端单独启动。",
-            "Public API only creates and polls jobs; live generation workers must be started on the server side."
+            "公共 API 只创建和轮询孵化任务；真实生成 worker 需要在服务端单独启动。",
+            "Public API only creates and polls hatch jobs; live generation workers must be started on the server side."
         )
     val descriptionLabel: String get() = text("文字描述", "Description")
     val requiredFieldSuffix: String get() = text("（必填）", " (required)")
     val appJobIdLabel: String get() = text("任务名称", "Task name")
     val referenceUrlsLabel: String get() = text("参考图 URL", "Reference URLs")
-    val createGenerationJob: String get() = text("创建生成任务", "Create generation job")
-    val checkGenerationService: String get() = text("检查生成服务", "Check generation service")
-    val pollJob: String get() = text("刷新任务状态", "Poll job")
+    val createGenerationJob: String get() = text("开始自主孵化", "Start custom hatch")
+    val checkGenerationService: String get() = text("检查孵化服务", "Check hatch service")
+    val pollJob: String get() = text("刷新孵化状态", "Poll hatch")
     val recentJobs: String get() = text("最近任务", "Recent jobs")
     val resume: String get() = text("继续", "Resume")
     val remove: String get() = text("移除", "Remove")
@@ -307,7 +342,7 @@ class PetShellStrings internal constructor(
     val candidateWaitingForInspection: String get() = text("等待服务端发布 candidate 后进入人审。", "Waiting for the server to publish a candidate.")
     val candidateSelectedStatus: String get() = text("已选中", "Selected")
     val candidateAvailableStatus: String get() = text("待选择", "Available")
-    val deliveryActionsHint: String get() = text("先完成人审，只有资源包就绪后才能下载 pet.zip。", "Review first; pet.zip is available only after the package is ready.")
+    val deliveryActionsHint: String get() = text("先完成人审，只有资源包就绪后才能接收 pet.zip。", "Review first; pet.zip is available only after the package is ready.")
     val deliveryReviewTargetStatus: String get() = text("审核对象", "Review target")
     val deliveryPackageStatus: String get() = text("资源包", "Package")
     val deliveryCommunityStatus: String get() = text("社区提交", "Community")
@@ -328,7 +363,7 @@ class PetShellStrings internal constructor(
     val reviewAccept: String get() = text("接受", "Accept")
     val reviewRevise: String get() = text("要求修订", "Revise")
     val reviewReject: String get() = text("拒绝", "Reject")
-    val downloadPetZip: String get() = text("下载 pet.zip", "Download pet.zip")
+    val downloadPetZip: String get() = text("接收 pet.zip", "Receive pet.zip")
     val submitToCommunityReview: String get() = text("提交到社区审核", "Submit to community review")
     val refreshCommunitySubmission: String get() = text("刷新社区提交", "Refresh community submission")
     val petPrev: String get() = text("上一个桌宠", "Pet Prev")
@@ -414,14 +449,14 @@ class PetShellStrings internal constructor(
 
         return when (rawMessage) {
             DEFAULT_GENERATION_MESSAGE -> "描述一个桌宠，开始生成。"
-            "Creating generation job..." -> "正在创建生成任务..."
-            "Resuming generation job..." -> "正在恢复生成任务..."
-            "Resuming recent generation job..." -> "正在继续最近的生成任务..."
-            "Recent generation job removed." -> "最近生成任务已移除。"
-            "Recent generation job is unavailable." -> "最近生成任务不可用。"
-            "Checking generation service..." -> "正在检查生成服务..."
+            "Creating generation job..." -> "正在创建孵化任务..."
+            "Resuming generation job..." -> "正在恢复孵化任务..."
+            "Resuming recent generation job..." -> "正在继续最近的孵化任务..."
+            "Recent generation job removed." -> "最近孵化任务已移除。"
+            "Recent generation job is unavailable." -> "最近孵化任务不可用。"
+            "Checking generation service..." -> "正在检查孵化服务..."
             "Submitting human review..." -> "正在提交人工审核..."
-            "Polling generation job..." -> "正在刷新生成任务..."
+            "Polling generation job..." -> "正在刷新孵化任务..."
             "Contract demo task: this candidate is pre-seeded for public API validation; it is not a live pet generation run." ->
                 "这是公共 API 契约演示任务：候选图是服务端预置的验证资源，不代表真实桌宠生成链路已运行。"
             "Contract demo fixture loaded; no live generation worker has run." ->
@@ -430,8 +465,8 @@ class PetShellStrings internal constructor(
                 "正在等待可信服务端 worker；app 只负责创建和轮询任务。"
             "Feedback recorded; a trusted server worker must publish the next candidate." ->
                 "反馈已记录；需要可信服务端 worker 发布新的候选图。"
-            "Create a generation job before review." -> "请先创建生成任务，再提交审核。"
-            "Create a generation job before download." -> "请先创建生成任务，再下载资源包。"
+            "Create a generation job before review." -> "请先开始孵化，再提交审核。"
+            "Create a generation job before download." -> "请先开始孵化，再接收资源包。"
             "Downloading pet.zip..." -> "正在下载 pet.zip..."
             "Description is required." -> "请填写桌宠描述。"
             "Description must be 4000 characters or fewer." -> "描述不能超过 4000 个字符。"
@@ -445,13 +480,13 @@ class PetShellStrings internal constructor(
             "Review notes cannot include internal paths or worker details." ->
                 "审核备注不能包含内部路径或 worker 细节。"
             "pet.zip is ready to download." -> "pet.zip 已可下载。"
-            "Waiting for generation worker." -> "正在等待生成服务。"
+            "Waiting for generation worker." -> "正在等待孵化服务。"
             "Generating candidate assets." -> "正在生成候选资源。"
             "Waiting for worker output." -> "正在等待生成结果。"
             "Packaging pet.zip." -> "正在打包 pet.zip。"
             "Revision requested; waiting for a revised candidate." -> "已请求修订，正在等待新候选图。"
             "Candidate rejected; waiting for a new candidate." -> "候选图已拒绝，正在等待新候选图。"
-            "Generation failed." -> "生成失败。"
+            "Generation failed." -> "孵化失败。"
             "Queued" -> "已排队"
             "Generating" -> "生成中"
             "Ready for human review" -> "等待人工审核"
@@ -461,8 +496,8 @@ class PetShellStrings internal constructor(
             "Candidate rejected" -> "候选图已拒绝"
             "Failed" -> "失败"
             "Waiting" -> "等待中"
-            "Generation service ready." -> "生成服务已就绪。"
-            "Generation service blocked: unsafe readiness report." -> "生成服务状态被阻止：报告不安全。"
+            "Generation service ready." -> "孵化服务已就绪。"
+            "Generation service blocked: unsafe readiness report." -> "孵化服务状态被阻止：报告不安全。"
             "Generation API contract blocked: unsafe public boundary." ->
                 "生成 API 合约被阻止：公共边界不安全。"
             "Community import blocked." -> "社区导入被阻止。"
@@ -480,7 +515,7 @@ class PetShellStrings internal constructor(
         } else {
             when (rawLabel) {
                 "Candidate generation" -> "候选图生成"
-                "Generation orchestration" -> "生成调度"
+                "Generation orchestration" -> "孵化调度"
                 "Planning" -> "规划"
                 else -> rawLabel
             }
@@ -720,17 +755,17 @@ class PetShellStrings internal constructor(
         val manyCandidatesSuffix = " candidates ready for human review."
         return when {
             rawMessage.startsWith("Generation poll failed: ") ->
-                localizedDynamicGenerationMessage(rawMessage, "Generation poll failed: ", "生成轮询失败: ")
+                localizedDynamicGenerationMessage(rawMessage, "Generation poll failed: ", "孵化状态刷新失败: ")
             rawMessage.startsWith("Saved generation job unavailable: ") ->
                 localizedDynamicGenerationMessage(
                     rawMessage,
                     "Saved generation job unavailable: ",
-                    "已保存生成任务不可用: "
+                    "已保存孵化任务不可用: "
                 )
             rawMessage.startsWith("Generation request failed: ") ->
-                localizedDynamicGenerationMessage(rawMessage, "Generation request failed: ", "生成请求失败: ")
+                localizedDynamicGenerationMessage(rawMessage, "Generation request failed: ", "孵化请求失败: ")
             rawMessage == "Review failed: contract_demo_job_review_disabled" ->
-                "审核失败: 这是公共 API 契约演示任务，不能作为真实生成任务提交人审。"
+                "审核失败: 这是公共 API 契约演示任务，不能作为真实孵化任务提交人审。"
             rawMessage == "Review failed: review_target_already_decided" ->
                 "人审提交失败: 这个候选图已经审核过，请等待新的候选图。"
             rawMessage == "Review failed: review_target_must_be_candidate" ->
@@ -749,24 +784,24 @@ class PetShellStrings internal constructor(
                 localizedDynamicGenerationMessage(
                     rawMessage,
                     "Generation API contract check failed: ",
-                    "生成 API 合约检查失败: "
+                    "孵化 API 合约检查失败: "
                 )
             rawMessage.startsWith("Generation service check failed: ") ->
                 localizedDynamicGenerationMessage(
                     rawMessage,
                     "Generation service check failed: ",
-                    "生成服务检查失败: "
+                    "孵化服务检查失败: "
                 )
             rawMessage.startsWith("Downloaded ") && rawMessage.endsWith(" to app downloads.") -> {
                 val fileName = rawMessage
                     .removePrefix("Downloaded ")
                     .removeSuffix(" to app downloads.")
                     .safeGenerationMessageDetail("pet.zip")
-                "已下载 $fileName 到 app 下载目录。"
+                "已接收 $fileName 到 app 下载目录。"
             }
             rawMessage.startsWith("Package download blocked: ") ->
-                localizedDynamicGenerationMessage(rawMessage, "Package download blocked: ", "资源包下载被阻止: ")
-            rawMessage == "Package download blocked." -> "资源包下载被阻止。"
+                localizedDynamicGenerationMessage(rawMessage, "Package download blocked: ", "资源包接收被阻止: ")
+            rawMessage == "Package download blocked." -> "资源包接收被阻止。"
             rawMessage.startsWith("Community import pending: ") ->
                 localizedDynamicGenerationMessage(rawMessage, "Community import pending: ", "社区导入待处理: ")
             rawMessage.startsWith("Community import draft ") ->

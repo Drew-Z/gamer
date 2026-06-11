@@ -603,6 +603,7 @@ fun PetShellApp(
                     generationContent = {
                         GenerationPanel(
                             strings = strings,
+                            walletBalance = state.walletBalance,
                             description = generationDescription,
                             onDescriptionChange = { generationDescription = it },
                             appJobId = generationAppJobId,
@@ -4158,8 +4159,374 @@ private fun DrawScope.drawProfileTabIcon(color: Color) {
 }
 
 @Composable
+private fun HatcheryOverviewPanel(
+    strings: PetShellStrings,
+    walletBalance: Int,
+    job: PetGenerationJobResponseDto?,
+    candidateCount: Int,
+    selectedCandidateDownloadId: String
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.hatcheryOverviewContentDescription
+            },
+        color = Color(0xFFFFFBF4),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFFFD6A3)),
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HatcheryEggBadge(
+                    active = job != null,
+                    modifier = Modifier.size(62.dp)
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = strings.hatcheryOverviewTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF101828),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = strings.hatcheryOverviewDetail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF667085),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                HatcheryWalletBadge(
+                    label = strings.hatcheryWalletLabel,
+                    value = strings.walletBalance(walletBalance)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                HatcheryModeToken(
+                    title = strings.hatcheryReserveRandomTitle,
+                    detail = strings.hatcheryReserveRandomDetail,
+                    status = strings.hatcheryModeComingSoon,
+                    accent = Color(0xFF0F766E),
+                    active = false,
+                    modifier = Modifier.weight(1f)
+                )
+                HatcheryModeToken(
+                    title = strings.hatcheryMysteryRandomTitle,
+                    detail = strings.hatcheryMysteryRandomDetail,
+                    status = strings.hatcheryModeComingSoon,
+                    accent = Color(0xFF7C3AED),
+                    active = false,
+                    modifier = Modifier.weight(1f)
+                )
+                HatcheryModeToken(
+                    title = strings.hatcheryCustomTitle,
+                    detail = strings.hatcheryCustomDetail,
+                    status = strings.hatcheryModeActive,
+                    accent = Color(0xFFF97316),
+                    active = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            HatcheryFinePathNotice(strings = strings)
+            HatcheryProgressRail(
+                strings = strings,
+                job = job,
+                candidateCount = candidateCount,
+                selectedCandidateDownloadId = selectedCandidateDownloadId
+            )
+        }
+    }
+}
+
+@Composable
+private fun HatcheryEggBadge(
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val shellColor = if (active) Color(0xFFFFE2B8) else Color(0xFFFDF2E4)
+    val crackColor = if (active) Color(0xFFB54708) else Color(0xFFD0D5DD)
+    Canvas(modifier = modifier) {
+        drawOval(
+            color = Color(0x26000000),
+            topLeft = Offset(size.width * 0.18f, size.height * 0.82f),
+            size = Size(size.width * 0.64f, size.height * 0.12f)
+        )
+        drawOval(
+            color = shellColor,
+            topLeft = Offset(size.width * 0.18f, size.height * 0.05f),
+            size = Size(size.width * 0.64f, size.height * 0.82f)
+        )
+        drawCircle(
+            color = Color.White.copy(alpha = 0.72f),
+            radius = size.minDimension * 0.12f,
+            center = Offset(size.width * 0.38f, size.height * 0.28f)
+        )
+        val stroke = size.minDimension * 0.055f
+        drawLine(
+            color = crackColor,
+            start = Offset(size.width * 0.46f, size.height * 0.34f),
+            end = Offset(size.width * 0.56f, size.height * 0.45f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = crackColor,
+            start = Offset(size.width * 0.56f, size.height * 0.45f),
+            end = Offset(size.width * 0.48f, size.height * 0.56f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = crackColor,
+            start = Offset(size.width * 0.48f, size.height * 0.56f),
+            end = Offset(size.width * 0.6f, size.height * 0.66f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun HatcheryWalletBadge(
+    label: String,
+    value: String
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White.copy(alpha = 0.84f))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF667085),
+                maxLines = 1
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF101828),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun HatcheryModeToken(
+    title: String,
+    detail: String,
+    status: String,
+    accent: Color,
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val container = if (active) accent.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.72f)
+    Box(
+        modifier = modifier
+            .heightIn(min = 96.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(container)
+            .padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 24.dp, height = 3.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(accent)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF101828),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF667085),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HatcheryFinePathNotice(strings: PetShellStrings) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White.copy(alpha = 0.72f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFFE4E7EC))
+    ) {
+        Text(
+            text = strings.hatcheryFinePathNotice,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFF475467)
+        )
+    }
+}
+
+@Composable
+private fun HatcheryProgressRail(
+    strings: PetShellStrings,
+    job: PetGenerationJobResponseDto?,
+    candidateCount: Int,
+    selectedCandidateDownloadId: String
+) {
+    val steps = listOf(
+        strings.hatcheryStepEgg,
+        strings.hatcheryStepPrompt,
+        strings.hatcheryStepIncubating,
+        strings.hatcheryStepReview,
+        strings.hatcheryStepShelf
+    )
+    val activeStep = hatcheryActiveStep(
+        job = job,
+        candidateCount = candidateCount,
+        selectedCandidateDownloadId = selectedCandidateDownloadId
+    )
+    val progress = ((activeStep + 1).toFloat() / steps.size.toFloat()).coerceIn(0.18f, 1f)
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = strings.hatcheryProgressTitle,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF101828)
+            )
+            Text(
+                text = strings.hatcheryProgressStatus(activeStep),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF667085),
+                maxLines = 1
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFE4E7EC))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0F766E))
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for ((index, label) in steps.withIndex()) {
+                HatcheryProgressStep(
+                    label = label,
+                    active = index == activeStep,
+                    completed = index < activeStep,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HatcheryProgressStep(
+    label: String,
+    active: Boolean,
+    completed: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val color = when {
+        active -> Color(0xFF0F766E)
+        completed -> Color(0xFF157A52)
+        else -> Color(0xFF667085)
+    }
+    Text(
+        text = label,
+        modifier = modifier,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center
+    )
+}
+
+private fun hatcheryActiveStep(
+    job: PetGenerationJobResponseDto?,
+    candidateCount: Int,
+    selectedCandidateDownloadId: String
+): Int {
+    job ?: return 0
+    if (job.downloadReady || job.nextAction == "download-package") {
+        return 4
+    }
+    if (selectedCandidateDownloadId.isNotBlank()) {
+        return 3
+    }
+    if (candidateCount > 0) {
+        return 3
+    }
+    return when (effectiveProgressStatus(job)) {
+        "ready-for-download" -> 4
+        "waiting-for-review",
+        "revision-requested",
+        "candidate-rejected" -> 3
+        "queued",
+        "processing",
+        "waiting-for-worker-output",
+        "packaging" -> 2
+        else -> 1
+    }
+}
+
+@Composable
 private fun GenerationPanel(
     strings: PetShellStrings,
+    walletBalance: Int,
     description: String,
     onDescriptionChange: (String) -> Unit,
     appJobId: String,
@@ -4201,6 +4568,13 @@ private fun GenerationPanel(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        HatcheryOverviewPanel(
+            strings = strings,
+            walletBalance = walletBalance,
+            job = job,
+            candidateCount = candidates.size,
+            selectedCandidateDownloadId = selectedCandidateDownloadId
+        )
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
