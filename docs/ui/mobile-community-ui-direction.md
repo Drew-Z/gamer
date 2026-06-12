@@ -252,3 +252,10 @@ Use these persistent traits:
 - Desktop pet mode uses a light mint-to-warm background instead of a dark launch surface; keep wallet/language controls padded below the Android status bar.
 - Generation hero uses soft hatch colors with dark readable text. If a section moves from dark to light, re-check small status chips for contrast instead of only changing the parent background.
 - Emulator screenshots for this pass: `C:\Users\zhang\AppData\Local\Temp\gamer-bright-onboarding.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-bright-community.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-current-after-hatch-tap.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-bright-profile.png`.
+
+2026-06-12 local desktop pet motion check:
+
+- Local starter pets should use real packaged assets, not Canvas placeholders. Electric Dormouse and Moon Dew Fox now package their `motion_sheets/idle.png` resources and Android previews should play those sheets as short idle loops.
+- The floating desktop pet reads the same selected local starter prefs as the in-app pet surface: preview asset path, idle motion sheet asset path, and frame count. If no real asset is available, do not draw a fake fallback pet.
+- HidenCloud approved-pet public responses currently expose `motionSheetCount` but not public motion sheet URLs. The current approved package zip inspected from HidenCloud contains only `artifacts/candidates/.../idle_body_locked_transparent.png` plus `package-manifest.json`; its manifest lists only a `candidate` file.
+- Follow-up for remote animated approved pets: the public approved-pet package descriptor or package download must include safe motion sheet file entries/URLs before Android can animate remote shelf/showcase pets.

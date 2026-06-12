@@ -1,0 +1,73 @@
+{
+  "schema": "fantasy-pet.motion-map.v1",
+  "format": "hd-independent-action-sheets",
+  "sourceGrid": {
+    "cols": 7,
+    "rows": 9
+  },
+  "cols": 8,
+  "rows": 9,
+  "actions": {
+    "idle": {
+      "row": 0,
+      "frames": 24,
+      "loop": true
+    },
+    "review": {
+      "row": 1,
+      "frames": 16,
+      "loop": true
+    },
+    "running": {
+      "row": 2,
+      "frames": 16,
+      "loop": true
+    },
+    "jumping": {
+      "row": 7,
+      "frames": 16,
+      "loop": false
+    },
+    "eat": {
+      "row": 8,
+      "frames": 24,
+      "loop": false
+    },
+    "play-ball": {
+      "row": 9,
+      "frames": 20,
+      "loop": false
+    },
+    "waving": {
+      "row": 10,
+      "frames": 18,
+      "loop": false
+    },
+    "waiting": {
+      "row": 11,
+      "frames": 24,
+      "loop": true
+    },
+    "nap-wake": {
+      "row": 12,
+      "frames": 28,
+      "loop": false
+    },
+    "attention-notification": {
+      "row": 13,
+      "frames": 20,
+      "loop": false
+    },
+    "failed": {
+      "row": 14,
+      "frames": 16,
+      "loop": false
+    },
+    "curious-sniff": {
+      "row": 15,
+      "frames": 20,
+      "loop": false
+    }
+  },
+  "note": "HD desktop-pet action set trimmed to meaningful pet states and interactions. Directional run/turn primitives were removed from this pet pack."
+}

@@ -1,6 +1,7 @@
 package com.gamer.community.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
 import androidx.compose.foundation.BorderStroke
@@ -71,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.net.URLEncoder
 import com.gamer.community.firstSpritesheetFrame
+import com.gamer.community.horizontalSpritesheetFrames
 import com.gamer.community.api.ApiCallResult
 import com.gamer.community.api.CommunityRepository
 import com.gamer.community.api.HttpCommunityApiClient
@@ -606,6 +608,8 @@ fun PetShellApp(
         val selectedPet = state.selectedDefaultDesktopPet()
         uiPrefs.edit()
             .putString("desktopPetOverlayPreviewAssetPath", selectedPet?.previewAssetPath.orEmpty())
+            .putString("desktopPetOverlayMotionSheetAssetPath", selectedPet?.idleMotionSheetAssetPath.orEmpty())
+            .putInt("desktopPetOverlayMotionFrameCount", selectedPet?.idleMotionFrameCount ?: 0)
             .putString("desktopPetOverlayPreviewUrl", "")
             .putString("desktopPetOverlayPetName", desktopPetOverlayDisplayName(selectedPet))
             .apply()
@@ -6297,9 +6301,33 @@ private fun DefaultDesktopPetPreviewArtwork(
     loading: @Composable (() -> Unit)? = null
 ) {
     val previewAssetPath = pet?.previewAssetPath.orEmpty()
+    val motionSheetAssetPath = pet?.idleMotionSheetAssetPath.orEmpty()
+    val motionFrameCount = pet?.idleMotionFrameCount ?: 0
 
     if (previewAssetPath.isBlank()) {
         StatusIconMark(action = action, modifier = modifier)
+        return
+    }
+
+    if (motionSheetAssetPath.isNotBlank() && motionFrameCount > 1) {
+        LocalMotionSheetImage(
+            assetPath = motionSheetAssetPath,
+            frameCount = motionFrameCount,
+            strings = strings,
+            modifier = modifier,
+            loading = loading,
+            unavailable = {
+                LocalAssetPreviewImage(
+                    assetPath = previewAssetPath,
+                    strings = strings,
+                    modifier = Modifier.fillMaxSize(),
+                    loading = loading,
+                    unavailable = {
+                        StatusIconMark(action = action, modifier = Modifier.fillMaxSize())
+                    }
+                )
+            }
+        )
         return
     }
 
@@ -6353,6 +6381,84 @@ private fun LocalAssetPreviewImage(
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
+                contentDescription = strings.candidatePreviewContentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        } else if (!failed && loading != null) {
+            loading()
+        } else if (failed && unavailable != null) {
+            unavailable()
+        } else {
+            Text(
+                text = if (failed) strings.previewUnavailable else strings.loadingPreview,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF667085),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun LocalMotionSheetImage(
+    assetPath: String,
+    frameCount: Int,
+    strings: PetShellStrings,
+    modifier: Modifier = Modifier,
+    frameDurationMillis: Long = 83L,
+    loading: @Composable (() -> Unit)? = null,
+    unavailable: @Composable (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+    var frames by remember(assetPath, frameCount) { mutableStateOf<List<ImageBitmap>>(emptyList()) }
+    var frameIndex by remember(assetPath, frameCount) { mutableStateOf(0) }
+    var failed by remember(assetPath, frameCount) { mutableStateOf(false) }
+
+    LaunchedEffect(context, assetPath, frameCount) {
+        frames = emptyList()
+        frameIndex = 0
+        failed = false
+        if (assetPath.isBlank() || frameCount <= 1) {
+            failed = true
+            return@LaunchedEffect
+        }
+
+        frames = withContext(Dispatchers.Default) {
+            runCatching {
+                context.assets.open(assetPath).use { stream ->
+                    BitmapFactory.decodeStream(stream)
+                        ?.horizontalSpritesheetFrames(frameCount)
+                        ?.map(Bitmap::asImageBitmap)
+                        .orEmpty()
+                }
+            }.getOrDefault(emptyList())
+        }
+        failed = frames.isEmpty()
+    }
+
+    LaunchedEffect(frames.size, frameDurationMillis) {
+        if (frames.size <= 1) {
+            frameIndex = 0
+            return@LaunchedEffect
+        }
+
+        while (true) {
+            delay(frameDurationMillis)
+            frameIndex = (frameIndex + 1) % frames.size
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFEFF3F7)),
+        contentAlignment = Alignment.Center
+    ) {
+        val currentFrames = frames
+        if (currentFrames.isNotEmpty()) {
+            Image(
+                bitmap = currentFrames[frameIndex.coerceIn(0, currentFrames.lastIndex)],
                 contentDescription = strings.candidatePreviewContentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit

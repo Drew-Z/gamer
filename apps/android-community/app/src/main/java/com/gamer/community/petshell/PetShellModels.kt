@@ -59,7 +59,9 @@ data class DefaultDesktopPet(
     val elementLabel: String,
     val previewAssetPath: String,
     val sourceLabel: String,
-    val motionLabel: String
+    val motionLabel: String,
+    val idleMotionSheetAssetPath: String = "",
+    val idleMotionFrameCount: Int = 0
 )
 
 data class PetShellState(
@@ -85,7 +87,9 @@ fun defaultDesktopPets(): List<DefaultDesktopPet> = listOf(
         elementLabel = "\u7535\u7cfb",
         previewAssetPath = "default-pets/electric-dormouse-hd/preview.png",
         sourceLabel = "\u672c\u5730\u9ed8\u8ba4",
-        motionLabel = "P1 v10 idle"
+        motionLabel = "P1 v10 idle",
+        idleMotionSheetAssetPath = "default-pets/electric-dormouse-hd/motion_sheets/idle.png",
+        idleMotionFrameCount = 24
     ),
     DefaultDesktopPet(
         id = "moon-dew-fox-v0",
@@ -93,7 +97,9 @@ fun defaultDesktopPets(): List<DefaultDesktopPet> = listOf(
         elementLabel = "\u6708\u7cfb",
         previewAssetPath = "default-pets/moon-dew-fox-v0/preview.png",
         sourceLabel = "\u672c\u5730\u9ed8\u8ba4",
-        motionLabel = "idle preview"
+        motionLabel = "idle preview",
+        idleMotionSheetAssetPath = "default-pets/moon-dew-fox-v0/motion_sheets/idle.png",
+        idleMotionFrameCount = 16
     ),
     DefaultDesktopPet(
         id = "fire-spirit-cat-demo",

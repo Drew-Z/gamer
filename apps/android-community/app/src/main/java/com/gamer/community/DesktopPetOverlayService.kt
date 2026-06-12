@@ -13,7 +13,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.drawable.Icon
@@ -219,15 +218,31 @@ class DesktopPetOverlayService : Service() {
             .getString(DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY, "")
             .orEmpty()
             .trim()
-        val previewSourceKey = when {
-            previewAssetPath.isNotBlank() -> "asset:$previewAssetPath"
-            previewUrl.isNotBlank() -> "url:$previewUrl"
-            else -> ""
+        val motionSheetAssetPath = prefs
+            .getString(DESKTOP_PET_OVERLAY_MOTION_SHEET_ASSET_PATH_KEY, "")
+            .orEmpty()
+            .trim()
+        val motionFrameCount = prefs.getInt(DESKTOP_PET_OVERLAY_MOTION_FRAME_COUNT_KEY, 0)
+        val previewSourceKey = buildString {
+            if (motionSheetAssetPath.isNotBlank() && motionFrameCount > 1) {
+                append("motion:")
+                append(motionSheetAssetPath)
+                append(":")
+                append(motionFrameCount)
+            }
+            if (previewAssetPath.isNotBlank()) {
+                append("|asset:")
+                append(previewAssetPath)
+            }
+            if (previewUrl.isNotBlank()) {
+                append("|url:")
+                append(previewUrl)
+            }
         }
 
         if (previewSourceKey.isBlank()) {
             lastPreviewSourceKey = ""
-            view.setPreviewBitmap(null)
+            view.setPreviewFrames(emptyList())
             return
         }
 
@@ -238,27 +253,54 @@ class DesktopPetOverlayService : Service() {
         lastPreviewSourceKey = previewSourceKey
         val requestedPreviewSourceKey = previewSourceKey
         Thread {
-            val bitmap = if (previewAssetPath.isNotBlank()) {
-                runCatching {
-                    assets.open(previewAssetPath).use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
-                }.getOrNull()
-            } else {
-                when (val result = FantasyPetPreviewDownloader().downloadBlocking(previewUrl)) {
-                    is PetPreviewDownloadResult.Success -> {
-                        BitmapFactory.decodeByteArray(result.bytes, 0, result.bytes.size)
-                            ?.firstSpritesheetFrame()
-                    }
-                    is PetPreviewDownloadResult.Failure -> null
-                }
+            val frames = loadMotionFrames(
+                assetPath = motionSheetAssetPath,
+                frameCount = motionFrameCount
+            ).ifEmpty {
+                loadStaticPreviewFrame(
+                    previewAssetPath = previewAssetPath,
+                    previewUrl = previewUrl
+                )
             }
             mainHandler.post {
                 if (overlayView === view && lastPreviewSourceKey == requestedPreviewSourceKey) {
-                    view.setPreviewBitmap(bitmap)
+                    view.setPreviewFrames(frames)
                 }
             }
         }.start()
+    }
+
+    private fun loadMotionFrames(assetPath: String, frameCount: Int): List<Bitmap> {
+        if (assetPath.isBlank() || frameCount <= 1) {
+            return emptyList()
+        }
+
+        return runCatching {
+            assets.open(assetPath).use { stream ->
+                BitmapFactory.decodeStream(stream)
+                    ?.horizontalSpritesheetFrames(frameCount)
+                    .orEmpty()
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun loadStaticPreviewFrame(previewAssetPath: String, previewUrl: String): List<Bitmap> {
+        val bitmap = if (previewAssetPath.isNotBlank()) {
+            runCatching {
+                assets.open(previewAssetPath).use { stream ->
+                    BitmapFactory.decodeStream(stream)
+                }
+            }.getOrNull()
+        } else {
+            when (val result = FantasyPetPreviewDownloader().downloadBlocking(previewUrl)) {
+                is PetPreviewDownloadResult.Success -> {
+                    BitmapFactory.decodeByteArray(result.bytes, 0, result.bytes.size)
+                        ?.firstSpritesheetFrame()
+                }
+                is PetPreviewDownloadResult.Failure -> null
+            }
+        }
+        return bitmap?.let(::listOf).orEmpty()
     }
 
     private fun startAsForegroundService() {
@@ -439,18 +481,12 @@ class DesktopPetOverlayService : Service() {
 
     private class DesktopPetOverlayView(context: Context) : View(context) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 4f
-            strokeCap = Paint.Cap.ROUND
-        }
         private val previewBounds = RectF()
-        private val path = Path()
         private val startTime = SystemClock.uptimeMillis()
-        private var previewBitmap: Bitmap? = null
+        private var previewFrames: List<Bitmap> = emptyList()
 
-        fun setPreviewBitmap(bitmap: Bitmap?) {
-            previewBitmap = bitmap
+        fun setPreviewFrames(frames: List<Bitmap>) {
+            previewFrames = frames
             invalidate()
         }
 
@@ -470,6 +506,7 @@ class DesktopPetOverlayService : Service() {
             val centerX = width * 0.5f
             val centerY = height * 0.54f + bob
 
+            val bitmap = currentPreviewFrame() ?: return
             paint.style = Paint.Style.FILL
             paint.color = Color.argb(46, 16, 24, 40)
             canvas.drawOval(
@@ -480,72 +517,27 @@ class DesktopPetOverlayService : Service() {
                 paint
             )
 
-            val bitmap = previewBitmap
-            if (bitmap != null) {
-                paint.alpha = 255
-                previewBounds.set(
-                    centerX - unit * 0.38f,
-                    centerY - unit * 0.39f,
-                    centerX + unit * 0.38f,
-                    centerY + unit * 0.37f
-                )
-                canvas.drawBitmap(bitmap, null, previewBounds, paint)
-                postInvalidateOnAnimation()
-                return
-            }
-
-            drawEar(canvas, centerX - unit * 0.22f, centerY - unit * 0.25f, true, unit)
-            drawEar(canvas, centerX + unit * 0.22f, centerY - unit * 0.25f, false, unit)
-
-            paint.color = Color.rgb(15, 118, 110)
-            canvas.drawOval(
-                centerX - unit * 0.34f,
-                centerY - unit * 0.29f,
-                centerX + unit * 0.34f,
-                centerY + unit * 0.33f,
-                paint
+            paint.alpha = 255
+            previewBounds.set(
+                centerX - unit * 0.38f,
+                centerY - unit * 0.39f,
+                centerX + unit * 0.38f,
+                centerY + unit * 0.37f
             )
-            paint.color = Color.rgb(172, 228, 217)
-            canvas.drawOval(
-                centerX - unit * 0.19f,
-                centerY + unit * 0.02f,
-                centerX + unit * 0.19f,
-                centerY + unit * 0.29f,
-                paint
-            )
-            paint.color = Color.WHITE
-            canvas.drawCircle(centerX - unit * 0.13f, centerY - unit * 0.07f, unit * 0.045f, paint)
-            canvas.drawCircle(centerX + unit * 0.13f, centerY - unit * 0.07f, unit * 0.045f, paint)
-            paint.color = Color.rgb(16, 24, 40)
-            canvas.drawCircle(centerX - unit * 0.13f, centerY - unit * 0.07f, unit * 0.022f, paint)
-            canvas.drawCircle(centerX + unit * 0.13f, centerY - unit * 0.07f, unit * 0.022f, paint)
-
-            strokePaint.color = Color.rgb(255, 184, 107)
-            strokePaint.strokeWidth = unit * 0.026f
-            path.reset()
-            path.moveTo(centerX - unit * 0.08f, centerY + unit * 0.08f)
-            path.quadTo(centerX, centerY + unit * 0.14f, centerX + unit * 0.08f, centerY + unit * 0.08f)
-            canvas.drawPath(path, strokePaint)
-
+            canvas.drawBitmap(bitmap, null, previewBounds, paint)
             postInvalidateOnAnimation()
         }
 
-        private fun drawEar(
-            canvas: Canvas,
-            x: Float,
-            y: Float,
-            left: Boolean,
-            unit: Float
-        ) {
-            val direction = if (left) -1f else 1f
-            path.reset()
-            path.moveTo(x, y + unit * 0.12f)
-            path.lineTo(x + direction * unit * 0.05f, y - unit * 0.19f)
-            path.lineTo(x + direction * unit * 0.24f, y + unit * 0.08f)
-            path.close()
-            paint.color = Color.rgb(13, 52, 48)
-            paint.style = Paint.Style.FILL
-            canvas.drawPath(path, paint)
+        private fun currentPreviewFrame(): Bitmap? {
+            if (previewFrames.isEmpty()) {
+                return null
+            }
+            if (previewFrames.size == 1) {
+                return previewFrames.first()
+            }
+            val elapsedMillis = SystemClock.uptimeMillis() - startTime
+            val frameIndex = ((elapsedMillis / MOTION_FRAME_DURATION_MILLIS) % previewFrames.size).toInt()
+            return previewFrames.getOrNull(frameIndex)
         }
     }
 
@@ -563,10 +555,14 @@ class DesktopPetOverlayService : Service() {
         private const val UI_PREFS_NAME = "pet-shell-ui"
         private const val DESKTOP_PET_OVERLAY_RUNNING_KEY = "desktopPetOverlayRunning"
         private const val DESKTOP_PET_OVERLAY_PREVIEW_ASSET_PATH_KEY = "desktopPetOverlayPreviewAssetPath"
+        private const val DESKTOP_PET_OVERLAY_MOTION_SHEET_ASSET_PATH_KEY =
+            "desktopPetOverlayMotionSheetAssetPath"
+        private const val DESKTOP_PET_OVERLAY_MOTION_FRAME_COUNT_KEY = "desktopPetOverlayMotionFrameCount"
         private const val DESKTOP_PET_OVERLAY_PREVIEW_URL_KEY = "desktopPetOverlayPreviewUrl"
         private const val DESKTOP_PET_OVERLAY_PET_NAME_KEY = "desktopPetOverlayPetName"
         private const val DESKTOP_PET_OVERLAY_X_KEY = "desktopPetOverlayX"
         private const val DESKTOP_PET_OVERLAY_Y_KEY = "desktopPetOverlayY"
+        private const val MOTION_FRAME_DURATION_MILLIS = 83L
         private const val LANGUAGE_PREF_KEY = "language"
         private const val DEFAULT_LANGUAGE = "zh"
         private const val ENGLISH_LANGUAGE = "en"

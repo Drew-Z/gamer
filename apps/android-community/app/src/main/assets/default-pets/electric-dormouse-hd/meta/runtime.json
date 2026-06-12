@@ -1,0 +1,237 @@
+{
+  "schema": "fantasy-pet.runtime.v1",
+  "targetFps": 60,
+  "defaultBaselineY": 0.88,
+  "defaultScale": 0.96,
+  "motions": {
+    "idle": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.12,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "breath_glow_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 26,
+        "isolatedComponentMax": 1,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "idle_runtime_candidate_v1_redraw"
+      },
+      "loopStartFrame": 0,
+      "loopEndFrame": 23
+    },
+    "review": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.18,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "curious_glow_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 1,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 26,
+        "isolatedComponentMax": 1,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "review_runtime_candidate_v1_redraw"
+      },
+      "loopStartFrame": 0,
+      "loopEndFrame": 15
+    },
+    "running": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.12,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "electric-speed",
+      "blendMs": 160,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 30,
+        "isolatedComponentMax": 0,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "running_runtime_candidate_v4_pose_mother_2x4"
+      },
+      "loopStartFrame": 0,
+      "loopEndFrame": 15
+    },
+    "jumping": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.2,
+      "shadowScale": 0.96,
+      "direction": 0,
+      "fx": "jump_sparks_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 48,
+        "minEdgeMarginPx": 18,
+        "isolatedComponentMax": 1,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "jumping_runtime_candidate_v1_pose_mother_2x4"
+      }
+    },
+    "eat": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.08,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "eat_fx_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 1,
+        "maxGroundDriftPx": 0,
+        "isolatedComponentMax": 1,
+        "sourceStage": "S5",
+        "sourceCandidate": "eat_runtime_candidate_v9_mouth_repair_fixed"
+      }
+    },
+    "play-ball": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.25,
+      "shadowScale": 0.96,
+      "direction": 0,
+      "fx": "play_ball_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 1,
+        "maxGroundDriftPx": 3,
+        "isolatedComponentMax": 3
+      }
+    },
+    "waving": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.2,
+      "shadowScale": 1.0,
+      "direction": 0,
+      "fx": "greeting_sparks_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 1.0,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 21,
+        "isolatedComponentMax": 1,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "waving_runtime_candidate_v1_redraw_2x3"
+      }
+    },
+    "waiting": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.08,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "waiting_glow_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 27,
+        "isolatedComponentMax": 0,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "waiting_runtime_candidate_v1_redraw"
+      },
+      "loopStartFrame": 0,
+      "loopEndFrame": 23
+    },
+    "nap-wake": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.18,
+      "shadowScale": 1.02,
+      "direction": 0,
+      "fx": "nap_wake_fx_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 22,
+        "isolatedComponentMax": 2,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "nap-wake_runtime_candidate_v1_redraw_2x4"
+      }
+    },
+    "attention-notification": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.35,
+      "shadowScale": 0.96,
+      "direction": 0,
+      "fx": "notification_fx_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 3.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 30,
+        "isolatedComponentMax": 3,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "attention-notification_runtime_candidate_v1_redraw_2x3"
+      }
+    },
+    "failed": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.18,
+      "shadowScale": 1.0,
+      "direction": 0,
+      "fx": "dim_sparks_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 0.5,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 30,
+        "isolatedComponentMax": 6,
+        "internalTransparentHoleMax": 0,
+        "sourceStage": "S5",
+        "sourceCandidate": "failed_runtime_candidate_v1_stabilized"
+      }
+    },
+    "curious-sniff": {
+      "baselineY": 0.88,
+      "bobAmplitude": 0.08,
+      "shadowScale": 1,
+      "direction": 0,
+      "fx": "sniff_fx_hd",
+      "blendMs": 180,
+      "qa": {
+        "centerLock": true,
+        "baselineLock": true,
+        "maxCenterDriftPx": 1,
+        "maxGroundDriftPx": 0,
+        "minEdgeMarginPx": 10,
+        "isolatedComponentMax": 5,
+        "sourceStage": "S5",
+        "sourceCandidate": "curious_sniff_runtime_candidate_v1"
+      }
+    }
+  }
+}

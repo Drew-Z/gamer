@@ -1,0 +1,27 @@
+{
+  "schema": "fantasy-pet.motion-map.v1",
+  "format": "hd-independent-action-sheets",
+  "actions": {
+    "idle": {
+      "frames": 16,
+      "loop": true,
+      "sheet": "motion/sheets/idle.png"
+    },
+    "happy-click": {
+      "frames": 14,
+      "loop": false,
+      "sheet": "motion/sheets/happy_click.png"
+    },
+    "sleepy": {
+      "frames": 20,
+      "loop": true,
+      "sheet": "motion/sheets/sleepy.png"
+    },
+    "signature": {
+      "frames": 18,
+      "loop": false,
+      "sheet": "motion/sheets/signature.png"
+    }
+  },
+  "note": "V0 text-to-pet scaffold keeps its product-level action semantics instead of mapping to a fixed legacy action set."
+}

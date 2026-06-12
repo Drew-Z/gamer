@@ -1,0 +1,52 @@
+{
+  "schema": "fantasy-pet.runtime.v1",
+  "targetFps": 60,
+  "packageProfile": "text-to-pet-v0",
+  "previewOnly": true,
+  "motions": {
+    "idle": {
+      "baselineY": 0.88,
+      "shadowScale": 1.0,
+      "blendMs": 180,
+      "fx": "none",
+      "qa": {
+        "status": "generated-needs-web-review",
+        "sourceCandidate": "source/generated/actions/idle/keyposes.png",
+        "note": "Generated source accepted; runtime sheet pending Web preview visual review."
+      }
+    },
+    "happy-click": {
+      "baselineY": 0.88,
+      "shadowScale": 1.0,
+      "blendMs": 180,
+      "fx": "none",
+      "qa": {
+        "status": "generated-needs-web-review",
+        "sourceCandidate": "source/generated/actions/happy-click/keyposes.png",
+        "note": "Generated source accepted; runtime sheet pending Web preview visual review."
+      }
+    },
+    "sleepy": {
+      "baselineY": 0.88,
+      "shadowScale": 1.0,
+      "blendMs": 180,
+      "fx": "none",
+      "qa": {
+        "status": "generated-needs-web-review",
+        "sourceCandidate": "source/generated/actions/sleepy/keyposes.png",
+        "note": "Generated source accepted; runtime sheet pending Web preview visual review."
+      }
+    },
+    "signature": {
+      "baselineY": 0.88,
+      "shadowScale": 1.0,
+      "blendMs": 180,
+      "fx": "signature_moon_glow",
+      "qa": {
+        "status": "generated-needs-web-review",
+        "sourceCandidate": "source/generated/actions/signature/keyposes.png",
+        "note": "Generated source accepted; runtime sheet pending Web preview visual review."
+      }
+    }
+  }
+}
