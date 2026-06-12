@@ -314,6 +314,10 @@ export function createWorkerConfig(env = process.env) {
     requireAllActions: parseBoolean(env.GA_PET_REQUIRE_ALL_ACTIONS, false),
     learningNoteLimit: parseNonNegativeInteger(env.GA_PET_LEARNING_NOTE_LIMIT, 12),
     reworkQueue: parseBoolean(env.GA_PET_REWORK_QUEUE, true),
+    reworkStartedTimeoutMinutes: parseNonNegativeInteger(
+      env.GA_PET_REWORK_STARTED_TIMEOUT_MINUTES,
+      180
+    ),
     configCheck:
       parseBoolean(env.GA_PET_CONFIG_CHECK, false) ||
       process.argv.includes("--config-check"),
@@ -353,7 +357,8 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     batchSize: config.batchSize,
     maxRuns: config.maxRuns,
     learningNoteLimit: config.learningNoteLimit,
-    reworkQueue: config.reworkQueue
+    reworkQueue: config.reworkQueue,
+    reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes
   });
 
   let completedRuns = 0;
@@ -370,7 +375,9 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
         limit: config.learningNoteLimit
       });
       const reworkRequest = config.reworkQueue
-        ? await findNextReworkRequest(config.runRoot)
+        ? await findNextReworkRequest(config.runRoot, {
+            startedTimeoutMinutes: config.reworkStartedTimeoutMinutes
+          })
         : null;
       const plan = reworkRequest
         ? await buildReworkPetPromptPlan({
@@ -1399,6 +1406,7 @@ function printConfigCheck(config) {
     requireAllActions: config.requireAllActions,
     learningNoteLimit: config.learningNoteLimit,
     reworkQueue: config.reworkQueue,
+    reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes,
     estimatedCallsPerCandidate: {
       image: expectedImageCalls,
       video: expectedVideoCalls
@@ -1447,23 +1455,57 @@ async function loadLearningContext({ runRoot, limit }) {
   };
 }
 
-async function findNextReworkRequest(runRoot) {
+async function findNextReworkRequest(runRoot, options = {}) {
   const records = await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
-  const consumed = new Set(
-    records
-      .filter((record) =>
-        record?.schema === "gamer.ga-pet-rework-status.v1" &&
-        ["started", "completed", "failed"].includes(record.status)
-      )
-      .map((record) => record.requestId)
-  );
+  return selectNextReworkRequest(records, options);
+}
+
+export function selectNextReworkRequest(records = [], options = {}) {
+  const startedTimeoutMinutes = Number.isFinite(options.startedTimeoutMinutes)
+    ? options.startedTimeoutMinutes
+    : 180;
+  const nowMs = Number.isFinite(options.nowMs) ? options.nowMs : Date.now();
+  const latestStatusByRequest = new Map();
+
+  for (const record of records) {
+    if (record?.schema === "gamer.ga-pet-rework-status.v1" && record.requestId) {
+      latestStatusByRequest.set(record.requestId, record);
+    }
+  }
+
   return records.find(
-    (record) =>
-      record?.schema === "gamer.ga-pet-rework-request.v1" &&
-      record.status === "requested" &&
-      record.requestId &&
-      !consumed.has(record.requestId)
+    (record) => {
+      if (
+        record?.schema !== "gamer.ga-pet-rework-request.v1" ||
+        record.status !== "requested" ||
+        !record.requestId
+      ) {
+        return false;
+      }
+
+      return canStartReworkRequest({
+        latestStatus: latestStatusByRequest.get(record.requestId),
+        startedTimeoutMinutes,
+        nowMs
+      });
+    }
   ) || null;
+}
+
+function canStartReworkRequest({ latestStatus, startedTimeoutMinutes, nowMs }) {
+  if (!latestStatus) return true;
+  if (latestStatus.status === "completed" || latestStatus.status === "failed") {
+    return false;
+  }
+  if (latestStatus.status !== "started") return true;
+  return isStartedReworkStale({ latestStatus, startedTimeoutMinutes, nowMs });
+}
+
+function isStartedReworkStale({ latestStatus, startedTimeoutMinutes, nowMs }) {
+  if (startedTimeoutMinutes <= 0) return false;
+  const startedAtMs = Date.parse(latestStatus.createdAt || "");
+  if (!Number.isFinite(startedAtMs)) return true;
+  return nowMs - startedAtMs >= startedTimeoutMinutes * 60 * 1000;
 }
 
 async function appendReworkStatus(runRoot, status) {

@@ -29,6 +29,7 @@ GA_PET_MAX_RUNS=0
 GA_PET_BATCH_SIZE=1
 GA_PET_INTERVAL_SECONDS=60
 GA_PET_ACTION_INTERVAL_SECONDS=0
+GA_PET_REWORK_STARTED_TIMEOUT_MINUTES=180
 GA_PET_ENABLE_VIDEO=1
 GA_PET_VIDEO_DURATION_SECONDS=5
 GA_PET_VIDEO_MAX_POLLS=30
@@ -133,7 +134,7 @@ Use issue tags consistently so the worker can translate them into prompt guidanc
 - `weak-silhouette`: small-size readability is poor.
 - `style-mismatch`: render style differs from the identity image.
 
-The worker reads recent `ga-learning-notes.jsonl` entries and injects them into later identity and motion-sheet prompts. When `GA_PET_REWORK_QUEUE=1` is enabled, it also consumes `ga-rework-queue.jsonl` before starting a random pet, producing a new rework run linked to the source candidate.
+The worker reads recent `ga-learning-notes.jsonl` entries and injects them into later identity and motion-sheet prompts. When `GA_PET_REWORK_QUEUE=1` is enabled, it also consumes `ga-rework-queue.jsonl` before starting a random pet, producing a new rework run linked to the source candidate. A request marked `started` is treated as running for `GA_PET_REWORK_STARTED_TIMEOUT_MINUTES` minutes; after that it can be retried so a worker crash does not strand the queue forever.
 
 ## Motion Plan
 
@@ -168,6 +169,7 @@ Each generated action is requested as a single horizontal spritesheet. `meta/mot
 - `GA_PET_REQUIRE_ALL_ACTIONS`: set to `1` only if a missing action should fail the whole package.
 - `GA_PET_LEARNING_NOTE_LIMIT`: defaults to `12`; recent human notes injected into future prompts.
 - `GA_PET_REWORK_QUEUE`: defaults to on; set to `0` to ignore queued rework requests.
+- `GA_PET_REWORK_STARTED_TIMEOUT_MINUTES`: defaults to `180`; set to `0` to never retry requests already marked `started`.
 - `GA_PET_CONFIG_CHECK`: set to `1` to print a safe config summary and exit without generation.
 - `GA_PET_ENABLE_VIDEO`: defaults to off.
 - `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`.
