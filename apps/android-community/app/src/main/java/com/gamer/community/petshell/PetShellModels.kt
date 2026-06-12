@@ -53,6 +53,12 @@ data class ApprovedPet(
     val totalScore: Int
 )
 
+data class DefaultDesktopPetMotionSheet(
+    val assetPath: String,
+    val frameCount: Int,
+    val loop: Boolean = true
+)
+
 data class DefaultDesktopPet(
     val id: String,
     val displayName: String,
@@ -61,7 +67,8 @@ data class DefaultDesktopPet(
     val sourceLabel: String,
     val motionLabel: String,
     val idleMotionSheetAssetPath: String = "",
-    val idleMotionFrameCount: Int = 0
+    val idleMotionFrameCount: Int = 0,
+    val actionMotionSheets: Map<PetAction, DefaultDesktopPetMotionSheet> = emptyMap()
 )
 
 data class PetShellState(
@@ -87,9 +94,10 @@ fun defaultDesktopPets(): List<DefaultDesktopPet> = listOf(
         elementLabel = "\u7535\u7cfb",
         previewAssetPath = "default-pets/electric-dormouse-hd/preview.png",
         sourceLabel = "\u672c\u5730\u9ed8\u8ba4",
-        motionLabel = "P1 v10 idle",
+        motionLabel = "12 motion sheets",
         idleMotionSheetAssetPath = "default-pets/electric-dormouse-hd/motion_sheets/idle.png",
-        idleMotionFrameCount = 24
+        idleMotionFrameCount = 24,
+        actionMotionSheets = electricDormouseMotionSheets()
     ),
     DefaultDesktopPet(
         id = "moon-dew-fox-v0",
@@ -97,9 +105,10 @@ fun defaultDesktopPets(): List<DefaultDesktopPet> = listOf(
         elementLabel = "\u6708\u7cfb",
         previewAssetPath = "default-pets/moon-dew-fox-v0/preview.png",
         sourceLabel = "\u672c\u5730\u9ed8\u8ba4",
-        motionLabel = "idle preview",
+        motionLabel = "4 motion sheets",
         idleMotionSheetAssetPath = "default-pets/moon-dew-fox-v0/motion_sheets/idle.png",
-        idleMotionFrameCount = 16
+        idleMotionFrameCount = 16,
+        actionMotionSheets = moonDewFoxMotionSheets()
     ),
     DefaultDesktopPet(
         id = "fire-spirit-cat-demo",
@@ -107,10 +116,56 @@ fun defaultDesktopPets(): List<DefaultDesktopPet> = listOf(
         elementLabel = "\u706b\u7cfb",
         previewAssetPath = "default-pets/fire-spirit-cat-demo/preview.png",
         sourceLabel = "\u672c\u5730\u9ed8\u8ba4",
-        motionLabel = "static pose"
+        motionLabel = "static poses"
     )
 )
 
 fun PetShellState.selectedDefaultDesktopPet(): DefaultDesktopPet? =
     defaultDesktopPets.firstOrNull { it.id == selectedDefaultDesktopPetId }
         ?: defaultDesktopPets.firstOrNull()
+
+fun DefaultDesktopPet.motionSheetFor(action: PetAction): DefaultDesktopPetMotionSheet? =
+    actionMotionSheets[action]
+        ?: actionMotionSheets[PetAction.Idle]
+        ?: idleMotionSheetAssetPath
+            .takeIf { it.isNotBlank() && idleMotionFrameCount > 1 }
+            ?.let { DefaultDesktopPetMotionSheet(it, idleMotionFrameCount) }
+
+private fun electricDormouseMotionSheets(): Map<PetAction, DefaultDesktopPetMotionSheet> {
+    val base = "default-pets/electric-dormouse-hd/motion_sheets"
+    return mapOf(
+        PetAction.Idle to motionSheet("$base/idle.png", frameCount = 24),
+        PetAction.FeedNext to motionSheet("$base/running.png", frameCount = 16),
+        PetAction.FeedPrevious to motionSheet("$base/curious_sniff.png", frameCount = 20, loop = false),
+        PetAction.FeedSkip to motionSheet("$base/jumping.png", frameCount = 16, loop = false),
+        PetAction.ShowcaseNext to motionSheet("$base/waving.png", frameCount = 18, loop = false),
+        PetAction.ShowcasePrevious to motionSheet("$base/curious_sniff.png", frameCount = 20, loop = false),
+        PetAction.Reward to motionSheet("$base/eat.png", frameCount = 24, loop = false),
+        PetAction.Review to motionSheet("$base/review.png", frameCount = 16)
+    )
+}
+
+private fun moonDewFoxMotionSheets(): Map<PetAction, DefaultDesktopPetMotionSheet> {
+    val base = "default-pets/moon-dew-fox-v0/motion_sheets"
+    return mapOf(
+        PetAction.Idle to motionSheet("$base/idle.png", frameCount = 16),
+        PetAction.FeedNext to motionSheet("$base/signature.png", frameCount = 18, loop = false),
+        PetAction.FeedPrevious to motionSheet("$base/happy_click.png", frameCount = 14, loop = false),
+        PetAction.FeedSkip to motionSheet("$base/signature.png", frameCount = 18, loop = false),
+        PetAction.ShowcaseNext to motionSheet("$base/signature.png", frameCount = 18, loop = false),
+        PetAction.ShowcasePrevious to motionSheet("$base/happy_click.png", frameCount = 14, loop = false),
+        PetAction.Reward to motionSheet("$base/happy_click.png", frameCount = 14, loop = false),
+        PetAction.Review to motionSheet("$base/sleepy.png", frameCount = 20)
+    )
+}
+
+private fun motionSheet(
+    assetPath: String,
+    frameCount: Int,
+    loop: Boolean = true
+): DefaultDesktopPetMotionSheet =
+    DefaultDesktopPetMotionSheet(
+        assetPath = assetPath,
+        frameCount = frameCount,
+        loop = loop
+    )

@@ -259,3 +259,9 @@ Use these persistent traits:
 - The floating desktop pet reads the same selected local starter prefs as the in-app pet surface: preview asset path, idle motion sheet asset path, and frame count. If no real asset is available, do not draw a fake fallback pet.
 - HidenCloud approved-pet public responses currently expose `motionSheetCount` but not public motion sheet URLs. The current approved package zip inspected from HidenCloud contains only `artifacts/candidates/.../idle_body_locked_transparent.png` plus `package-manifest.json`; its manifest lists only a `candidate` file.
 - Follow-up for remote animated approved pets: the public approved-pet package descriptor or package download must include safe motion sheet file entries/URLs before Android can animate remote shelf/showcase pets.
+
+2026-06-12 action motion polish:
+
+- Local starter pets now map `PetAction` to real packaged motion sheets. Community navigation, showcase navigation, reward, and review states should select a sheet from the chosen local pet instead of always showing idle.
+- Short actions are transient: they play for one interaction window and return the shell state to idle. Review remains a looping state because it represents an ongoing inspection context.
+- Emulator check: tapping the community `看下一条` action changed the local pet avatar region during the action window, then the label returned to `待机` after the transient delay.

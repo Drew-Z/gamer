@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -137,6 +138,7 @@ import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
 import com.gamer.community.petshell.ShellPhase
+import com.gamer.community.petshell.motionSheetFor
 import com.gamer.community.petshell.selectedDefaultDesktopPet
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -590,6 +592,8 @@ fun PetShellApp(
         }
     }
 
+    val latestPetShellState by rememberUpdatedState(state)
+
     LaunchedEffect(repository) {
         val result = repository.loadInitialCommunity()
         state = PetShellController.applyCommunityLoad(
@@ -602,6 +606,22 @@ fun PetShellApp(
             usedFallback = result.usedFallback,
             message = result.message
         )
+    }
+
+    LaunchedEffect(
+        state.petAction,
+        state.feedIndex,
+        state.approvedPetIndex,
+        state.walletBalance,
+        state.checkInClaimed
+    ) {
+        val action = state.petAction
+        val delayMillis = action.returnToIdleDelayMillis() ?: return@LaunchedEffect
+        delay(delayMillis)
+        val currentState = latestPetShellState
+        if (currentState.petAction == action) {
+            state = currentState.copy(petAction = PetAction.Idle)
+        }
     }
 
     LaunchedEffect(state.selectedDefaultDesktopPetId, state.defaultDesktopPets) {
@@ -4479,6 +4499,18 @@ private fun petActionAccent(action: PetAction): Color =
         else -> GamerUiTokens.ColorRole.Muted
     }
 
+private fun PetAction.returnToIdleDelayMillis(): Long? =
+    when (this) {
+        PetAction.Idle,
+        PetAction.Review -> null
+        PetAction.FeedNext,
+        PetAction.FeedPrevious,
+        PetAction.FeedSkip,
+        PetAction.ShowcaseNext,
+        PetAction.ShowcasePrevious,
+        PetAction.Reward -> 2_200L
+    }
+
 private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundSpec) {
     drawRect(
         brush = Brush.verticalGradient(
@@ -6301,18 +6333,18 @@ private fun DefaultDesktopPetPreviewArtwork(
     loading: @Composable (() -> Unit)? = null
 ) {
     val previewAssetPath = pet?.previewAssetPath.orEmpty()
-    val motionSheetAssetPath = pet?.idleMotionSheetAssetPath.orEmpty()
-    val motionFrameCount = pet?.idleMotionFrameCount ?: 0
+    val motionSheet = pet?.motionSheetFor(action)
 
     if (previewAssetPath.isBlank()) {
         StatusIconMark(action = action, modifier = modifier)
         return
     }
 
-    if (motionSheetAssetPath.isNotBlank() && motionFrameCount > 1) {
+    if (motionSheet != null) {
         LocalMotionSheetImage(
-            assetPath = motionSheetAssetPath,
-            frameCount = motionFrameCount,
+            assetPath = motionSheet.assetPath,
+            frameCount = motionSheet.frameCount,
+            loop = motionSheet.loop,
             strings = strings,
             modifier = modifier,
             loading = loading,
@@ -6404,6 +6436,7 @@ private fun LocalAssetPreviewImage(
 private fun LocalMotionSheetImage(
     assetPath: String,
     frameCount: Int,
+    loop: Boolean,
     strings: PetShellStrings,
     modifier: Modifier = Modifier,
     frameDurationMillis: Long = 83L,
@@ -6437,15 +6470,22 @@ private fun LocalMotionSheetImage(
         failed = frames.isEmpty()
     }
 
-    LaunchedEffect(frames.size, frameDurationMillis) {
+    LaunchedEffect(assetPath, frames.size, frameDurationMillis, loop) {
+        frameIndex = 0
         if (frames.size <= 1) {
-            frameIndex = 0
             return@LaunchedEffect
         }
 
-        while (true) {
-            delay(frameDurationMillis)
-            frameIndex = (frameIndex + 1) % frames.size
+        if (loop) {
+            while (true) {
+                delay(frameDurationMillis)
+                frameIndex = (frameIndex + 1) % frames.size
+            }
+        } else {
+            for (nextFrameIndex in 1 until frames.size) {
+                delay(frameDurationMillis)
+                frameIndex = nextFrameIndex
+            }
         }
     }
 
