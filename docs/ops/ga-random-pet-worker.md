@@ -1,8 +1,8 @@
 # GA Random Pet Worker
 
-This worker is a temporary high-throughput path for the 24-hour Google AI image/video quota window. It creates random original desktop-pet candidates, records prompts and outcomes, and leaves every result in `waiting-human-review`.
+This worker is a temporary high-throughput path for the 24-hour Google AI image/video quota window. It creates random original desktop-pet resource candidates, records prompts and outcomes, and defaults to a full package mode with base identity art plus desktop-pet motion sheets.
 
-It does not call admin APIs, does not publish to community, and does not mark any package as human-reviewed.
+It does not call admin APIs, does not publish to community, and does not mark any package as human-reviewed. Full candidates are tagged as `ga-auto-generated` / `auto-generated-unverified` so they can be accumulated first and reviewed or repaired later.
 
 ## Secret Handling
 
@@ -18,10 +18,17 @@ Recommended server environment:
 ```powershell
 GEMINI_API_KEY=<server-secret>
 GA_PET_RUN_ROOT=/data/ga-random-pets
+GA_PET_PACKAGE_MODE=full
+GA_PET_QUALITY_PRESET=high
+GA_PET_IMAGE_SIZE=2K
+GA_PET_SPRITESHEET_IMAGE_SIZE=4K
+GA_PET_BACKGROUND_MODE=transparent
+GA_PET_OUTPUT_MIME_TYPE=image/png
 GA_PET_LOOP=1
 GA_PET_MAX_RUNS=0
 GA_PET_BATCH_SIZE=1
-GA_PET_INTERVAL_SECONDS=90
+GA_PET_INTERVAL_SECONDS=60
+GA_PET_ACTION_INTERVAL_SECONDS=0
 GA_PET_ENABLE_VIDEO=1
 GA_PET_VIDEO_DURATION_SECONDS=5
 GA_PET_VIDEO_MAX_POLLS=30
@@ -33,7 +40,9 @@ Start command:
 npm run start:ga-random-pet-worker
 ```
 
-For a cautious first run, set `GA_PET_MAX_RUNS=3`. After confirming output folders are being created, change it back to `0` for continuous generation during the quota window.
+For a cautious first run, set `GA_PET_MAX_RUNS=1`. A full resource package calls image generation once for the identity image and then once per planned motion sheet, so one candidate is already a meaningful server test. After confirming output folders are being created, change it back to `0` for continuous generation during the quota window.
+
+If the proxy documented in `image.docx` uses different size or output names, keep the key in the server panel and change only the environment variables. For example, nano-style transparent PNG generation should keep `GA_PET_BACKGROUND_MODE=transparent` and `GA_PET_OUTPUT_MIME_TYPE=image/png`. A channel that cannot generate transparency should use `GA_PET_BACKGROUND_MODE=chroma` or `light`, then post-process later.
 
 ## Output Layout
 
@@ -42,37 +51,66 @@ Each candidate is written under:
 ```text
 GA_PET_RUN_ROOT/
   ga-<timestamp>-<ordinal>-<slug>/
+    assets/base_identity.png
     artifacts/candidates/base-identity.png
     artifacts/video/motion-reference.mp4
     artifacts/video/operation.json
+    meta/motion_map.json
+    meta/runtime.json
+    motion/sheets/<action>.png
+    previews/preview.png
     source/generation/prompt-plan.json
     source/generation/api-trace.json
+    source/generation/actions/<action>.json
+    license.json
+    manifest.json
+    ownership-claim.json
     package-manifest.json
+    score-report.json
     review-card.md
-    ga-<...>-candidate.zip
+    exports/ga-<...>-full-resource-candidate.zip
   ga-experience.jsonl
 ```
 
 Video files appear only when `GA_PET_ENABLE_VIDEO=1` and the Veo operation returns downloadable media.
 
+## Motion Plan
+
+Full mode uses two layers of actions:
+
+- Core desktop-pet interactions: idle, tap reaction, drag hold, drag release, feed, sleep, wake, roam, waiting/review, attention, and failed.
+- Adaptive habit actions: selected from the generated species and element, plus one signature action. A fox may get scent/tail motions; a mouse may get whisker or quick-dash motions; a dragon may get wing or breath motions.
+
+Each generated action is requested as a single horizontal spritesheet. `meta/motion_map.json` records frame count, loop behavior, trigger, status, and sheet path.
+
 ## Review Flow
 
-1. Open `review-card.md` and `base-identity.png`.
-2. Check originality, small-size readability, no text/watermark, separable body parts, and motion potential.
-3. Use `motion-reference.mp4` only as a motion-quality reference. The Android app still needs PNG motion sheets.
-4. If accepted, generate/repair action sheets and then produce a human-reviewed package.
-5. Only after human review should `acceptedBy` become `human-review` for community import.
+1. Let the worker accumulate full resource candidates during the quota window.
+2. Later open `review-card.md`, `previews/preview.png`, and the files under `motion/sheets/`.
+3. Check originality, small-size readability, transparency or clean chroma key, frame count, identity drift, and action semantics.
+4. Use `motion-reference.mp4` only as a motion-quality reference. The app still consumes PNG motion sheets.
+5. Only after a separate acceptance step should `acceptedBy` become `human-review` for community import.
 
 ## Important Environment Variables
 
 - `GA_PET_IMAGE_MODEL`: defaults to `gemini-3.1-flash-image`.
-- `GA_PET_IMAGE_SIZE`: defaults to `1K`.
+- `GA_PET_PACKAGE_MODE`: `full` creates base art plus motion sheets; `identity` creates only the base identity package.
+- `GA_PET_QUALITY_PRESET`: `high` defaults identity art to `2K` and spritesheets to `4K`; `balanced` uses `2K`/`2K`; `fast` uses `1K`/`2K`.
+- `GA_PET_IMAGE_SIZE`: defaults to the quality preset's identity size.
 - `GA_PET_IMAGE_ASPECT_RATIO`: defaults to `1:1`.
+- `GA_PET_SPRITESHEET_IMAGE_SIZE`: defaults to the quality preset's spritesheet size.
+- `GA_PET_SPRITESHEET_ASPECT_RATIO`: defaults to `16:9`.
+- `GA_PET_BACKGROUND_MODE`: `transparent`, `chroma`, `light`, or `auto`.
+- `GA_PET_OUTPUT_MIME_TYPE`: defaults to `image/png`; set to `default` to omit the field if the proxy rejects it.
+- `GA_PET_IMAGE_DELIVERY`: optional; set to the proxy's URI/inline value if needed.
+- `GA_PET_CUSTOM_ACTION_COUNT`: defaults to `3` species-habit actions in addition to core actions and signature.
+- `GA_PET_REQUIRE_ALL_ACTIONS`: set to `1` only if a missing action should fail the whole package.
 - `GA_PET_ENABLE_VIDEO`: defaults to off.
 - `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`.
 - `GA_PET_MAX_RUNS`: `0` means unlimited until the process is stopped.
 - `GA_PET_INTERVAL_SECONDS`: pause between batches when loop mode is enabled.
+- `GA_PET_ACTION_INTERVAL_SECONDS`: optional pause between per-action image calls.
 
 ## Why This Is Separate From Codex
 
-Codex should not spend scarce quota on repeated image/video generation. This worker moves the expensive loop to GA while keeping the product gates intact: generated candidates accumulate quickly, then Codex or a human can review, repair, package, and wire the accepted assets into Android/community flows later.
+Codex should not spend scarce quota on repeated image/video generation. This worker moves the expensive loop to GA while keeping the product gates intact: generated full resource candidates accumulate quickly, then Codex or a human can review, repair, package, and wire the accepted assets into Android/community flows later.

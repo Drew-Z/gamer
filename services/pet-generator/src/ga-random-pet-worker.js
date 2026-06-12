@@ -73,13 +73,219 @@ const PALETTES = [
   "rose pink, cloud white, and tiny green highlights"
 ];
 
+const CORE_DESKTOP_ACTIONS = [
+  {
+    id: "idle",
+    fileName: "idle.png",
+    displayName: "Idle",
+    category: "core-desktop",
+    trigger: "app open and desktop standby",
+    frameCount: 16,
+    loop: true,
+    prompt:
+      "gentle breathing idle loop, tiny ear or tail motion, calm eyes, no locomotion"
+  },
+  {
+    id: "tap-reaction",
+    fileName: "tap_reaction.png",
+    displayName: "Tap reaction",
+    category: "core-desktop",
+    trigger: "user taps or clicks the pet",
+    frameCount: 14,
+    loop: false,
+    prompt:
+      "happy click reaction, small bounce, bright expression, quick settle back to idle"
+  },
+  {
+    id: "drag-hold",
+    fileName: "drag_hold.png",
+    displayName: "Drag hold",
+    category: "core-desktop",
+    trigger: "user drags the pet around the desktop",
+    frameCount: 12,
+    loop: true,
+    prompt:
+      "being gently dragged, body tucked upward, surprised but comfortable expression, dangling paws or tail"
+  },
+  {
+    id: "drag-release",
+    fileName: "drag_release.png",
+    displayName: "Drag release",
+    category: "core-desktop",
+    trigger: "user releases the dragged pet",
+    frameCount: 14,
+    loop: false,
+    prompt:
+      "soft landing after drag, squash and stretch, regains balance, returns to idle stance"
+  },
+  {
+    id: "feed",
+    fileName: "feed.png",
+    displayName: "Feed",
+    category: "core-desktop",
+    trigger: "user feeds or rewards the pet",
+    frameCount: 18,
+    loop: false,
+    prompt:
+      "accepts a tiny snack, cheerful nibble, satisfied sparkle, no human hand visible"
+  },
+  {
+    id: "sleep",
+    fileName: "sleep.png",
+    displayName: "Sleep",
+    category: "core-desktop",
+    trigger: "pet rests while idle for a long time",
+    frameCount: 18,
+    loop: true,
+    prompt:
+      "sleeping loop, curled or settled posture, slow breathing, tiny dream effect"
+  },
+  {
+    id: "wake",
+    fileName: "wake.png",
+    displayName: "Wake",
+    category: "core-desktop",
+    trigger: "pet wakes up from sleep",
+    frameCount: 14,
+    loop: false,
+    prompt:
+      "wakes from sleep, stretches, blinks, returns to alert desktop companion posture"
+  },
+  {
+    id: "roam",
+    fileName: "roam.png",
+    displayName: "Roam",
+    category: "core-desktop",
+    trigger: "pet moves across or around the desktop",
+    frameCount: 16,
+    loop: true,
+    prompt:
+      "small in-place roam or walk cycle, readable foot rhythm, stable body size"
+  },
+  {
+    id: "waiting-review",
+    fileName: "waiting_review.png",
+    displayName: "Waiting review",
+    category: "core-desktop",
+    trigger: "pet waits during generation, review, or loading",
+    frameCount: 16,
+    loop: true,
+    prompt:
+      "patient waiting pose, focused eyes, tiny ambient motion, does not imply automatic approval"
+  },
+  {
+    id: "attention",
+    fileName: "attention.png",
+    displayName: "Attention",
+    category: "core-desktop",
+    trigger: "pet notifies the user",
+    frameCount: 14,
+    loop: false,
+    prompt:
+      "friendly notification reaction, perk up, small glow or chime effect, not alarming"
+  },
+  {
+    id: "failed",
+    fileName: "failed.png",
+    displayName: "Failed",
+    category: "core-desktop",
+    trigger: "generation or action fails",
+    frameCount: 14,
+    loop: false,
+    prompt:
+      "gentle failure reaction, droops briefly, recovers with hopeful expression"
+  }
+];
+
+const SPECIES_ACTIONS = {
+  fox: [
+    habitAction("scent-sniff", "scent_sniff.png", "Scent sniff", "follows an invisible scent trail, nose twitch, tail balances the body"),
+    habitAction("tail-fan", "tail_fan.png", "Tail fan", "expressive tail fan flourish, soft curl and settle"),
+    habitAction("clever-peek", "clever_peek.png", "Clever peek", "leans forward with clever curiosity, ears perk, quick retreat")
+  ],
+  mouse: [
+    habitAction("whisker-sniff", "whisker_sniff.png", "Whisker sniff", "whiskers twitch, tiny cautious sniff, quick paw adjustment"),
+    habitAction("crumb-dash", "crumb_dash.png", "Crumb dash", "short playful dash toward a tiny crumb, stops cleanly in place"),
+    habitAction("cheek-spark", "cheek_spark.png", "Cheek spark", "cheeks glow with a cute charge, tiny paws brace, no harsh lightning")
+  ],
+  dragon: [
+    habitAction("wing-flutter", "wing_flutter.png", "Wing flutter", "tiny wing flutter while staying centered, tail counterbalance"),
+    habitAction("breath-spark", "breath_spark.png", "Breath spark", "small harmless magical breath puff, returns to neutral"),
+    habitAction("treasure-guard", "treasure_guard.png", "Treasure guard", "protects a tiny shiny pebble, proud but cute stance")
+  ],
+  cat: [
+    habitAction("paw-bat", "paw_bat.png", "Paw bat", "bats at a tiny floating mote, quick paw motion, playful focus"),
+    habitAction("pounce", "pounce.png", "Pounce", "small playful pounce in place, crouch then spring then settle"),
+    habitAction("loaf-curl", "loaf_curl.png", "Loaf curl", "curls into a compact loaf-like rest and peeks up")
+  ],
+  turtle: [
+    habitAction("shell-tuck", "shell_tuck.png", "Shell tuck", "brief shell tuck and peek, gentle and readable"),
+    habitAction("bubble-peek", "bubble_peek.png", "Bubble peek", "peeks through soft bubbles, slow charming motion"),
+    habitAction("slow-spin", "slow_spin.png", "Slow spin", "tiny slow turn in place, shell remains readable")
+  ],
+  rabbit: [
+    habitAction("ear-radar", "ear_radar.png", "Ear radar", "ears scan like radar, alert but cute expression"),
+    habitAction("binky-hop", "binky_hop.png", "Binky hop", "joyful small hop twist, lands softly"),
+    habitAction("nose-wiggle", "nose_wiggle.png", "Nose wiggle", "nose wiggle and tiny paw lift, compact idle-like loop")
+  ],
+  moth: [
+    habitAction("wing-shimmer", "wing_shimmer.png", "Wing shimmer", "gentle wing shimmer with tiny dust sparkle, body centered"),
+    habitAction("lantern-orbit", "lantern_orbit.png", "Lantern orbit", "orbits a tiny harmless light mote, soft wing beats"),
+    habitAction("dust-twirl", "dust_twirl.png", "Dust twirl", "brief powdery sparkle twirl, no dense particles")
+  ],
+  ferret: [
+    habitAction("slinky-scamper", "slinky_scamper.png", "Slinky scamper", "long playful scamper in place, flexible body arc"),
+    habitAction("peekaboo", "peekaboo.png", "Peekaboo", "peeks out, ducks, and pops back up cheerfully"),
+    habitAction("tail-loop", "tail_loop.png", "Tail loop", "tail makes a playful loop, body remains stable")
+  ]
+};
+
+const ELEMENT_ACTIONS = {
+  electric: [
+    habitAction("static-charge", "static_charge.png", "Static charge", "soft static charge gathers then pops into tiny harmless sparks")
+  ],
+  sunlit: [
+    habitAction("sun-glow", "sun_glow.png", "Sun glow", "warm sun glow pulse, cheerful stretch, no harsh flare")
+  ],
+  moon: [
+    habitAction("moon-ring", "moon_ring.png", "Moon ring", "small moon ring orbits once, dreamy expression, stable body")
+  ],
+  mint: [
+    habitAction("wind-swirl", "wind_swirl.png", "Wind swirl", "soft mint wind swirl lifts ears or fur gently")
+  ],
+  warm: [
+    habitAction("ember-puff", "ember_puff.png", "Ember puff", "tiny warm ember puff, cozy expression, no fire danger")
+  ],
+  crystal: [
+    habitAction("water-prism", "water_prism.png", "Water prism", "small water-prism shimmer, droplets stay close to body")
+  ],
+  violet: [
+    habitAction("nebula-blink", "nebula_blink.png", "Nebula blink", "tiny nebula blink effect, star specks fade quickly")
+  ],
+  soft: [
+    habitAction("brass-chime", "brass_chime.png", "Brass chime", "small chime-like shimmer, polite notification flourish")
+  ]
+};
+
 export function createWorkerConfig(env = process.env) {
+  const qualityPreset = parseQualityPreset(env.GA_PET_QUALITY_PRESET, "high");
+  const qualityDefaults = qualityDefaultsFor(qualityPreset);
   return {
     apiKey: env.GEMINI_API_KEY || env.GOOGLE_API_KEY || "",
     apiBaseUrl: env.GA_PET_API_BASE_URL || DEFAULT_API_BASE_URL,
+    packageMode: parsePackageMode(env.GA_PET_PACKAGE_MODE, "full"),
+    qualityPreset,
+    backgroundMode: parseBackgroundMode(env.GA_PET_BACKGROUND_MODE, "transparent"),
+    outputMimeType: parseOptionalString(env.GA_PET_OUTPUT_MIME_TYPE, "image/png"),
+    imageDelivery: parseOptionalString(env.GA_PET_IMAGE_DELIVERY, ""),
     imageModel: env.GA_PET_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
-    imageSize: env.GA_PET_IMAGE_SIZE || "1K",
+    imageSize: parseImageSize(env.GA_PET_IMAGE_SIZE, qualityDefaults.identityImageSize),
     imageAspectRatio: env.GA_PET_IMAGE_ASPECT_RATIO || "1:1",
+    spriteSheetImageSize: parseImageSize(
+      env.GA_PET_SPRITESHEET_IMAGE_SIZE,
+      qualityDefaults.spriteSheetImageSize
+    ),
+    spriteSheetAspectRatio: env.GA_PET_SPRITESHEET_ASPECT_RATIO || "16:9",
     videoModel: env.GA_PET_VIDEO_MODEL || DEFAULT_VIDEO_MODEL,
     enableVideo: parseBoolean(env.GA_PET_ENABLE_VIDEO, false),
     videoDurationSeconds: parsePositiveInteger(env.GA_PET_VIDEO_DURATION_SECONDS, 5),
@@ -90,6 +296,9 @@ export function createWorkerConfig(env = process.env) {
     loop: parseBoolean(env.GA_PET_LOOP, false),
     intervalSeconds: parsePositiveInteger(env.GA_PET_INTERVAL_SECONDS, 90),
     maxRuns: parseNonNegativeInteger(env.GA_PET_MAX_RUNS, 1),
+    actionIntervalSeconds: parseNonNegativeInteger(env.GA_PET_ACTION_INTERVAL_SECONDS, 0),
+    customActionCount: parseNonNegativeInteger(env.GA_PET_CUSTOM_ACTION_COUNT, 3),
+    requireAllActions: parseBoolean(env.GA_PET_REQUIRE_ALL_ACTIONS, false),
     requestTimeoutMs: parsePositiveInteger(env.GA_PET_REQUEST_TIMEOUT_MS, 180000),
     ownerUserId: env.GA_PET_OWNER_USER_ID || "user-demo-001"
   };
@@ -106,7 +315,15 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
   await appendExperience(experienceLogPath, {
     type: "worker-started",
     startedAt,
+    packageMode: config.packageMode,
+    qualityPreset: config.qualityPreset,
+    backgroundMode: config.backgroundMode,
+    outputMimeType: config.outputMimeType,
+    imageDelivery: config.imageDelivery,
     imageModel: config.imageModel,
+    imageSize: config.imageSize,
+    spriteSheetImageSize: config.spriteSheetImageSize,
+    spriteSheetAspectRatio: config.spriteSheetAspectRatio,
     videoModel: config.enableVideo ? config.videoModel : "",
     enableVideo: config.enableVideo,
     loop: config.loop,
@@ -124,7 +341,10 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
       completedRuns += 1;
       const plan = buildRandomPetPromptPlan({
         runOrdinal: completedRuns,
-        seed: crypto.randomBytes(8).toString("hex")
+        seed: crypto.randomBytes(8).toString("hex"),
+        packageMode: config.packageMode,
+        customActionCount: config.customActionCount,
+        backgroundMode: config.backgroundMode
       });
       const runId = createRunId(plan, completedRuns);
       const runDir = path.join(config.runRoot, runId);
@@ -143,13 +363,20 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
           completedRuns,
           createdAt: new Date().toISOString(),
           promptSummary: plan.summary,
+          packageMode: config.packageMode,
+          qualityPreset: config.qualityPreset,
+          backgroundMode: config.backgroundMode,
           imageModel: config.imageModel,
+          imageSize: config.imageSize,
+          spriteSheetImageSize: config.spriteSheetImageSize,
           videoModel: result.video ? config.videoModel : "",
           packageZip: result.packageZip,
-          status: "waiting-human-review"
+          generatedActionCount: result.generatedActionCount,
+          expectedActionCount: result.expectedActionCount,
+          status: result.status
         });
         console.log(
-          `[ga-worker] candidate-ready ${runId} status=waiting-human-review zip=${result.packageZip}`
+          `[ga-worker] candidate-ready ${runId} status=${result.status} actions=${result.generatedActionCount}/${result.expectedActionCount} zip=${result.packageZip}`
         );
       } catch (error) {
         const safeError = safeErrorMessage(error);
@@ -188,7 +415,13 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
   });
 }
 
-export function buildRandomPetPromptPlan({ runOrdinal, seed }) {
+export function buildRandomPetPromptPlan({
+  runOrdinal,
+  seed,
+  packageMode = "full",
+  customActionCount = 3,
+  backgroundMode = "transparent"
+}) {
   const pick = (items, offset) => items[indexFromSeed(seed, offset, items.length)];
   const species = pick(SPECIES, 0);
   const element = pick(ELEMENTS, 1);
@@ -197,6 +430,7 @@ export function buildRandomPetPromptPlan({ runOrdinal, seed }) {
   const palette = pick(PALETTES, 4);
   const name = titleCase(`${element.split(" ")[0]} ${species}`);
   const summary = `${name}: ${temperament}, ${motionIdea}`;
+  const backgroundInstruction = backgroundInstructionFor(backgroundMode);
 
   const identityPrompt = [
     "Create an original fantasy desktop pet character.",
@@ -204,7 +438,7 @@ export function buildRandomPetPromptPlan({ runOrdinal, seed }) {
     `Element and palette: ${element}; ${palette}.`,
     `Temperament: ${temperament}.`,
     `Animation direction: ${motionIdea}.`,
-    "Full body, centered, transparent or clean solid light background, no cropping.",
+    `Full body, centered, no cropping. ${backgroundInstruction}`,
     "Cute game companion, readable at 128px, strong silhouette, separated ears, paws, tail, and effects.",
     "No text, no watermark, no UI, no existing IP, no photorealistic human features.",
     "Design it as a source identity image for later sprite-sheet animation."
@@ -218,8 +452,15 @@ export function buildRandomPetPromptPlan({ runOrdinal, seed }) {
     "The result is only a motion-quality reference for later PNG sprite-sheet production."
   ].join(" ");
 
+  const actions =
+    packageMode === "full"
+      ? buildAdaptiveActionPlan({ species, element, temperament, motionIdea, seed, customActionCount })
+      : [];
+
   return {
     schema: "gamer.ga-random-pet-prompt-plan.v1",
+    packageMode,
+    backgroundMode,
     runOrdinal,
     seed,
     name,
@@ -231,27 +472,153 @@ export function buildRandomPetPromptPlan({ runOrdinal, seed }) {
     palette,
     imagePrompt: identityPrompt,
     videoPrompt,
+    backgroundInstruction,
+    actions,
     reviewChecklist: [
       "Original creature, not recognizable as existing IP",
       "Full body readable at Android small-avatar scale",
       "No text or watermark",
-      "Body has separable parts for idle, reward, review, and click motion",
+      "Body has separable parts for desktop interaction motion",
+      "Core desktop actions include idle, tap, drag, feed, sleep, attention, waiting, and failure states",
+      "Species and element actions match the animal habits instead of copying a fixed template",
       "Effects support transparent PNG cleanup",
       "Video reference does not rely on camera movement"
     ]
   };
 }
 
+function buildAdaptiveActionPlan({
+  species,
+  element,
+  temperament,
+  motionIdea,
+  seed,
+  customActionCount
+}) {
+  const speciesKey = detectSpeciesKey(species);
+  const elementKey = detectElementKey(element);
+  const speciesPool = SPECIES_ACTIONS[speciesKey] || [];
+  const elementPool = ELEMENT_ACTIONS[elementKey] || [];
+  const selectedSpeciesActions = pickManyFromSeed(
+    speciesPool,
+    seed,
+    10,
+    Math.min(customActionCount, speciesPool.length)
+  );
+  const selectedElementActions = pickManyFromSeed(
+    elementPool,
+    seed,
+    20,
+    elementPool.length > 0 ? 1 : 0
+  );
+  const signatureAction = habitAction(
+    "signature",
+    "signature.png",
+    "Signature",
+    `${motionIdea}, customized for a ${temperament} ${species} with ${element} effects`
+  );
+
+  return dedupeActions([
+    ...CORE_DESKTOP_ACTIONS,
+    ...selectedSpeciesActions,
+    ...selectedElementActions,
+    signatureAction
+  ]);
+}
+
+function habitAction(id, fileName, displayName, prompt) {
+  return {
+    id,
+    fileName,
+    displayName,
+    category: "adaptive-habit",
+    trigger: "pet-specific habit or signature animation",
+    frameCount: 16,
+    loop: false,
+    prompt
+  };
+}
+
+function detectSpeciesKey(species) {
+  const text = String(species).toLowerCase();
+  for (const key of Object.keys(SPECIES_ACTIONS)) {
+    if (text.includes(key)) return key;
+  }
+  return "fox";
+}
+
+function detectElementKey(element) {
+  const text = String(element).toLowerCase();
+  for (const key of Object.keys(ELEMENT_ACTIONS)) {
+    if (text.includes(key)) return key;
+  }
+  return "soft";
+}
+
+function pickManyFromSeed(items, seed, offset, count) {
+  const remaining = [...items];
+  const selected = [];
+  while (selected.length < count && remaining.length > 0) {
+    const index = indexFromSeed(seed, offset + selected.length, remaining.length);
+    selected.push(remaining.splice(index, 1)[0]);
+  }
+  return selected;
+}
+
+function dedupeActions(actions) {
+  const seen = new Set();
+  const result = [];
+  for (const action of actions) {
+    if (seen.has(action.id)) continue;
+    seen.add(action.id);
+    result.push(action);
+  }
+  return result;
+}
+
+function backgroundInstructionFor(backgroundMode) {
+  if (backgroundMode === "transparent") {
+    return [
+      "Use true transparent alpha background.",
+      "Output PNG with no matte, no checkerboard, no paper texture, no cast-shadow rectangle, and no background scene."
+    ].join(" ");
+  }
+  if (backgroundMode === "chroma") {
+    return [
+      "Use a single flat bright green chroma-key background only.",
+      "Keep the pet edges clean and separated for later background removal."
+    ].join(" ");
+  }
+  if (backgroundMode === "light") {
+    return "Use a clean solid light background only, with no scene details or text.";
+  }
+  return "Use the cleanest available cutout-friendly background for later transparent desktop-pet packaging.";
+}
+
 async function generateCandidateRun({ config, plan, runId, runDir }) {
   const candidatePath = "artifacts/candidates/base-identity.png";
+  const baseAssetPath = "assets/base_identity.png";
+  const previewPath = "previews/preview.png";
   const promptPlanPath = "source/generation/prompt-plan.json";
   const reviewCardPath = "review-card.md";
   const manifestPath = "package-manifest.json";
   const apiTracePath = "source/generation/api-trace.json";
+  const motionMapPath = "meta/motion_map.json";
+  const runtimePath = "meta/runtime.json";
+  const licensePath = "license.json";
+  const scoreReportPath = "score-report.json";
+  const ownershipClaimPath = "ownership-claim.json";
+  const gamerManifestPath = "manifest.json";
 
   await mkdir(path.join(runDir, "artifacts", "candidates"), { recursive: true });
   await mkdir(path.join(runDir, "artifacts", "video"), { recursive: true });
+  await mkdir(path.join(runDir, "assets"), { recursive: true });
+  await mkdir(path.join(runDir, "meta"), { recursive: true });
+  await mkdir(path.join(runDir, "motion", "sheets"), { recursive: true });
+  await mkdir(path.join(runDir, "previews"), { recursive: true });
+  await mkdir(path.join(runDir, "exports"), { recursive: true });
   await mkdir(path.join(runDir, "source", "generation"), { recursive: true });
+  await mkdir(path.join(runDir, "source", "generation", "actions"), { recursive: true });
 
   await writeJsonFile(path.join(runDir, promptPlanPath), plan);
 
@@ -260,6 +627,31 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     prompt: plan.imagePrompt
   });
   await writeFile(path.join(runDir, candidatePath), imageResult.bytes);
+  await writeFile(path.join(runDir, baseAssetPath), imageResult.bytes);
+  await writeFile(path.join(runDir, previewPath), imageResult.bytes);
+
+  const motionResults =
+    plan.packageMode === "full"
+      ? await generateMotionSheets({
+          config,
+          plan,
+          runDir,
+          identityImage: imageResult
+        })
+      : [];
+  const generatedActionCount = motionResults.filter((result) => result.status === "generated")
+    .length;
+  const expectedActionCount = plan.actions.length;
+
+  if (
+    config.requireAllActions &&
+    expectedActionCount > 0 &&
+    generatedActionCount !== expectedActionCount
+  ) {
+    throw new Error(
+      `required_full_actions_missing generated=${generatedActionCount} expected=${expectedActionCount}`
+    );
+  }
 
   let videoResult = null;
   if (config.enableVideo) {
@@ -270,6 +662,54 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     });
   }
 
+  if (plan.packageMode === "full") {
+    await writeJsonFile(
+      path.join(runDir, motionMapPath),
+      buildMotionMap({ motionResults })
+    );
+    await writeJsonFile(
+      path.join(runDir, runtimePath),
+      buildRuntimeMetadata({ motionResults })
+    );
+    await writeJsonFile(
+      path.join(runDir, licensePath),
+      buildLicenseMetadata({ runId, plan })
+    );
+    await writeJsonFile(
+      path.join(runDir, scoreReportPath),
+      buildScoreReport({ runId, plan, generatedActionCount, expectedActionCount })
+    );
+    await writeJsonFile(
+      path.join(runDir, ownershipClaimPath),
+      buildOwnershipClaim({ runId, config })
+    );
+  }
+
+  const status = resourceStatusFor({
+    packageMode: plan.packageMode,
+    generatedActionCount,
+    expectedActionCount
+  });
+  const packageZip = `${runId}-${plan.packageMode === "full" ? "full-resource" : "identity"}-candidate.zip`;
+  const exportArtifactPath = plan.packageMode === "full" ? `exports/${packageZip}` : packageZip;
+
+  if (plan.packageMode === "full") {
+    await writeJsonFile(
+      path.join(runDir, gamerManifestPath),
+      buildGamerPetManifest({
+        runId,
+        config,
+        plan,
+        baseAssetPath,
+        previewPath,
+        exportArtifactPath,
+        motionResults,
+        licensePath,
+        scoreReportPath
+      })
+    );
+  }
+
   const files = [
     {
       kind: "candidate",
@@ -277,10 +717,63 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
       role: "base-identity"
     },
     {
+      kind: "base-image",
+      path: baseAssetPath
+    },
+    {
+      kind: "preview-image",
+      path: previewPath
+    },
+    {
       kind: "generation-plan",
       path: promptPlanPath
     }
   ];
+  for (const result of motionResults) {
+    if (result.status === "generated") {
+      files.push({
+        kind: "motion-sheet",
+        path: result.path,
+        action: result.action.id,
+        status: result.status
+      });
+    } else if (result.failurePath) {
+      files.push({
+        kind: "motion-sheet-failure",
+        path: result.failurePath,
+        action: result.action.id,
+        status: result.status
+      });
+    }
+  }
+  if (plan.packageMode === "full") {
+    files.push(
+      {
+        kind: "motion-map",
+        path: motionMapPath
+      },
+      {
+        kind: "runtime",
+        path: runtimePath
+      },
+      {
+        kind: "license",
+        path: licensePath
+      },
+      {
+        kind: "score-report",
+        path: scoreReportPath
+      },
+      {
+        kind: "ownership-claim",
+        path: ownershipClaimPath
+      },
+      {
+        kind: "gamer-pet-manifest",
+        path: gamerManifestPath
+      }
+    );
+  }
   if (videoResult?.filePath) {
     files.push({
       kind: "video-reference",
@@ -298,13 +791,18 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     schema: "fantasy-pet.package-manifest.v1",
     runId,
     appJobId: runId,
-    acceptedBy: "pending-human-review",
+    acceptedBy: "ga-auto-generated",
+    qualityGate: "auto-generated-unverified",
+    resourceStatus: status,
     sourceTaskId: `${runId}:ga-random-pet-worker`,
-    sourceDownloadId: "ga-base-identity",
+    sourceDownloadId: plan.packageMode === "full" ? "ga-full-resource-package" : "ga-base-identity",
     generatedBy: {
       provider: "google-genai",
       imageModel: config.imageModel,
       videoModel: config.enableVideo ? config.videoModel : "",
+      qualityPreset: config.qualityPreset,
+      backgroundMode: config.backgroundMode,
+      outputMimeType: config.outputMimeType,
       createdAt: new Date().toISOString()
     },
     files
@@ -314,9 +812,27 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
   await writeJsonFile(path.join(runDir, apiTracePath), {
     image: {
       model: config.imageModel,
+      imageSize: config.imageSize,
+      aspectRatio: config.imageAspectRatio,
       mimeType: imageResult.mimeType,
       responseShape: imageResult.responseShape
     },
+    quality: {
+      preset: config.qualityPreset,
+      spriteSheetImageSize: config.spriteSheetImageSize,
+      spriteSheetAspectRatio: config.spriteSheetAspectRatio,
+      backgroundMode: config.backgroundMode,
+      outputMimeType: config.outputMimeType,
+      imageDelivery: config.imageDelivery
+    },
+    motionSheets: motionResults.map((result) => ({
+      actionId: result.action.id,
+      path: result.path,
+      status: result.status,
+      mimeType: result.mimeType,
+      responseShape: result.responseShape,
+      error: result.error || ""
+    })),
     video: videoResult
       ? {
           model: config.videoModel,
@@ -329,37 +845,151 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
 
   await writeFile(
     path.join(runDir, reviewCardPath),
-    buildReviewCard({ runId, plan, imageResult, videoResult }),
+    buildReviewCard({
+      runId,
+      plan,
+      imageResult,
+      videoResult,
+      motionResults,
+      status,
+      generatedActionCount,
+      expectedActionCount
+    }),
     "utf8"
   );
 
-  const packageZip = `${runId}-candidate.zip`;
-  await createStoredZipFromDirectory(runDir, path.join(runDir, packageZip));
+  const packageZipPath = path.join(runDir, exportArtifactPath);
+  await createStoredZipFromDirectory(runDir, packageZipPath);
 
   return {
-    packageZip: path.join(runDir, packageZip),
-    video: videoResult
+    packageZip: packageZipPath,
+    video: videoResult,
+    status,
+    generatedActionCount,
+    expectedActionCount
   };
 }
 
-async function generateImage({ config, prompt }) {
+async function generateMotionSheets({ config, plan, runDir, identityImage }) {
+  const results = [];
+  for (const action of plan.actions) {
+    const sheetPath = `motion/sheets/${action.fileName}`;
+    const actionPrompt = buildMotionSheetPrompt({ plan, action });
+    const actionPromptPath = `source/generation/actions/${action.id}.json`;
+
+    await writeJsonFile(path.join(runDir, actionPromptPath), {
+      schema: "gamer.ga-random-pet-action-prompt.v1",
+      action,
+      prompt: actionPrompt,
+      identityReference: "assets/base_identity.png"
+    });
+
+    try {
+      const sheetResult = await generateImage({
+        config,
+        prompt: actionPrompt,
+        inputImage: identityImage,
+        aspectRatio: config.spriteSheetAspectRatio,
+        imageSize: config.spriteSheetImageSize
+      });
+      await writeFile(path.join(runDir, sheetPath), sheetResult.bytes);
+      results.push({
+        action,
+        path: sheetPath,
+        promptPath: actionPromptPath,
+        status: "generated",
+        mimeType: sheetResult.mimeType,
+        responseShape: sheetResult.responseShape
+      });
+    } catch (error) {
+      const safeError = safeErrorMessage(error);
+      const failurePath = `source/generation/actions/${action.id}.failure.json`;
+      await writeJsonFile(path.join(runDir, failurePath), {
+        schema: "gamer.ga-random-pet-action-failure.v1",
+        action,
+        failedAt: new Date().toISOString(),
+        error: safeError
+      });
+      results.push({
+        action,
+        path: sheetPath,
+        promptPath: actionPromptPath,
+        status: "failed",
+        mimeType: "",
+        responseShape: "",
+        failurePath,
+        error: safeError
+      });
+    }
+
+    if (config.actionIntervalSeconds > 0) {
+      await sleep(config.actionIntervalSeconds * 1000);
+    }
+  }
+  return results;
+}
+
+function buildMotionSheetPrompt({ plan, action }) {
+  const loopText = action.loop ? "This action should loop cleanly." : "This action should play once and settle cleanly.";
+  return [
+    "Use the attached identity image as the strict character reference.",
+    "Generate one PNG horizontal spritesheet for an original desktop pet action.",
+    `Pet: ${plan.name}, a ${plan.species} with ${plan.element} styling, ${plan.palette}.`,
+    `Personality: ${plan.temperament}.`,
+    `Action id: ${action.id}.`,
+    `Desktop trigger: ${action.trigger}.`,
+    `Motion: ${action.prompt}.`,
+    `Create exactly ${action.frameCount} animation frames in one single horizontal row.`,
+    "Every frame must have the same canvas size and the same body scale.",
+    "Keep the ground anchor and body center stable unless the action clearly jumps or lands.",
+    plan.backgroundInstruction,
+    "No grid lines, no labels, no numbers, no UI, no watermark, no text.",
+    "Avoid camera zoom, scene cuts, duplicate static frames, cropped body parts, and identity drift.",
+    loopText,
+    "Output only the spritesheet image."
+  ].join(" ");
+}
+
+async function generateImage({
+  config,
+  prompt,
+  inputImage = null,
+  aspectRatio = config.imageAspectRatio,
+  imageSize = config.imageSize
+}) {
+  const input = [
+    {
+      type: "text",
+      text: prompt
+    }
+  ];
+  if (inputImage?.bytes) {
+    input.push({
+      type: "image",
+      data: inputImage.bytes.toString("base64"),
+      mime_type: inputImage.mimeType || "image/png"
+    });
+  }
+  const responseFormat = {
+    type: "image",
+    aspect_ratio: aspectRatio,
+    image_size: imageSize
+  };
+  if (config.outputMimeType) {
+    responseFormat.mime_type = config.outputMimeType;
+  }
+  if (config.imageDelivery) {
+    responseFormat.delivery = config.imageDelivery;
+  }
+
   const responseJson = await postJson({
     apiKey: config.apiKey,
     url: `${config.apiBaseUrl}/interactions`,
     timeoutMs: config.requestTimeoutMs,
     body: {
       model: config.imageModel,
-      input: [
-        {
-          type: "text",
-          text: prompt
-        }
-      ],
-      response_format: {
-        type: "image",
-        aspect_ratio: config.imageAspectRatio,
-        image_size: config.imageSize
-      }
+      input,
+      response_format: responseFormat
     },
     headers: {
       "Api-Revision": API_REVISION
@@ -369,15 +999,184 @@ async function generateImage({ config, prompt }) {
   const image = extractGeneratedImage(responseJson);
   if (!image) {
     throw new Error(
-      `image_response_missing_base64 shape=${summarizeResponseShape(responseJson)}`
+      `image_response_missing_data shape=${summarizeResponseShape(responseJson)}`
     );
   }
+  const bytes = image.base64
+    ? Buffer.from(stripDataUrl(image.base64), "base64")
+    : await downloadBinary({
+        apiKey: config.apiKey,
+        url: resolveApiUrl(config.apiBaseUrl, image.uri),
+        timeoutMs: config.requestTimeoutMs
+      });
 
   return {
-    bytes: Buffer.from(stripDataUrl(image.base64), "base64"),
+    bytes,
     mimeType: image.mimeType || "image/png",
     responseShape: summarizeResponseShape(responseJson)
   };
+}
+
+function buildMotionMap({ motionResults }) {
+  const actions = {};
+  for (const result of motionResults) {
+    actions[result.action.id] = {
+      sheet: result.status === "generated" ? result.path : "",
+      failure: result.failurePath || "",
+      frames: result.action.frameCount,
+      loop: result.action.loop,
+      category: result.action.category,
+      trigger: result.action.trigger,
+      status: result.status
+    };
+  }
+  return {
+    schema: "fantasy-pet.motion-map.v1",
+    format: "hd-independent-horizontal-action-sheets",
+    generatedBy: "ga-random-pet-worker",
+    actions,
+    note:
+      "Core desktop-pet interactions are fixed; species and element actions are selected from the generated pet's habits."
+  };
+}
+
+function buildRuntimeMetadata({ motionResults }) {
+  const motions = {};
+  for (const result of motionResults) {
+    motions[result.action.id] = {
+      baselineY: 0.88,
+      shadowScale: 1,
+      blendMs: result.action.loop ? 180 : 120,
+      fx: fxForAction(result.action),
+      qa: {
+        status: result.status === "generated" ? "ga-generated-needs-runtime-qa" : "generation-failed",
+        sourceCandidate: result.status === "generated" ? result.path : "",
+        failurePath: result.failurePath || "",
+        note:
+          "Generated automatically from GA during the quota window. Runtime QA and visual acceptance are still separate gates."
+      }
+    };
+  }
+  return {
+    schema: "fantasy-pet.runtime.v1",
+    targetFps: 60,
+    packageProfile: "ga-full-desktop-pet-v1",
+    previewOnly: true,
+    motions
+  };
+}
+
+function buildLicenseMetadata({ runId, plan }) {
+  return {
+    schema: "gamer.pet-license.v1",
+    runId,
+    claim: "original-ai-generated-candidate",
+    provider: "google-genai",
+    reviewStatus: "unreviewed",
+    usage:
+      "Prototype candidate for internal desktop-pet generation review and later packaging.",
+    restrictions: [
+      "Do not publish as human-reviewed without a separate review record.",
+      "Do not use if it resembles existing IP, contains text, or contains watermark artifacts."
+    ],
+    promptSummary: plan.summary
+  };
+}
+
+function buildScoreReport({ runId, plan, generatedActionCount, expectedActionCount }) {
+  const completeness =
+    expectedActionCount === 0 ? 0 : Math.round((generatedActionCount / expectedActionCount) * 20);
+  const complete = generatedActionCount === expectedActionCount && expectedActionCount > 0;
+  return {
+    schema: "gamer.pet-score-report.v1",
+    petId: runId,
+    totalScore: complete ? 70 : Math.max(25, completeness + 20),
+    breakdown: {
+      packageCompleteness: completeness,
+      visualQuality: complete ? 12 : 6,
+      actionCoverage: completeness,
+      identityConsistency: 8,
+      previewEvidence: 6,
+      licenseReadiness: 4
+    },
+    rewardRecommendation: {
+      grant: false,
+      amount: 0,
+      reason:
+        "GA auto-generated resource candidate. Reward and community approval require a later review gate."
+    },
+    risks: [
+      "Automated generation may still contain identity drift between action sheets.",
+      "Spritesheets may need transparency cleanup, frame extraction repair, or runtime anchor QA.",
+      `Prompt summary: ${plan.summary}`
+    ]
+  };
+}
+
+function buildOwnershipClaim({ runId, config }) {
+  return {
+    schema: "gamer.ownership-claim.v1",
+    claimId: `claim-${runId}`,
+    userId: config.ownerUserId,
+    petId: runId,
+    claimType: "original-created",
+    attestation:
+      "Auto-generated candidate controlled by the project owner; not yet reviewed for publication.",
+    sourceReferences: ["source/generation/prompt-plan.json"],
+    submittedAt: new Date().toISOString(),
+    reviewStatus: "pending"
+  };
+}
+
+function buildGamerPetManifest({
+  runId,
+  config,
+  plan,
+  baseAssetPath,
+  previewPath,
+  exportArtifactPath,
+  motionResults,
+  licensePath,
+  scoreReportPath
+}) {
+  return {
+    schema: "gamer.pet-package.v1",
+    petId: runId,
+    displayName: plan.name,
+    ownerUserId: config.ownerUserId,
+    source: {
+      kind: "fantasy-pet-rule",
+      runId,
+      statePath: "source/generation/prompt-plan.json"
+    },
+    assets: {
+      baseImage: baseAssetPath,
+      previewImage: previewPath,
+      exportArtifact: exportArtifactPath,
+      motionSheets: motionResults
+        .filter((result) => result.status === "generated")
+        .map((result) => result.path)
+    },
+    license: licensePath,
+    scoreReport: scoreReportPath
+  };
+}
+
+function resourceStatusFor({ packageMode, generatedActionCount, expectedActionCount }) {
+  if (packageMode !== "full") return "identity-candidate-ready";
+  if (expectedActionCount > 0 && generatedActionCount === expectedActionCount) {
+    return "full-resource-candidate-ready";
+  }
+  return "partial-resource-candidate";
+}
+
+function fxForAction(action) {
+  if (action.id.includes("electric") || action.id.includes("static")) return "soft_static";
+  if (action.id.includes("moon")) return "moon_glow";
+  if (action.id.includes("feed")) return "snack_sparkle";
+  if (action.id.includes("attention")) return "friendly_ping";
+  if (action.category === "adaptive-habit") return "species_signature";
+  return "none";
 }
 
 async function generateVideoReference({ config, prompt, runDir }) {
@@ -557,9 +1356,16 @@ function imageFromCandidate(candidate) {
     candidate.b64Json ||
     candidate.inlineData?.data ||
     candidate.inline_data?.data;
-  if (typeof base64 !== "string" || base64.trim() === "") return null;
+  const uri = candidate.uri || candidate.url || candidate.gcsUri || candidate.gcs_uri;
+  if (
+    (typeof base64 !== "string" || base64.trim() === "") &&
+    (typeof uri !== "string" || uri.trim() === "")
+  ) {
+    return null;
+  }
   return {
     base64,
+    uri,
     mimeType:
       candidate.mime_type ||
       candidate.mimeType ||
@@ -609,19 +1415,41 @@ function resolveApiUrl(baseUrl, maybeUrl) {
   return `${base}/${pathPart}`;
 }
 
-function buildReviewCard({ runId, plan, imageResult, videoResult }) {
+function buildReviewCard({
+  runId,
+  plan,
+  imageResult,
+  videoResult,
+  motionResults,
+  status,
+  generatedActionCount,
+  expectedActionCount
+}) {
+  const actionLines =
+    motionResults.length > 0
+      ? motionResults.map((result) => {
+          const marker = result.status === "generated" ? "ok" : "failed";
+          return `- ${marker}: ${result.action.id} / ${result.action.displayName} / ${result.path}`;
+        })
+      : ["- identity-only mode: no motion sheets generated"];
+
   return [
     `# GA random pet candidate ${runId}`,
     "",
-    `Status: waiting-human-review`,
+    `Status: ${status}`,
     `Name: ${plan.name}`,
     `Summary: ${plan.summary}`,
     `Image mime: ${imageResult.mimeType}`,
+    `Motion sheets: ${generatedActionCount}/${expectedActionCount}`,
     `Video reference: ${videoResult?.filePath || "not generated"}`,
     "",
     "## Image Prompt",
     "",
     plan.imagePrompt,
+    "",
+    "## Motion Sheets",
+    "",
+    ...actionLines,
     "",
     "## Video Prompt",
     "",
@@ -633,9 +1461,9 @@ function buildReviewCard({ runId, plan, imageResult, videoResult }) {
     "",
     "## Next",
     "",
-    "- Review the base identity image at Android small-avatar size.",
-    "- If accepted, generate or repair action sheets before community import.",
-    "- Do not mark this package as human-reviewed until a person accepts it."
+    "- Keep running the worker during the quota window to accumulate full resource candidates.",
+    "- Later, batch-triage identity drift, transparency, frame count, and runtime anchor quality.",
+    "- Do not mark this package as human-reviewed or publish it until a separate acceptance step exists."
   ].join("\n");
 }
 
@@ -749,6 +1577,52 @@ function shouldContinue(config, completedRuns) {
 function parseBoolean(value, fallback) {
   if (value === undefined) return fallback;
   return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
+}
+
+function parseOptionalString(value, fallback) {
+  if (value === undefined) return fallback;
+  const text = String(value).trim();
+  if (["", "default", "none", "auto"].includes(text.toLowerCase())) return "";
+  return text;
+}
+
+function parsePackageMode(value, fallback) {
+  const mode = String(value || fallback || "full").trim().toLowerCase();
+  return ["identity", "full"].includes(mode) ? mode : fallback;
+}
+
+function parseBackgroundMode(value, fallback) {
+  const mode = String(value || fallback || "transparent").trim().toLowerCase();
+  return ["transparent", "chroma", "light", "auto"].includes(mode) ? mode : fallback;
+}
+
+function parseQualityPreset(value, fallback) {
+  const preset = String(value || fallback || "high").trim().toLowerCase();
+  return ["fast", "balanced", "high"].includes(preset) ? preset : fallback;
+}
+
+function qualityDefaultsFor(preset) {
+  if (preset === "fast") {
+    return {
+      identityImageSize: "1K",
+      spriteSheetImageSize: "2K"
+    };
+  }
+  if (preset === "balanced") {
+    return {
+      identityImageSize: "2K",
+      spriteSheetImageSize: "2K"
+    };
+  }
+  return {
+    identityImageSize: "2K",
+    spriteSheetImageSize: "4K"
+  };
+}
+
+function parseImageSize(value, fallback) {
+  const size = String(value || fallback || "2K").trim();
+  return size || fallback;
 }
 
 function parsePositiveInteger(value, fallback) {
