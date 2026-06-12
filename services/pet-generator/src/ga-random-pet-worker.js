@@ -810,9 +810,6 @@ function backgroundInstructionFor(backgroundMode) {
 }
 
 async function generateCandidateRun({ config, plan, runId, runDir }) {
-  const candidatePath = "artifacts/candidates/base-identity.png";
-  const baseAssetPath = "assets/base_identity.png";
-  const previewPath = "previews/preview.png";
   const promptPlanPath = "source/generation/prompt-plan.json";
   const reviewCardPath = "review-card.md";
   const manifestPath = "package-manifest.json";
@@ -840,6 +837,10 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     config,
     prompt: plan.imagePrompt
   });
+  const baseExtension = imageFileExtension(imageResult.mimeType);
+  const candidatePath = `artifacts/candidates/base-identity.${baseExtension}`;
+  const baseAssetPath = `assets/base_identity.${baseExtension}`;
+  const previewPath = `previews/preview.${baseExtension}`;
   await writeFile(path.join(runDir, candidatePath), imageResult.bytes);
   await writeFile(path.join(runDir, baseAssetPath), imageResult.bytes);
   await writeFile(path.join(runDir, previewPath), imageResult.bytes);
@@ -850,7 +851,8 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
           config,
           plan,
           runDir,
-          identityImage: imageResult
+          identityImage: imageResult,
+          identityReferencePath: baseAssetPath
         })
       : [];
   const generatedActionCount = motionResults.filter((result) => result.status === "generated")
@@ -1139,10 +1141,16 @@ async function syncCandidateIfConfigured(input) {
   }
 }
 
-async function generateMotionSheets({ config, plan, runDir, identityImage }) {
+async function generateMotionSheets({
+  config,
+  plan,
+  runDir,
+  identityImage,
+  identityReferencePath
+}) {
   const results = [];
   for (const action of plan.actions) {
-    const sheetPath = `motion/sheets/${action.fileName}`;
+    const plannedSheetPath = `motion/sheets/${action.fileName}`;
     const actionPrompt = buildMotionSheetPrompt({ plan, action });
     const actionPromptPath = `source/generation/actions/${action.id}.json`;
 
@@ -1150,7 +1158,7 @@ async function generateMotionSheets({ config, plan, runDir, identityImage }) {
       schema: "gamer.ga-random-pet-action-prompt.v1",
       action,
       prompt: actionPrompt,
-      identityReference: "assets/base_identity.png"
+      identityReference: identityReferencePath
     });
 
     try {
@@ -1161,6 +1169,10 @@ async function generateMotionSheets({ config, plan, runDir, identityImage }) {
         aspectRatio: config.spriteSheetAspectRatio,
         imageSize: config.spriteSheetImageSize
       });
+      const sheetPath = `motion/sheets/${replaceFileExtension(
+        action.fileName,
+        imageFileExtension(sheetResult.mimeType)
+      )}`;
       await writeFile(path.join(runDir, sheetPath), sheetResult.bytes);
       results.push({
         action,
@@ -1181,7 +1193,7 @@ async function generateMotionSheets({ config, plan, runDir, identityImage }) {
       });
       results.push({
         action,
-        path: sheetPath,
+        path: plannedSheetPath,
         promptPath: actionPromptPath,
         status: "failed",
         mimeType: "",
@@ -2067,7 +2079,7 @@ function imageFromCandidate(candidate) {
       return {
         base64: "",
         uri: candidate,
-        mimeType: "image/png"
+        mimeType: mimeTypeFromUrl(candidate) || "image/png"
       };
     }
     return null;
@@ -2110,6 +2122,7 @@ function imageFromCandidate(candidate) {
       candidate.mime_type ||
       candidate.mimeType ||
       mimeTypeFromDataUrl(base64) ||
+      mimeTypeFromUrl(uri) ||
       candidate.inlineData?.mimeType ||
       candidate.inline_data?.mime_type ||
       "image/png"
@@ -2180,8 +2193,27 @@ function mimeTypeFromDataUrl(value) {
   return match?.[1] || "";
 }
 
+function mimeTypeFromUrl(value) {
+  const url = String(value || "").split("?")[0].toLowerCase();
+  if (url.endsWith(".jpg") || url.endsWith(".jpeg")) return "image/jpeg";
+  if (url.endsWith(".png")) return "image/png";
+  if (url.endsWith(".webp")) return "image/webp";
+  return "";
+}
+
 function toDataUrl(bytes, mimeType) {
   return `data:${mimeType || "image/png"};base64,${Buffer.from(bytes).toString("base64")}`;
+}
+
+function imageFileExtension(mimeType) {
+  const text = String(mimeType || "").toLowerCase();
+  if (text.includes("jpeg") || text.includes("jpg")) return "jpg";
+  if (text.includes("webp")) return "webp";
+  return "png";
+}
+
+function replaceFileExtension(fileName, extension) {
+  return String(fileName || "image.png").replace(/\.[^.]+$/u, `.${extension || "png"}`);
 }
 
 function resolveApiUrl(baseUrl, maybeUrl) {
