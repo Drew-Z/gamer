@@ -100,6 +100,11 @@ the private `pet-assets` bucket under `ga-random-pets/<run-id>/...` and upserts
 candidate/asset metadata into `ga_pet_candidates` and `ga_pet_assets`. If upload
 or metadata sync fails, the local candidate is kept and the error is written to
 `meta/supabase-sync-error.json` for later retry or diagnosis.
+When `DATABASE_URL` is present, the worker also checks the shared database
+`ga_pet_rework_requests` queue before the local `ga-rework-queue.jsonl`, writes
+started/completed/failed status rows back to `ga_pet_rework_statuses`, and can
+load a source candidate prompt plan from `ga_pet_candidates` when the source run
+folder is on another server.
 
 ## Human Review Console
 

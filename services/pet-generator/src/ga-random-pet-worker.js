@@ -9,6 +9,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnvFiles } from "../../community-api/src/env-file.js";
+import { createGaPetDatabaseStore } from "./ga-pet-database.js";
 import {
   createSupabasePetSyncConfig,
   isSupabasePetSyncReady,
@@ -325,6 +326,7 @@ export function createWorkerConfig(env = process.env) {
       180
     ),
     supabaseSync: createSupabasePetSyncConfig(env),
+    databaseStore: createGaPetDatabaseStore(env),
     configCheck:
       parseBoolean(env.GA_PET_CONFIG_CHECK, false) ||
       process.argv.includes("--config-check"),
@@ -366,7 +368,8 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     learningNoteLimit: config.learningNoteLimit,
     reworkQueue: config.reworkQueue,
     reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes,
-    supabaseSyncEnabled: isSupabasePetSyncReady(config.supabaseSync)
+    supabaseSyncEnabled: isSupabasePetSyncReady(config.supabaseSync),
+    databaseReworkQueueEnabled: Boolean(config.databaseStore)
   });
 
   let completedRuns = 0;
@@ -383,7 +386,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
         limit: config.learningNoteLimit
       });
       const reworkRequest = config.reworkQueue
-        ? await findNextReworkRequest(config.runRoot, {
+        ? await findNextReworkRequest(config, {
             startedTimeoutMinutes: config.reworkStartedTimeoutMinutes
           })
         : null;
@@ -408,7 +411,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
 
       try {
         if (reworkRequest) {
-          await appendReworkStatus(config.runRoot, {
+          await appendReworkStatus(config, {
             requestId: reworkRequest.requestId,
             sourceRunId: reworkRequest.sourceRunId,
             targetRunId: runId,
@@ -445,7 +448,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
           status: result.status
         });
         if (reworkRequest) {
-          await appendReworkStatus(config.runRoot, {
+          await appendReworkStatus(config, {
             requestId: reworkRequest.requestId,
             sourceRunId: reworkRequest.sourceRunId,
             targetRunId: runId,
@@ -458,7 +461,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
       } catch (error) {
         const safeError = safeErrorMessage(error);
         if (reworkRequest) {
-          await appendReworkStatus(config.runRoot, {
+          await appendReworkStatus(config, {
             requestId: reworkRequest.requestId,
             sourceRunId: reworkRequest.sourceRunId,
             targetRunId: runId,
@@ -672,7 +675,7 @@ async function buildReworkPetPromptPlan({
   request,
   learningInstruction
 }) {
-  const originalPlan = await readPromptPlanForRework(config.runRoot, request);
+  const originalPlan = await readPromptPlanForRework(config, request);
   const species = originalPlan?.species || "fantasy desktop pet";
   const element = originalPlan?.element || "bright original";
   const temperament = originalPlan?.temperament || "friendly";
@@ -1476,6 +1479,7 @@ function printConfigCheck(config) {
       serviceKeyPresent: Boolean(config.supabaseSync.serviceKey),
       bucket: config.supabaseSync.bucket || ""
     },
+    databaseReworkQueueEnabled: Boolean(config.databaseStore),
     estimatedCallsPerCandidate: {
       image: expectedImageCalls,
       video: expectedVideoCalls
@@ -1524,8 +1528,20 @@ async function loadLearningContext({ runRoot, limit }) {
   };
 }
 
-async function findNextReworkRequest(runRoot, options = {}) {
-  const records = await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
+async function findNextReworkRequest(config, options = {}) {
+  if (config.databaseStore) {
+    try {
+      const databaseRecords = await config.databaseStore.readReworkRecords();
+      const databaseRequest = selectNextReworkRequest(databaseRecords, options);
+      if (databaseRequest) {
+        return databaseRequest;
+      }
+    } catch (error) {
+      console.error(`[ga-worker] database-rework-read-failed error=${safeErrorMessage(error)}`);
+    }
+  }
+
+  const records = await readJsonLinesIfExists(path.join(config.runRoot, "ga-rework-queue.jsonl"));
   return selectNextReworkRequest(records, options);
 }
 
@@ -1577,9 +1593,9 @@ function isStartedReworkStale({ latestStatus, startedTimeoutMinutes, nowMs }) {
   return nowMs - startedAtMs >= startedTimeoutMinutes * 60 * 1000;
 }
 
-async function appendReworkStatus(runRoot, status) {
+async function appendReworkStatus(config, status) {
   await appendFile(
-    path.join(runRoot, "ga-rework-queue.jsonl"),
+    path.join(config.runRoot, "ga-rework-queue.jsonl"),
     `${JSON.stringify({
       schema: "gamer.ga-pet-rework-status.v1",
       requestId: status.requestId,
@@ -1591,13 +1607,32 @@ async function appendReworkStatus(runRoot, status) {
     })}\n`,
     "utf8"
   );
+
+  if (config.databaseStore) {
+    try {
+      await config.databaseStore.appendReworkStatus(status);
+    } catch (error) {
+      console.error(`[ga-worker] database-rework-status-failed error=${safeErrorMessage(error)}`);
+    }
+  }
 }
 
-async function readPromptPlanForRework(runRoot, request) {
+async function readPromptPlanForRework(config, request) {
   if (!request?.sourceRunId) return null;
-  return readJsonIfExists(
-    path.join(runRoot, request.sourceRunId, "source", "generation", "prompt-plan.json")
+  const localPlan = await readJsonIfExists(
+    path.join(config.runRoot, request.sourceRunId, "source", "generation", "prompt-plan.json")
   );
+  if (localPlan) return localPlan;
+
+  if (config.databaseStore) {
+    try {
+      return await config.databaseStore.readPromptPlan(request.sourceRunId);
+    } catch (error) {
+      console.error(`[ga-worker] database-rework-prompt-read-failed error=${safeErrorMessage(error)}`);
+    }
+  }
+
+  return null;
 }
 
 async function generateVideoReference({ config, prompt, runDir }) {
