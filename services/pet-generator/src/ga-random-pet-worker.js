@@ -73,6 +73,19 @@ const PALETTES = [
   "rose pink, cloud white, and tiny green highlights"
 ];
 
+const ISSUE_GUIDANCE = {
+  "identity-drift": "Lock the base identity, head/body ratio, colors, markings, ears, tail, and signature effects across every sheet.",
+  "static-frames": "Make frames visibly different with clear key poses and avoid repeated near-identical frames.",
+  "scale-pop": "Keep body size, center, and ground anchor stable across frames and between idle handoff.",
+  "bad-transparency": "Use clean true alpha or clean chroma edges with no background patches.",
+  "white-matte": "Avoid white matte contamination around fur, muzzle, paws, ears, and effects.",
+  "cropped-body": "Keep full body, tail, ears, wings, props, and effects inside every frame.",
+  "wrong-action": "Make the motion clearly match the requested desktop-pet trigger and action semantics.",
+  "too-noisy": "Reduce particles and decorative fragments so the pet silhouette stays readable.",
+  "weak-silhouette": "Strengthen small-size readability with clear silhouette, separated limbs, and simple effects.",
+  "style-mismatch": "Keep the same render style, line weight, lighting, and material treatment as the accepted identity."
+};
+
 const CORE_DESKTOP_ACTIONS = [
   {
     id: "idle",
@@ -727,11 +740,29 @@ function buildReworkInstruction(request) {
   if (request.actionId) pieces.push(`focus action ${request.actionId}`);
   if (Array.isArray(request.tags) && request.tags.length > 0) {
     pieces.push(`problem tags: ${request.tags.join(", ")}`);
+    pieces.push(`tag guidance: ${guidanceForTags(request.tags)}`);
   }
   if (request.notes) pieces.push(request.notes);
   if (request.promptPatch) pieces.push(`specific prompt patch: ${request.promptPatch}`);
   if (request.mode) pieces.push(`requested mode: ${request.mode}`);
   return pieces.join("; ") || "improve identity consistency, transparency, and motion readability";
+}
+
+function guidanceForTags(tags) {
+  return (Array.isArray(tags) ? tags : [])
+    .map((tag) => ISSUE_GUIDANCE[normalizeIssueTag(tag)])
+    .filter(Boolean)
+    .join(" ");
+}
+
+function normalizeIssueTag(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/gu, "-")
+    .replace(/[^a-z0-9-]+/gu, "")
+    .replace(/-+/gu, "-")
+    .replace(/^-|-$/gu, "");
 }
 
 function backgroundInstructionFor(backgroundMode) {
@@ -1405,7 +1436,8 @@ async function loadLearningContext({ runRoot, limit }) {
       const tags = Array.isArray(note.tags) && note.tags.length > 0
         ? `[${note.tags.join(", ")}] `
         : "";
-      return `${action}${tags}${note.lesson}`;
+      const guidance = note.guidance || guidanceForTags(note.tags);
+      return `${action}${tags}${guidance ? `${guidance} ` : ""}${note.lesson}`;
     })
     .join(" | ")
     .slice(0, 2400);

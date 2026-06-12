@@ -68,7 +68,8 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   assert.equal(result.reworkRequest.status, "requested");
 
   const learningText = await readFile(path.join(runRoot, "ga-learning-notes.jsonl"), "utf8");
-  assert.match(learningText, /identity drift/);
+  assert.match(learningText, /identity-drift/);
+  assert.match(learningText, /Lock the base identity/);
   const queueText = await readFile(path.join(runRoot, "ga-rework-queue.jsonl"), "utf8");
   assert.match(queueText, /ga-pet-rework-request/);
 });

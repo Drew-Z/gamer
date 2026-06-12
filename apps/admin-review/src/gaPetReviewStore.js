@@ -10,6 +10,19 @@ const DEFAULT_RUN_ROOT = path.resolve(
 
 const textDecoder = new TextDecoder();
 
+const ISSUE_GUIDANCE = {
+  "identity-drift": "Lock the base identity, head/body ratio, colors, markings, ears, tail, and signature effects across every sheet.",
+  "static-frames": "Make frames visibly different with clear key poses and avoid repeated near-identical frames.",
+  "scale-pop": "Keep body size, center, and ground anchor stable across frames and between idle handoff.",
+  "bad-transparency": "Use clean true alpha or clean chroma edges with no background patches.",
+  "white-matte": "Avoid white matte contamination around fur, muzzle, paws, ears, and effects.",
+  "cropped-body": "Keep full body, tail, ears, wings, props, and effects inside every frame.",
+  "wrong-action": "Make the motion clearly match the requested desktop-pet trigger and action semantics.",
+  "too-noisy": "Reduce particles and decorative fragments so the pet silhouette stays readable.",
+  "weak-silhouette": "Strengthen small-size readability with clear silhouette, separated limbs, and simple effects.",
+  "style-mismatch": "Keep the same render style, line weight, lighting, and material treatment as the accepted identity."
+};
+
 export function createGaPetReviewStore(options = {}) {
   const runRoot = path.resolve(options.runRoot || process.env.GA_PET_RUN_ROOT || DEFAULT_RUN_ROOT);
 
@@ -171,6 +184,7 @@ async function writeFeedback({ runRoot, runId, body }) {
     severity: feedback.severity,
     actionId: feedback.actionId,
     tags: feedback.tags,
+    guidance: guidanceForTags(feedback.tags),
     lesson: buildLearningLesson(feedback)
   };
   await appendFile(
@@ -279,22 +293,41 @@ function normalizeField(value, fallback) {
 
 function parseTags(value) {
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeField(item, "")).filter(Boolean).slice(0, 16);
+    return value.map(normalizeTag).filter(Boolean).slice(0, 16);
   }
   return String(value ?? "")
     .split(",")
-    .map((item) => item.trim())
+    .map(normalizeTag)
     .filter(Boolean)
     .slice(0, 16);
+}
+
+function normalizeTag(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/gu, "-")
+    .replace(/[^a-z0-9-]+/gu, "")
+    .replace(/-+/gu, "-")
+    .replace(/^-|-$/gu, "");
 }
 
 function buildLearningLesson(feedback) {
   const pieces = [];
   if (feedback.actionId) pieces.push(`action=${feedback.actionId}`);
   if (feedback.tags.length > 0) pieces.push(`tags=${feedback.tags.join(",")}`);
+  const guidance = guidanceForTags(feedback.tags);
+  if (guidance) pieces.push(`guidance: ${guidance}`);
   if (feedback.notes) pieces.push(feedback.notes);
   if (feedback.promptPatch) pieces.push(`prompt patch: ${feedback.promptPatch}`);
   return pieces.join(" / ");
+}
+
+function guidanceForTags(tags) {
+  return (Array.isArray(tags) ? tags : [])
+    .map((tag) => ISSUE_GUIDANCE[tag])
+    .filter(Boolean)
+    .join(" ");
 }
 
 function shortId() {

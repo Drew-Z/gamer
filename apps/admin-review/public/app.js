@@ -111,6 +111,19 @@ const safeZipFileName = (value) => {
   return `${baseName || "fantasy-pet-package"}.zip`;
 };
 
+const GA_ISSUE_TAGS = [
+  ["identity-drift", "Identity drift"],
+  ["static-frames", "Static frames"],
+  ["scale-pop", "Scale pop"],
+  ["bad-transparency", "Bad transparency"],
+  ["white-matte", "White matte"],
+  ["cropped-body", "Cropped body"],
+  ["wrong-action", "Wrong action"],
+  ["too-noisy", "Too noisy"],
+  ["weak-silhouette", "Weak silhouette"],
+  ["style-mismatch", "Style mismatch"]
+];
+
 function findZipEndOfCentralDirectory(view) {
   const minimumSize = 22;
   const maximumCommentSize = 0xffff;
@@ -555,9 +568,11 @@ function renderGaReviewList() {
 
     const motionStrip = document.createElement("div");
     motionStrip.className = "ga-motion-strip";
-    for (const motion of (candidate.motionSheets || []).slice(0, 8)) {
-      const motionItem = document.createElement("div");
+    for (const motion of candidate.motionSheets || []) {
+      const motionItem = document.createElement("button");
       motionItem.className = "ga-motion-item";
+      motionItem.type = "button";
+      motionItem.dataset.actionId = motion.actionId;
       motionItem.title = motion.trigger || motion.actionId;
       if (motion.imageUrl) {
         const image = document.createElement("img");
@@ -569,6 +584,14 @@ function renderGaReviewList() {
       const label = document.createElement("span");
       label.textContent = motion.actionId;
       motionItem.append(label);
+      motionItem.addEventListener("click", () => {
+        const actionInput = form.querySelector('[name="actionId"]');
+        actionInput.value = motion.actionId;
+        for (const item of motionStrip.querySelectorAll(".ga-motion-item.is-selected")) {
+          item.classList.remove("is-selected");
+        }
+        motionItem.classList.add("is-selected");
+      });
       motionStrip.append(motionItem);
     }
 
@@ -606,10 +629,27 @@ function renderGaReviewList() {
     actionId.placeholder = "action id";
     actionId.autocomplete = "off";
 
-    const tags = document.createElement("input");
-    tags.name = "tags";
-    tags.placeholder = "tags: identity drift, static frames";
-    tags.autocomplete = "off";
+    const tagGroup = document.createElement("fieldset");
+    tagGroup.className = "ga-issue-tags";
+    const tagLegend = document.createElement("legend");
+    tagLegend.textContent = "Issue tags";
+    tagGroup.append(tagLegend);
+    for (const [value, labelText] of GA_ISSUE_TAGS) {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.name = "tags";
+      input.type = "checkbox";
+      input.value = value;
+      const text = document.createElement("span");
+      text.textContent = labelText;
+      label.append(input, text);
+      tagGroup.append(label);
+    }
+
+    const customTags = document.createElement("input");
+    customTags.name = "customTags";
+    customTags.placeholder = "extra tags";
+    customTags.autocomplete = "off";
 
     const notes = document.createElement("textarea");
     notes.name = "notes";
@@ -626,7 +666,7 @@ function renderGaReviewList() {
     submit.type = "submit";
     submit.textContent = "Save note";
 
-    form.append(decision, severity, actionId, tags, notes, promptPatch, submit);
+    form.append(decision, severity, actionId, customTags, tagGroup, notes, promptPatch, submit);
     form.addEventListener("submit", submitGaFeedback);
 
     body.append(heading, summary, feedback, motionStrip, form);
@@ -895,11 +935,17 @@ async function submitGaFeedback(event) {
 
   try {
     const formData = new FormData(form);
+    const selectedTags = [
+      ...formData.getAll("tags").map((value) => String(value)),
+      ...String(formData.get("customTags") || "")
+        .split(",")
+        .map((value) => value.trim())
+    ].filter(Boolean);
     const payload = {
       decision: String(formData.get("decision") || "hold"),
       severity: String(formData.get("severity") || "medium"),
       actionId: String(formData.get("actionId") || ""),
-      tags: String(formData.get("tags") || ""),
+      tags: selectedTags,
       notes: String(formData.get("notes") || ""),
       promptPatch: String(formData.get("promptPatch") || ""),
       reworkMode:

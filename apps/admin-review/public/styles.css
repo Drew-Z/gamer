@@ -732,7 +732,16 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
   padding: 6px;
+  text-align: left;
+}
+
+.ga-motion-item.is-selected {
+  border-color: var(--accent);
+  outline: 2px solid rgba(23, 126, 137, 0.18);
 }
 
 .ga-motion-item img {
@@ -774,6 +783,43 @@ h1 {
 .ga-feedback-form textarea {
   grid-column: 1 / -1;
   resize: vertical;
+}
+
+.ga-issue-tags {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.ga-issue-tags legend {
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ga-issue-tags label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 8px;
+}
+
+.ga-issue-tags input {
+  width: 14px;
+  min-height: 14px;
+  padding: 0;
 }
 
 .package-link {

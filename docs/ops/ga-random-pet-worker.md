@@ -117,6 +117,18 @@ Feedback decisions:
 - `Regenerate pet`: queues a stronger regeneration request while preserving useful concept notes.
 - `Reject`: records a negative lesson so future prompts avoid similar failures.
 
+Use issue tags consistently so the worker can translate them into prompt guidance:
+
+- `identity-drift`: different face/body/colors between sheets.
+- `static-frames`: frames barely change.
+- `scale-pop`: body size, center, or ground anchor jumps.
+- `bad-transparency` / `white-matte`: alpha, matte, or edge contamination problems.
+- `cropped-body`: ears, tail, wings, props, or effects are cut off.
+- `wrong-action`: motion does not match the desktop-pet trigger.
+- `too-noisy`: particles or effects overpower the character.
+- `weak-silhouette`: small-size readability is poor.
+- `style-mismatch`: render style differs from the identity image.
+
 The worker reads recent `ga-learning-notes.jsonl` entries and injects them into later identity and motion-sheet prompts. When `GA_PET_REWORK_QUEUE=1` is enabled, it also consumes `ga-rework-queue.jsonl` before starting a random pet, producing a new rework run linked to the source candidate.
 
 ## Motion Plan
