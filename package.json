@@ -7,6 +7,7 @@
     "start:admin-review": "node apps/admin-review/server.js",
     "start:community-api": "node services/community-api/src/server.js",
     "start:pet-generator": "node services/pet-generator/src/server.js",
+    "start:ga-random-pet-worker": "node services/pet-generator/src/ga-random-pet-worker.js",
     "migrate:community-db": "node services/community-api/src/database/migrate.js",
     "migrate:community-db:dry-run": "node services/community-api/src/database/migrate.js --dry-run"
   },
