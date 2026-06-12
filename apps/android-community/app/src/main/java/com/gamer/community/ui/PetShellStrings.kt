@@ -81,7 +81,7 @@ class PetShellStrings internal constructor(
     val communityPetCommandShowcase: String get() = text("\u53BB\u5C55\u793A", "Showcase")
     val communityStatusTitle: String get() = text("今日社区状态", "Today's community status")
     val communityStatusRemoteSynced: String get() = text("远端同步", "Remote synced")
-    val communityStatusLocalFallback: String get() = text("本地兜底", "Local fallback")
+    val communityStatusRemoteUnavailable: String get() = text("远端未连接", "Remote unavailable")
     val communityStatusHumanReview: String get() = text("人审展示", "Human review")
     val communityFeedEmptyTitle: String get() = text("等待远端社区内容", "Waiting for remote community posts")
     val communityFeedEmptyDetail: String
@@ -126,18 +126,21 @@ class PetShellStrings internal constructor(
         if (enabled) {
             text("直达已开", "Direct on")
         } else {
-            text("常规开屏", "Bubble first")
+            text("常规开屏", "Normal start")
         }
     val desktopPetOpenCommunity: String get() = text("进入社区", "Community")
     val desktopPetOpenGenerate: String get() = text("孵化桌宠", "Hatch")
     val desktopPetOpenProfile: String get() = text("我的主页", "Profile")
+    val desktopPetOpenCommunityContentDescription: String get() = "desktop-pet-open-community"
+    val desktopPetOpenGenerateContentDescription: String get() = "desktop-pet-open-generate"
+    val desktopPetOpenProfileContentDescription: String get() = "desktop-pet-open-profile"
     val desktopPetActionDockTitle: String get() = text("快速入口", "Quick entry")
     val desktopPetSettingsTitle: String get() = text("启动与桌宠设置", "Launch and pet settings")
     val directPetLaunchTitle: String get() = text("下次启动先显示 App 内桌宠页", "Open to in-app pet first")
     val directPetLaunchDetail: String
         get() = text(
-            "关闭时保留常规气泡开屏；开启后点 App 图标会跳过气泡，先进入 App 内桌宠页。",
-            "Off keeps the launch bubble; on skips the bubble and opens the in-app pet surface."
+            "关闭时进入完整 App；开启后点 App 图标会先进入 App 内桌宠页。",
+            "Off opens the full app; on opens the in-app pet surface first."
         )
     val enterDesktopPetMode: String get() = text("进入 App 内桌宠模式", "Enter in-app pet mode")
     val systemDesktopPetTitle: String get() = text("桌面悬浮桌宠", "Floating desktop pet")
@@ -376,7 +379,6 @@ class PetShellStrings internal constructor(
         }
     val quickActionShowcase: String get() = text("展示", "Showcase")
     val quickActionShowcaseDetail: String get() = text("广场", "Gallery")
-    val launchEnterHint: String get() = text("点击气泡进入", "Tap the bubble to enter")
     val generatePanelTitle: String get() = text("孵化桌宠", "Hatch Desktop Pet")
     val generationPublicApiBoundaryNotice: String
         get() = text(
@@ -434,7 +436,6 @@ class PetShellStrings internal constructor(
     val checkedIn: String get() = text("已签到", "Checked in")
     val dailyCheckIn: String get() = text("每日签到", "Daily check-in")
     val candidatePreviewContentDescription: String get() = text("候选图预览", "Candidate preview")
-    val launchBubbleEnterContentDescription: String get() = "launch-bubble-enter"
     val generationDescriptionContentDescription: String get() = "generation-description-input"
     val appJobIdContentDescription: String get() = "generation-app-job-id-input"
     val referenceUrlsContentDescription: String get() = "generation-reference-url-input"
@@ -479,7 +480,8 @@ class PetShellStrings internal constructor(
             "Welcome back, Demo Keeper." -> "欢迎回来，Demo Keeper。"
             "Community ready." -> "社区已就绪。"
             "Community home ready." -> "社区主页已就绪。"
-            "Local fallback active." -> "本地兜底数据已启用。"
+            "Remote community unavailable." -> "远端社区暂未连接。"
+            "Remote check-in unavailable." -> "远端签到暂未连接。"
             "Daily reward already claimed." -> "今日奖励已经领取。"
             "No approved pets ready yet." -> "暂时还没有已通过的桌宠。"
             else -> localizedSpeechBubble(rawMessage)
@@ -492,8 +494,6 @@ class PetShellStrings internal constructor(
         } else {
             when (action) {
                 PetAction.Idle -> "待机"
-                PetAction.AppLoading -> "正在加载应用"
-                PetAction.BubbleOpen -> "打开气泡"
                 PetAction.FeedNext -> "下一页"
                 PetAction.FeedPrevious -> "上一页"
                 PetAction.FeedSkip -> "下下页"
@@ -1005,8 +1005,8 @@ private fun String.isSafeAssetDisplayTextForStrings(): Boolean {
         INTERNAL_ASSET_MARKERS_FOR_STRINGS.none { marker -> lower.contains(marker) }
 }
 
-private fun String.safeGenerationMessageDetail(fallback: String): String =
-    trim().takeIf { it.isNotBlank() && it.isSafeGenerationMessageText() } ?: fallback
+private fun String.safeGenerationMessageDetail(defaultValue: String): String =
+    trim().takeIf { it.isNotBlank() && it.isSafeGenerationMessageText() } ?: defaultValue
 
 private fun String.isSafeGenerationMessageText(): Boolean =
     isSafeAssetDisplayTextForStrings()

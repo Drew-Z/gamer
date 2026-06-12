@@ -47,10 +47,10 @@ class CommunityRepository(
             is ApiCallResult.Success -> walletResult.value.balance
             is ApiCallResult.Failure -> FALLBACK_WALLET_BALANCE
         }
-        val hasRemotePosts = remotePosts.isNotEmpty()
+        val hasRemoteFeed = feedResult is ApiCallResult.Success
         val hasRemoteWallet = walletResult is ApiCallResult.Success
 
-        return if (hasRemotePosts && hasRemoteWallet) {
+        return if (hasRemoteFeed && hasRemoteWallet) {
                 InitialCommunityResult(
                     posts = remotePosts,
                     approvedPets = approvedPets,
@@ -63,7 +63,7 @@ class CommunityRepository(
                     posts = remotePosts,
                     approvedPets = approvedPets,
                     walletBalance = walletBalance,
-                    message = "Local fallback active.",
+                    message = "Remote community unavailable.",
                     usedFallback = true
                 )
         }
@@ -84,9 +84,9 @@ class CommunityRepository(
             is ApiCallResult.Failure ->
                 CheckInResult(
                     walletBalance = null,
-                    rewardAmount = FALLBACK_CHECK_IN_REWARD,
-                    claimed = true,
-                    message = "Local check-in fallback active.",
+                    rewardAmount = 0,
+                    claimed = false,
+                    message = "Remote check-in unavailable.",
                     usedFallback = true
                 )
         }
@@ -121,34 +121,20 @@ class CommunityRepository(
 
     private companion object {
         const val FALLBACK_WALLET_BALANCE = 90
-        const val FALLBACK_CHECK_IN_REWARD = 10
     }
 }
 
 private fun CommunityHomeResponseDto.toInitialCommunityResult(): InitialCommunityResult {
     val remotePosts = feed.toFeedPosts()
-    val hasRemotePosts = remotePosts.isNotEmpty()
-    return if (hasRemotePosts) {
-        InitialCommunityResult(
-            posts = remotePosts,
-            approvedPets = approvedPets.toApprovedPets(),
-            walletBalance = wallet.balance,
-            message = "Community home ready.",
-            usedFallback = false,
-            checkInClaimed = dailyCheckIn.claimed,
-            pendingSubmissionCount = submissionsSummary.pendingCount
-        )
-    } else {
-        InitialCommunityResult(
-            posts = remotePosts,
-            approvedPets = approvedPets.toApprovedPets(),
-            walletBalance = wallet.balance,
-            message = "Local fallback active.",
-            usedFallback = true,
-            checkInClaimed = dailyCheckIn.claimed,
-            pendingSubmissionCount = submissionsSummary.pendingCount
-        )
-    }
+    return InitialCommunityResult(
+        posts = remotePosts,
+        approvedPets = approvedPets.toApprovedPets(),
+        walletBalance = wallet.balance,
+        message = "Community home ready.",
+        usedFallback = false,
+        checkInClaimed = dailyCheckIn.claimed,
+        pendingSubmissionCount = submissionsSummary.pendingCount
+    )
 }
 
 private fun String.isSafePublicToken(): Boolean {

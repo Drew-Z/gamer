@@ -7,47 +7,39 @@ import org.junit.Test
 
 class PetShellControllerTest {
     @Test
-    fun initialStateStartsOnLaunchBubble() {
+    fun initialStateStartsOnDesktopPetMode() {
         val state = PetShellController.initialState()
 
-        assertEquals(ShellPhase.LaunchBubble, state.phase)
-        assertEquals(PetAction.AppLoading, state.petAction)
-        assertEquals("Loading community...", state.speechBubble)
+        assertEquals(ShellPhase.DesktopPet, state.phase)
+        assertEquals(PetAction.Idle, state.petAction)
+        assertEquals("Desktop pet ready.", state.speechBubble)
         assertEquals(0, state.feedIndex)
         assertEquals(0, state.approvedPetIndex)
     }
 
     @Test
-    fun initialStateCanSkipLaunchBubbleForDesktopPetMode() {
-        val state = PetShellController.initialState(skipLaunchBubble = true)
-
-        assertEquals(ShellPhase.DesktopPet, state.phase)
-        assertEquals(PetAction.Idle, state.petAction)
-        assertEquals("Desktop pet ready.", state.speechBubble)
-    }
-
-    @Test
-    fun tappingBubbleOpensCommunity() {
-        val state = PetShellController.onBubbleTapped(PetShellController.initialState())
-
-        assertEquals(ShellPhase.Community, state.phase)
-        assertEquals(PetAction.BubbleOpen, state.petAction)
-        assertEquals("Welcome back, Demo Keeper.", state.speechBubble)
-    }
-
-    @Test
     fun desktopPetModeCanOpenCommunity() {
-        val desktopPet = PetShellController.initialState(skipLaunchBubble = true)
-        val state = PetShellController.openCommunity(desktopPet)
+        val state = PetShellController.openCommunity(PetShellController.initialState())
 
         assertEquals(ShellPhase.Community, state.phase)
-        assertEquals(PetAction.BubbleOpen, state.petAction)
+        assertEquals(PetAction.Idle, state.petAction)
         assertEquals("Welcome back, Demo Keeper.", state.speechBubble)
+    }
+
+    @Test
+    fun desktopPetModeCanReturnToDesktopPet() {
+        val desktopPet = PetShellController.initialState()
+        val state = PetShellController.openCommunity(desktopPet)
+        val returned = PetShellController.openDesktopPet(state)
+
+        assertEquals(ShellPhase.DesktopPet, returned.phase)
+        assertEquals(PetAction.Idle, returned.petAction)
+        assertEquals("Desktop pet ready.", returned.speechBubble)
     }
 
     @Test
     fun feedNavigationUpdatesIndexAndPetAction() {
-        val open = PetShellController.onBubbleTapped(
+        val open = PetShellController.openCommunity(
             PetShellController.initialState().copy(posts = testFeedPosts)
         )
         val next = PetShellController.navigateFeed(open, FeedDirection.Next)
@@ -64,7 +56,7 @@ class PetShellControllerTest {
 
     @Test
     fun feedNavigationDoesNotCreateFallbackPostsWhenFeedIsEmpty() {
-        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+        val open = PetShellController.openCommunity(PetShellController.initialState())
 
         val next = PetShellController.navigateFeed(open, FeedDirection.Next)
 
@@ -76,7 +68,7 @@ class PetShellControllerTest {
 
     @Test
     fun checkInClaimsRewardAndUpdatesWallet() {
-        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+        val open = PetShellController.openCommunity(PetShellController.initialState())
         assertFalse(open.checkInClaimed)
 
         val claimed = PetShellController.claimDailyReward(open)
@@ -119,6 +111,7 @@ class PetShellControllerTest {
 
         assertEquals(0, loaded.feedIndex)
         assertEquals(123, loaded.walletBalance)
+        assertTrue(loaded.remoteCommunitySynced)
         assertEquals(1, loaded.approvedPets.size)
         assertEquals("Stardust Dragon", loaded.approvedPets[0].displayName)
         assertEquals("Live feed", loaded.posts[loaded.feedIndex].title)
@@ -127,7 +120,7 @@ class PetShellControllerTest {
     }
 
     @Test
-    fun applyingFallbackCommunityLoadDoesNotCreatePlaceholderPosts() {
+    fun applyingUnavailableCommunityLoadDoesNotCreatePlaceholderPosts() {
         val state = PetShellController.initialState().copy(posts = testFeedPosts)
 
         val loaded = PetShellController.applyCommunityLoad(
@@ -136,12 +129,13 @@ class PetShellControllerTest {
             approvedPets = emptyList(),
             walletBalance = 90,
             usedFallback = true,
-            message = "Local fallback active."
+            message = "Remote community unavailable."
         )
 
         assertTrue(loaded.posts.isEmpty())
-        assertEquals(PetAction.AppLoading, loaded.petAction)
-        assertEquals("Local fallback active.", loaded.speechBubble)
+        assertFalse(loaded.remoteCommunitySynced)
+        assertEquals(PetAction.Idle, loaded.petAction)
+        assertEquals("Remote community unavailable.", loaded.speechBubble)
     }
 
     @Test
@@ -223,7 +217,7 @@ class PetShellControllerTest {
 
     @Test
     fun applyingRemoteCheckInUsesRemoteWalletBalance() {
-        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+        val open = PetShellController.openCommunity(PetShellController.initialState())
 
         val checkedIn = PetShellController.applyCheckInResult(
             state = open,
@@ -241,22 +235,22 @@ class PetShellControllerTest {
     }
 
     @Test
-    fun applyingFallbackCheckInUsesLocalIncrement() {
-        val open = PetShellController.onBubbleTapped(PetShellController.initialState())
+    fun applyingUnavailableCheckInDoesNotClaimLocalReward() {
+        val open = PetShellController.openCommunity(PetShellController.initialState())
 
         val checkedIn = PetShellController.applyCheckInResult(
             state = open,
             walletBalance = null,
-            claimed = true,
-            rewardAmount = 10,
+            claimed = false,
+            rewardAmount = 0,
             usedFallback = true,
-            message = "Local check-in fallback active."
+            message = "Remote check-in unavailable."
         )
 
-        assertEquals(100, checkedIn.walletBalance)
-        assertTrue(checkedIn.checkInClaimed)
-        assertEquals(PetAction.Reward, checkedIn.petAction)
-        assertEquals("Local check-in fallback active.", checkedIn.speechBubble)
+        assertEquals(90, checkedIn.walletBalance)
+        assertFalse(checkedIn.checkInClaimed)
+        assertEquals(PetAction.Idle, checkedIn.petAction)
+        assertEquals("Remote check-in unavailable.", checkedIn.speechBubble)
     }
 
     private fun approvedPet(

@@ -2,7 +2,6 @@ package com.gamer.community.petshell
 
 object PetShellController {
     fun initialState(
-        skipLaunchBubble: Boolean = false,
         selectedDefaultDesktopPetId: String = ""
     ): PetShellState {
         val defaultPets = defaultDesktopPets()
@@ -10,9 +9,9 @@ object PetShellController {
             .takeIf { requestedId -> defaultPets.any { it.id == requestedId } }
             ?: defaultPets.firstOrNull()?.id.orEmpty()
         return PetShellState(
-            phase = if (skipLaunchBubble) ShellPhase.DesktopPet else ShellPhase.LaunchBubble,
-            petAction = if (skipLaunchBubble) PetAction.Idle else PetAction.AppLoading,
-            speechBubble = if (skipLaunchBubble) "Desktop pet ready." else "Loading community...",
+            phase = ShellPhase.DesktopPet,
+            petAction = PetAction.Idle,
+            speechBubble = "Desktop pet ready.",
             feedIndex = 0,
             walletBalance = 90,
             checkInClaimed = false,
@@ -25,13 +24,10 @@ object PetShellController {
         )
     }
 
-    fun onBubbleTapped(state: PetShellState): PetShellState =
-        openCommunity(state)
-
     fun openCommunity(state: PetShellState): PetShellState =
         state.copy(
             phase = ShellPhase.Community,
-            petAction = PetAction.BubbleOpen,
+            petAction = PetAction.Idle,
             speechBubble = "Welcome back, Demo Keeper."
         )
 
@@ -132,6 +128,7 @@ object PetShellController {
             walletBalance = walletBalance,
             checkInClaimed = checkInClaimed,
             pendingSubmissionCount = pendingSubmissionCount,
+            remoteCommunitySynced = !usedFallback,
             approvedPets = approvedPets,
             approvedPetIndex = 0,
             posts = posts
@@ -164,6 +161,13 @@ object PetShellController {
             return state.copy(
                 petAction = PetAction.Idle,
                 speechBubble = "Daily reward already claimed."
+            )
+        }
+
+        if (usedFallback) {
+            return state.copy(
+                petAction = PetAction.Idle,
+                speechBubble = message
             )
         }
 

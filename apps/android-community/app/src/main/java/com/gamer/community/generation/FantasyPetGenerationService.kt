@@ -329,11 +329,11 @@ class FantasyPetGenerationService(
                 )
 
     private fun publicPreviewUrl(appJobId: String, artifact: PetGenerationArtifactDto): String {
-        val fallbackUrl = "/pet-generation-jobs/${appJobId.pathSegment()}/artifacts/${artifact.downloadId.pathSegment()}"
+        val artifactRoute = "/pet-generation-jobs/${appJobId.pathSegment()}/artifacts/${artifact.downloadId.pathSegment()}"
         val url = artifact.downloadUrl
             .trim()
             .takeIf { it.isPublicDownloadUrl() }
-            ?: fallbackUrl
+            ?: artifactRoute
         val lowerUrl = url.lowercase()
         return when {
             lowerUrl.startsWith("http://") || lowerUrl.startsWith("https://") -> url

@@ -1,4 +1,4 @@
-package com.gamer.community.ui
+﻿package com.gamer.community.ui
 
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -71,8 +71,30 @@ class PetShellAppFlowTest {
             .commit()
     }
 
+    private fun seedDefaultDesktopPet() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.getSharedPreferences("pet-shell-ui", 0)
+            .edit()
+            .putBoolean("defaultDesktopPetInitialized", true)
+            .putString("defaultDesktopPetId", "electric-dormouse-hd")
+            .commit()
+    }
+
+    private fun openCommunityFromDesktopPet() {
+        composeRule.onNodeWithContentDescription("desktop-pet-open-community")
+            .performScrollTo()
+            .performClick()
+    }
+
+    private fun openGenerateFromDesktopPet() {
+        composeRule.onNodeWithContentDescription("desktop-pet-open-generate")
+            .performScrollTo()
+            .performClick()
+    }
+
     @Test
-    fun launchBubbleHasStableAutomationEntryPoint() {
+    fun desktopPetModeHasStableAutomationEntryPoint() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -80,9 +102,9 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
+        composeRule.onNodeWithContentDescription("gamer-desktop-pet-mode")
             .assertIsDisplayed()
-            .performClick()
+        openCommunityFromDesktopPet()
         composeRule.onNodeWithContentDescription("gamer-community-home")
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("gamer-tab-generate")
@@ -95,6 +117,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun communityShellUsesBottomTabsForCommunityGenerationAndProfile() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -102,8 +125,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
+        openCommunityFromDesktopPet()
 
         composeRule.onNodeWithContentDescription("gamer-community-home")
             .assertIsDisplayed()
@@ -126,6 +148,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun communityHeaderExposesImmersiveBackdropAcrossShellTabs() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -133,8 +156,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
+        openCommunityFromDesktopPet()
         composeRule.onNodeWithContentDescription("gamer-immersive-header-backdrop")
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("gamer-tab-generate")
@@ -149,6 +171,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun communityHomePresentsGameCommunityChrome() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -156,8 +179,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
+        openCommunityFromDesktopPet()
 
         composeRule.onNodeWithContentDescription("community-channel-rail")
             .assertIsDisplayed()
@@ -180,6 +202,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun profileWorkspacePresentsKeeperHomeSections() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -187,8 +210,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
+        openCommunityFromDesktopPet()
         composeRule.onNodeWithContentDescription("gamer-tab-profile")
             .performClick()
 
@@ -206,6 +228,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun petCompanionAvatarHasStableEntryPointAcrossShellSurfaces() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -216,8 +239,7 @@ class PetShellAppFlowTest {
         composeRule.onAllNodesWithContentDescription("gamer-pet-avatar")
             .onFirst()
             .assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
+        openCommunityFromDesktopPet()
         composeRule.onAllNodesWithContentDescription("gamer-pet-avatar")
             .onFirst()
             .assertIsDisplayed()
@@ -230,6 +252,7 @@ class PetShellAppFlowTest {
 
     @Test
     fun generationWorkspacePresentsCreatorWorkbenchSections() {
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -237,10 +260,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate")
-            .performClick()
+        openGenerateFromDesktopPet()
 
         composeRule.onNodeWithContentDescription("generation-studio-hero")
             .assertIsDisplayed()
@@ -273,7 +293,7 @@ class PetShellAppFlowTest {
     }
 
     @Test
-    fun launchBubbleLanguageToggleSwitchesBetweenChineseAndEnglish() {
+    fun defaultPetOnboardingLanguageToggleSwitchesBetweenChineseAndEnglish() {
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -281,20 +301,19 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithText("正在加载应用").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("default-desktop-pet-onboarding").assertIsDisplayed()
+        composeRule.onNodeWithText("选择你的第一只桌宠").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("切换到英文").performClick()
 
-        composeRule.onNodeWithText("AppLoading").assertIsDisplayed()
-        composeRule.onNodeWithText("Tap the bubble to enter").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose your first desktop pet").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Switch to Chinese").performClick()
 
-        composeRule.onNodeWithText("正在加载应用").assertIsDisplayed()
-        composeRule.onNodeWithText("点击气泡进入").assertIsDisplayed()
+        composeRule.onNodeWithText("选择你的第一只桌宠").assertIsDisplayed()
     }
-
     @Test
     fun generationPanelCreatesJobAcceptsCandidateAndDownloadsPetPackage() {
         val generationClient = RecordingFantasyPetGenerationClient()
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(FakeCommunityApiClient()),
@@ -306,8 +325,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithText("本地兜底数据已启用。").performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate").performClick()
+        openGenerateFromDesktopPet()
         composeRule.onNodeWithContentDescription("generation-public-api-boundary-notice")
             .performScrollTo()
             .assertIsDisplayed()
@@ -321,13 +339,13 @@ class PetShellAppFlowTest {
         assertEquals("fantasy-pet.app-job-create-request.v1", generationClient.createdRequest?.schema)
         assertEquals("tiny stardust dragon", generationClient.createdRequest?.description)
 
-        composeRule.onNodeWithText("候选图画廊")
+        composeRule.onNodeWithText("鍊欓€夊浘鐢诲粖")
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithTag("candidate-select-candidate-1")
             .performScrollTo()
             .performClick()
-        composeRule.onNodeWithText("已选为审核对象")
+        composeRule.onNodeWithText("宸查€変负瀹℃牳瀵硅薄")
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithTag("review-accept")
@@ -358,6 +376,7 @@ class PetShellAppFlowTest {
     fun generationPanelDownloadsPackageCreatesImportDraftAndSubmitsCommunityReview() {
         val communityClient = RecordingCommunityApiClient()
         val generationClient = RecordingFantasyPetGenerationClient()
+        seedDefaultDesktopPet()
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(communityClient),
@@ -369,8 +388,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithText("本地兜底数据已启用。").performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate").performClick()
+        openGenerateFromDesktopPet()
         composeRule.onNodeWithTag("generation-create")
             .performScrollTo()
             .performClick()
@@ -427,6 +445,7 @@ class PetShellAppFlowTest {
             .edit()
             .putString("appJobId", "public-lifecycle-smoke")
             .commit()
+        seedDefaultDesktopPet()
 
         composeRule.setContent {
             PetShellApp(
@@ -438,14 +457,8 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate")
-            .performClick()
+        openGenerateFromDesktopPet()
 
-        composeRule.onNodeWithText("契约演示资源已载入；真实生成 worker 尚未运行。")
-            .performScrollTo()
-            .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("generation-contract-demo-notice")
             .performScrollTo()
             .assertIsDisplayed()
@@ -465,6 +478,7 @@ class PetShellAppFlowTest {
             .putString("appJobId", "queued-job-ui")
             .commit()
         val generationClient = QueuedFantasyPetGenerationClient()
+        seedDefaultDesktopPet()
 
         composeRule.setContent {
             PetShellApp(
@@ -476,18 +490,12 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate")
-            .performClick()
+        openGenerateFromDesktopPet()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             generationClient.pollCount > 0
         }
 
         composeRule.onNodeWithContentDescription("generation-server-worker-wait-notice")
-            .performScrollTo()
-            .assertIsDisplayed()
-        composeRule.onNodeWithText("正在等待可信服务端 worker；app 只负责创建和轮询任务。")
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithTag("review-accept")
@@ -548,6 +556,8 @@ class PetShellAppFlowTest {
         context.getSharedPreferences("pet-shell-ui", 0)
             .edit()
             .putString("language", "en")
+            .putBoolean("defaultDesktopPetInitialized", true)
+            .putString("defaultDesktopPetId", "electric-dormouse-hd")
             .commit()
         context.getSharedPreferences("fantasy-pet-generation", 0)
             .edit()
@@ -568,10 +578,7 @@ class PetShellAppFlowTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("launch-bubble-enter")
-            .performClick()
-        composeRule.onNodeWithContentDescription("gamer-tab-generate")
-            .performClick()
+        openGenerateFromDesktopPet()
         composeRule.onNodeWithTag("generation-create")
             .performScrollTo()
             .assertIsEnabled()

@@ -1,15 +1,12 @@
 package com.gamer.community.petshell
 
 enum class ShellPhase {
-    LaunchBubble,
     DesktopPet,
     Community
 }
 
 enum class PetAction {
     Idle,
-    AppLoading,
-    BubbleOpen,
     FeedNext,
     FeedPrevious,
     FeedSkip,
@@ -73,6 +70,7 @@ data class PetShellState(
     val walletBalance: Int,
     val checkInClaimed: Boolean,
     val pendingSubmissionCount: Int = 0,
+    val remoteCommunitySynced: Boolean = false,
     val approvedPets: List<ApprovedPet>,
     val approvedPetIndex: Int,
     val defaultDesktopPets: List<DefaultDesktopPet>,

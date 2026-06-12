@@ -284,8 +284,6 @@ fun PetShellApp(
     }
     var state by remember {
         val initialState = PetShellController.initialState(
-            skipLaunchBubble = (directPetLaunchEnabled || openDesktopPetOnStart) &&
-                !openProfileOnStart,
             selectedDefaultDesktopPetId = uiPrefs.getString("defaultDesktopPetId", "").orEmpty()
         )
         mutableStateOf(
@@ -371,7 +369,7 @@ fun PetShellApp(
 
     fun completeDefaultDesktopPetInitialization(petId: String) {
         val nextState = PetShellController.selectDefaultDesktopPet(state, petId)
-        state = nextState
+        state = PetShellController.openDesktopPet(nextState)
         defaultDesktopPetInitialized = true
         uiPrefs.edit()
             .putString("defaultDesktopPetId", nextState.selectedDefaultDesktopPetId)
@@ -655,16 +653,6 @@ fun PetShellApp(
                     onComplete = ::completeDefaultDesktopPetInitialization
                 )
             } else when (state.phase) {
-                ShellPhase.LaunchBubble -> LaunchBubbleScreen(
-                    state = state,
-                    language = language,
-                    strings = strings,
-                    onLanguageChange = ::changeLanguage,
-                    onBubbleTapped = {
-                        state = PetShellController.onBubbleTapped(state)
-                    }
-                )
-
                 ShellPhase.DesktopPet -> DesktopPetScreen(
                     state = state,
                     language = language,
@@ -1260,52 +1248,6 @@ private fun DefaultDesktopPetStarterCard(
 }
 
 @Composable
-private fun LaunchBubbleScreen(
-    state: PetShellState,
-    language: PetShellLanguage,
-    strings: PetShellStrings,
-    onLanguageChange: (PetShellLanguage) -> Unit,
-    onBubbleTapped: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFFE9F4FF), Color(0xFFF9FAFC))
-                )
-            )
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        LanguageToggle(
-            language = language,
-            strings = strings,
-            onLanguageChange = onLanguageChange,
-            modifier = Modifier.align(Alignment.TopEnd)
-        )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            PetAvatar(action = state.petAction, strings = strings)
-            Spacer(modifier = Modifier.height(30.dp))
-            SpeechBubble(
-                text = strings.speechBubble(state.speechBubble),
-                modifier = Modifier
-                    .semantics {
-                        contentDescription = strings.launchBubbleEnterContentDescription
-                    }
-                    .clickable(onClick = onBubbleTapped)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = strings.launchEnterHint,
-                style = MaterialTheme.typography.bodySmall,
-                            color = GamerUiTokens.ColorRole.Muted
-            )
-        }
-    }
-}
-
-@Composable
 private fun DesktopPetScreen(
     state: PetShellState,
     language: PetShellLanguage,
@@ -1668,7 +1610,11 @@ private fun DesktopPetActionDock(
             ) {
                 Button(
                     onClick = onOpenCommunity,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = strings.desktopPetOpenCommunityContentDescription
+                        }
                 ) {
                     Text(
                         text = strings.desktopPetOpenCommunity,
@@ -1678,7 +1624,11 @@ private fun DesktopPetActionDock(
                 }
                 Button(
                     onClick = onOpenGenerate,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = strings.desktopPetOpenGenerateContentDescription
+                        }
                 ) {
                     Text(
                         text = strings.desktopPetOpenGenerate,
@@ -1688,7 +1638,11 @@ private fun DesktopPetActionDock(
                 }
                 Button(
                     onClick = onOpenProfile,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics {
+                            contentDescription = strings.desktopPetOpenProfileContentDescription
+                        }
                 ) {
                     Text(
                         text = strings.desktopPetOpenProfile,
@@ -2101,7 +2055,7 @@ private fun CommunityStatusSummary(
     state: PetShellState,
     strings: PetShellStrings
 ) {
-    val remoteSynced = state.speechBubble != "Local fallback active."
+    val remoteSynced = state.remoteCommunitySynced
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -2132,7 +2086,7 @@ private fun CommunityStatusSummary(
                     label = if (remoteSynced) {
                         strings.communityStatusRemoteSynced
                     } else {
-                        strings.communityStatusLocalFallback
+                        strings.communityStatusRemoteUnavailable
                     },
                     accent = if (remoteSynced) GamerUiTokens.ColorRole.Identity else GamerUiTokens.ColorRole.Reward
                 )
@@ -2537,8 +2491,10 @@ private fun GenerationWorkspace(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Box(modifier = Modifier.padding(4.dp)) {
-                            PetArtworkBadge(
+                            DefaultDesktopPetPreviewArtwork(
+                                pet = state.selectedDefaultDesktopPet(),
                                 action = state.petAction,
+                                strings = strings,
                                 modifier = Modifier
                                     .size(60.dp)
                                     .semantics {
@@ -2724,8 +2680,10 @@ private fun ProfileKeeperHero(
                 shape = GamerUiTokens.Shape.Card
             ) {
                 Box(modifier = Modifier.padding(6.dp)) {
-                    PetArtworkBadge(
+                    DefaultDesktopPetPreviewArtwork(
+                        pet = state.selectedDefaultDesktopPet(),
                         action = state.petAction,
+                        strings = strings,
                         modifier = Modifier.size(86.dp)
                     )
                 }
@@ -2884,12 +2842,14 @@ private fun ProfilePetShelf(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ApprovedPetPreviewArtwork(
-                    pet = selectedPet,
-                    action = state.petAction,
-                    strings = strings,
-                    modifier = Modifier.size(82.dp)
-                )
+                if (hasApprovedPets) {
+                    ApprovedPetPreviewArtwork(
+                        pet = selectedPet,
+                        action = state.petAction,
+                        strings = strings,
+                        modifier = Modifier.size(82.dp)
+                    )
+                }
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -2907,7 +2867,7 @@ private fun ProfilePetShelf(
                     Text(
                         text = approvedPetDisplayName(
                             pet = selectedPet,
-                            fallback = if (selectedPet == null) {
+                            emptyLabel = if (selectedPet == null) {
                                 strings.desktopPetActivePetMissing
                             } else {
                                 strings.desktopPetActivePetReady
@@ -3139,7 +3099,7 @@ private fun CompactDesktopPetPreviewThumbnail(
         strings = strings,
         modifier = modifier,
         loading = {
-            PetArtworkBadge(
+            StatusIconMark(
                 action = PetAction.Idle,
                 modifier = Modifier.fillMaxSize()
             )
@@ -3548,7 +3508,11 @@ private fun PetCompanionStrip(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Box(modifier = Modifier.padding(8.dp)) {
-                        PetAvatar(action = state.petAction, strings = strings)
+                        DefaultDesktopPetAvatar(
+                            pet = state.selectedDefaultDesktopPet(),
+                            action = state.petAction,
+                            strings = strings
+                        )
                     }
                 }
                 Column(
@@ -3683,12 +3647,14 @@ private fun ApprovedPetShowcaseBlock(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ApprovedPetPreviewArtwork(
-                    pet = selectedPet,
-                    action = state.petAction,
-                    strings = strings,
-                    modifier = Modifier.size(82.dp)
-                )
+                if (hasApprovedPets) {
+                    ApprovedPetPreviewArtwork(
+                        pet = selectedPet,
+                        action = state.petAction,
+                        strings = strings,
+                        modifier = Modifier.size(82.dp)
+                    )
+                }
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -3696,7 +3662,7 @@ private fun ApprovedPetShowcaseBlock(
                     Text(
                         text = approvedPetDisplayName(
                             pet = selectedPet,
-                            fallback = if (selectedPet == null) {
+                            emptyLabel = if (selectedPet == null) {
                                 strings.desktopPetActivePetMissing
                             } else {
                                 strings.desktopPetActivePetReady
@@ -3925,7 +3891,7 @@ private fun FeedEmptyBlock(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PetArtworkBadge(
+            StatusIconMark(
                 action = PetAction.Idle,
                 modifier = Modifier.size(52.dp)
             )
@@ -3983,7 +3949,7 @@ private fun FeedPostBlock(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PetArtworkBadge(
+                    StatusIconMark(
                         action = PetAction.Review,
                         modifier = Modifier.size(52.dp)
                     )
@@ -4449,25 +4415,60 @@ internal fun petShellHeaderBackgroundSpec(tab: PetShellTab): PetShellHeaderBackg
     }
 
 @Composable
-private fun PetArtworkBadge(
+private fun StatusIconMark(
     action: PetAction,
     modifier: Modifier = Modifier
 ) {
-    val palette = petAvatarPalette(action)
+    val accent = petActionAccent(action)
     Box(
         modifier = modifier
             .clip(GamerUiTokens.Shape.Card)
-            .background(GamerUiTokens.ColorRole.Raised),
+            .background(accent.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawDesktopPetMascot(
-                palette = palette,
-                action = action
+            drawRoundRect(
+                color = Color.White.copy(alpha = 0.82f),
+                topLeft = Offset(size.width * 0.24f, size.height * 0.20f),
+                size = Size(size.width * 0.52f, size.height * 0.60f),
+                cornerRadius = CornerRadius(size.minDimension * 0.08f, size.minDimension * 0.08f)
+            )
+            drawLine(
+                color = accent,
+                start = Offset(size.width * 0.36f, size.height * 0.40f),
+                end = Offset(size.width * 0.64f, size.height * 0.40f),
+                strokeWidth = size.minDimension * 0.05f,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = accent.copy(alpha = 0.76f),
+                start = Offset(size.width * 0.36f, size.height * 0.52f),
+                end = Offset(size.width * 0.58f, size.height * 0.52f),
+                strokeWidth = size.minDimension * 0.05f,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = accent.copy(alpha = 0.54f),
+                start = Offset(size.width * 0.36f, size.height * 0.64f),
+                end = Offset(size.width * 0.52f, size.height * 0.64f),
+                strokeWidth = size.minDimension * 0.05f,
+                cap = StrokeCap.Round
             )
         }
     }
 }
+
+private fun petActionAccent(action: PetAction): Color =
+    when (action) {
+        PetAction.Reward -> GamerUiTokens.ColorRole.Reward
+        PetAction.Review -> GamerUiTokens.ColorRole.Review
+        PetAction.FeedNext,
+        PetAction.FeedPrevious,
+        PetAction.FeedSkip,
+        PetAction.ShowcaseNext,
+        PetAction.ShowcasePrevious -> GamerUiTokens.ColorRole.Identity
+        else -> GamerUiTokens.ColorRole.Muted
+    }
 
 private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundSpec) {
     drawRect(
@@ -6031,7 +6032,7 @@ private fun GenerationWaitingCandidateNotice(strings: PetShellStrings) {
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PetArtworkBadge(
+            StatusIconMark(
                 action = PetAction.Review,
                 modifier = Modifier.size(54.dp)
             )
@@ -6266,7 +6267,7 @@ private fun ApprovedPetPreviewArtwork(
     val previewUrl = approvedPetPreviewUrl(pet)
 
     if (previewUrl.isBlank()) {
-        PetArtworkBadge(action = action, modifier = modifier)
+        StatusIconMark(action = action, modifier = modifier)
         return
     }
 
@@ -6276,8 +6277,8 @@ private fun ApprovedPetPreviewArtwork(
         modifier = modifier,
         cropFirstSpritesheetFrame = true,
         loading = loading,
-        fallback = {
-            PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
+        unavailable = {
+            StatusIconMark(action = action, modifier = Modifier.fillMaxSize())
         }
     )
 }
@@ -6293,7 +6294,7 @@ private fun DefaultDesktopPetPreviewArtwork(
     val previewAssetPath = pet?.previewAssetPath.orEmpty()
 
     if (previewAssetPath.isBlank()) {
-        PetArtworkBadge(action = action, modifier = modifier)
+        StatusIconMark(action = action, modifier = modifier)
         return
     }
 
@@ -6302,8 +6303,8 @@ private fun DefaultDesktopPetPreviewArtwork(
         strings = strings,
         modifier = modifier,
         loading = loading,
-        fallback = {
-            PetArtworkBadge(action = action, modifier = Modifier.fillMaxSize())
+        unavailable = {
+            StatusIconMark(action = action, modifier = Modifier.fillMaxSize())
         }
     )
 }
@@ -6314,7 +6315,7 @@ private fun LocalAssetPreviewImage(
     strings: PetShellStrings,
     modifier: Modifier = Modifier,
     loading: @Composable (() -> Unit)? = null,
-    fallback: @Composable (() -> Unit)? = null
+    unavailable: @Composable (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var image by remember(assetPath) { mutableStateOf<ImageBitmap?>(null) }
@@ -6353,8 +6354,8 @@ private fun LocalAssetPreviewImage(
             )
         } else if (!failed && loading != null) {
             loading()
-        } else if (failed && fallback != null) {
-            fallback()
+        } else if (failed && unavailable != null) {
+            unavailable()
         } else {
             Text(
                 text = if (failed) strings.previewUnavailable else strings.loadingPreview,
@@ -6373,7 +6374,7 @@ private fun RemotePreviewImage(
     modifier: Modifier = Modifier,
     cropFirstSpritesheetFrame: Boolean = false,
     loading: @Composable (() -> Unit)? = null,
-    fallback: @Composable (() -> Unit)? = null
+    unavailable: @Composable (() -> Unit)? = null
 ) {
     var image by remember(previewUrl) { mutableStateOf<ImageBitmap?>(null) }
     var failed by remember(previewUrl) { mutableStateOf(false) }
@@ -6423,8 +6424,8 @@ private fun RemotePreviewImage(
             )
         } else if (!failed && loading != null) {
             loading()
-        } else if (failed && fallback != null) {
-            fallback()
+        } else if (failed && unavailable != null) {
+            unavailable()
         } else {
             Text(
                 text = if (failed) strings.previewUnavailable else strings.loadingPreview,
@@ -6436,24 +6437,22 @@ private fun RemotePreviewImage(
 }
 
 @Composable
-private fun PetAvatar(
+private fun DefaultDesktopPetAvatar(
+    pet: DefaultDesktopPet?,
     action: PetAction,
     strings: PetShellStrings
 ) {
-    val palette = petAvatarPalette(action)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Canvas(
+        DefaultDesktopPetPreviewArtwork(
+            pet = pet,
+            action = action,
+            strings = strings,
             modifier = Modifier
                 .size(96.dp)
                 .semantics {
                     contentDescription = strings.petAvatarContentDescription
                 }
-        ) {
-            drawDesktopPetMascot(
-                palette = palette,
-                action = action
-            )
-        }
+        )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = strings.petActionLabel(action),
@@ -6462,161 +6461,6 @@ private fun PetAvatar(
             textAlign = TextAlign.Center
         )
     }
-}
-
-private data class PetAvatarPalette(
-    val auraStart: Color,
-    val auraEnd: Color,
-    val body: Color,
-    val bodyShade: Color,
-    val accent: Color
-)
-
-private fun petAvatarPalette(action: PetAction): PetAvatarPalette =
-    when (action) {
-        PetAction.AppLoading,
-        PetAction.BubbleOpen -> PetAvatarPalette(
-            auraStart = Color(0xFFD7F3EE),
-            auraEnd = Color(0xFFFFE2C7),
-            body = Color(0xFF58C7B2),
-            bodyShade = Color(0xFF0F766E),
-            accent = Color(0xFFF97316)
-        )
-        PetAction.Reward -> PetAvatarPalette(
-            auraStart = Color(0xFFFFE8B6),
-            auraEnd = Color(0xFFFFC6D4),
-            body = Color(0xFFFFB84D),
-            bodyShade = Color(0xFFF97316),
-            accent = Color(0xFFEF476F)
-        )
-        PetAction.Review -> PetAvatarPalette(
-            auraStart = Color(0xFFE7F0FF),
-            auraEnd = Color(0xFFD7F3EE),
-            body = Color(0xFF76A9FA),
-            bodyShade = Color(0xFF2F80ED),
-            accent = Color(0xFF0F766E)
-        )
-        else -> PetAvatarPalette(
-            auraStart = Color(0xFFFFD166),
-            auraEnd = Color(0xFFEF476F),
-            body = Color(0xFFFF8F70),
-            bodyShade = Color(0xFFEF476F),
-            accent = Color(0xFFFFD166)
-        )
-    }
-
-private fun DrawScope.drawDesktopPetMascot(
-    palette: PetAvatarPalette,
-    action: PetAction
-) {
-    val width = size.width
-    val height = size.height
-    val centerX = width * 0.5f
-    val hop = when (action) {
-        PetAction.FeedNext,
-        PetAction.FeedPrevious,
-        PetAction.FeedSkip,
-        PetAction.ShowcaseNext,
-        PetAction.ShowcasePrevious -> -height * 0.04f
-        else -> 0f
-    }
-    val look = when (action) {
-        PetAction.FeedPrevious,
-        PetAction.ShowcasePrevious -> -1f
-        PetAction.FeedNext,
-        PetAction.FeedSkip,
-        PetAction.ShowcaseNext -> 1f
-        else -> 0f
-    }
-
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(palette.auraStart, palette.auraEnd),
-            center = Offset(centerX, height * 0.44f),
-            radius = width * 0.52f
-        ),
-        radius = width * 0.48f,
-        center = Offset(centerX, height * 0.48f)
-    )
-    drawOval(
-        color = Color(0x33000000),
-        topLeft = Offset(width * 0.24f, height * 0.78f),
-        size = Size(width * 0.52f, height * 0.1f)
-    )
-
-    val tail = Path().apply {
-        moveTo(width * 0.72f, height * 0.52f + hop)
-        cubicTo(
-            width * 0.94f,
-            height * 0.42f + hop,
-            width * 0.88f,
-            height * 0.24f + hop,
-            width * 0.72f,
-            height * 0.31f + hop
-        )
-    }
-    drawPath(
-        path = tail,
-        color = palette.bodyShade,
-        style = Stroke(width = width * 0.1f, cap = StrokeCap.Round)
-    )
-
-    val leftEar = Path().apply {
-        moveTo(width * 0.31f, height * 0.35f + hop)
-        lineTo(width * 0.38f, height * 0.14f + hop)
-        lineTo(width * 0.48f, height * 0.34f + hop)
-        close()
-    }
-    val rightEar = Path().apply {
-        moveTo(width * 0.52f, height * 0.34f + hop)
-        lineTo(width * 0.63f, height * 0.14f + hop)
-        lineTo(width * 0.7f, height * 0.35f + hop)
-        close()
-    }
-    drawPath(leftEar, palette.bodyShade)
-    drawPath(rightEar, palette.bodyShade)
-
-    drawOval(
-        color = palette.body,
-        topLeft = Offset(width * 0.24f, height * 0.29f + hop),
-        size = Size(width * 0.52f, height * 0.5f)
-    )
-    drawOval(
-        color = Color.White.copy(alpha = 0.35f),
-        topLeft = Offset(width * 0.38f, height * 0.52f + hop),
-        size = Size(width * 0.24f, height * 0.2f)
-    )
-    drawCircle(
-        color = Color(0xFF101828),
-        radius = width * 0.045f,
-        center = Offset(width * (0.41f + look * 0.03f), height * 0.46f + hop)
-    )
-    drawCircle(
-        color = Color(0xFF101828),
-        radius = width * 0.045f,
-        center = Offset(width * (0.59f + look * 0.03f), height * 0.46f + hop)
-    )
-    drawCircle(
-        color = Color.White,
-        radius = width * 0.015f,
-        center = Offset(width * (0.425f + look * 0.03f), height * 0.445f + hop)
-    )
-    drawCircle(
-        color = Color.White,
-        radius = width * 0.015f,
-        center = Offset(width * (0.605f + look * 0.03f), height * 0.445f + hop)
-    )
-    drawCircle(
-        color = palette.accent,
-        radius = width * 0.035f,
-        center = Offset(width * 0.5f, height * 0.54f + hop)
-    )
-    drawRoundRect(
-        color = Color(0x33000000),
-        topLeft = Offset(width * 0.42f, height * 0.63f + hop),
-        size = Size(width * 0.16f, height * 0.025f),
-        cornerRadius = CornerRadius(width * 0.02f, width * 0.02f)
-    )
 }
 
 @Composable
@@ -6851,7 +6695,7 @@ internal fun approvedPetShowcaseTitle(
 ): String =
     approvedPetDisplayName(
         pet = pets.selectedApprovedPet(selectedIndex),
-        fallback = "Awaiting approved pet"
+        emptyLabel = "Awaiting approved pet"
     )
 
 internal fun approvedPetShowcaseDetail(
@@ -6984,9 +6828,9 @@ internal fun desktopPetOverlayDisplayName(pet: DefaultDesktopPet?): String {
 
 private fun approvedPetDisplayName(
     pet: ApprovedPet?,
-    fallback: String
+    emptyLabel: String
 ): String =
-    desktopPetOverlayDisplayName(pet).ifBlank { fallback }
+    desktopPetOverlayDisplayName(pet).ifBlank { emptyLabel }
 
 private fun List<ApprovedPet>.selectedApprovedPet(selectedIndex: Int): ApprovedPet? {
     if (isEmpty()) return null

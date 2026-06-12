@@ -137,7 +137,7 @@ class CommunityRepositoryTest {
     }
 
     @Test
-    fun loadInitialCommunityFallsBackWhenRemoteFails() = runTest {
+    fun loadInitialCommunityReturnsEmptyStateWhenRemoteFails() = runTest {
         val repository = CommunityRepository(
             client = FakeCommunityApiClient(
                 feedResponse = ApiCallResult.Failure("network_down"),
@@ -148,8 +148,8 @@ class CommunityRepositoryTest {
         val result = repository.loadInitialCommunity()
 
         assertTrue(result.usedFallback)
-        assertEquals("Local fallback active.", result.message)
-        assertEquals("Stardust dragon launch pose", result.posts[0].title)
+        assertEquals("Remote community unavailable.", result.message)
+        assertTrue(result.posts.isEmpty())
         assertEquals(90, result.walletBalance)
         assertTrue(result.approvedPets.isEmpty())
     }
@@ -180,7 +180,7 @@ class CommunityRepositoryTest {
         val result = repository.loadInitialCommunity()
 
         assertTrue(result.usedFallback)
-        assertEquals("Local fallback active.", result.message)
+        assertEquals("Remote community unavailable.", result.message)
         assertEquals(1, result.posts.size)
         assertEquals("Live feed", result.posts[0].title)
         assertEquals(90, result.walletBalance)
@@ -204,13 +204,13 @@ class CommunityRepositoryTest {
         val result = repository.loadInitialCommunity()
 
         assertTrue(result.usedFallback)
-        assertEquals("Local fallback active.", result.message)
-        assertEquals("Stardust dragon launch pose", result.posts[0].title)
+        assertEquals("Remote community unavailable.", result.message)
+        assertTrue(result.posts.isEmpty())
         assertEquals(123, result.walletBalance)
     }
 
     @Test
-    fun loadInitialCommunityFallsBackWhenRemoteFeedIsEmpty() = runTest {
+    fun loadInitialCommunityKeepsEmptyFeedWhenRemoteFeedIsEmpty() = runTest {
         val repository = CommunityRepository(
             client = FakeCommunityApiClient(
                 feedResponse = ApiCallResult.Success(FeedResponseDto(items = emptyList())),
@@ -226,9 +226,9 @@ class CommunityRepositoryTest {
 
         val result = repository.loadInitialCommunity()
 
-        assertTrue(result.usedFallback)
-        assertEquals("Local fallback active.", result.message)
-        assertEquals("Stardust dragon launch pose", result.posts[0].title)
+        assertFalse(result.usedFallback)
+        assertEquals("Community ready.", result.message)
+        assertTrue(result.posts.isEmpty())
         assertEquals(123, result.walletBalance)
     }
 
@@ -275,10 +275,10 @@ class CommunityRepositoryTest {
         val result = repository.claimDailyCheckIn()
 
         assertTrue(result.usedFallback)
-        assertEquals("Local check-in fallback active.", result.message)
+        assertEquals("Remote check-in unavailable.", result.message)
         assertNull(result.walletBalance)
-        assertEquals(10, result.rewardAmount)
-        assertTrue(result.claimed)
+        assertEquals(0, result.rewardAmount)
+        assertFalse(result.claimed)
     }
 
     @Test
