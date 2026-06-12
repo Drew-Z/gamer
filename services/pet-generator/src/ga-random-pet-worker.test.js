@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectNextReworkRequest } from "./ga-random-pet-worker.js";
+import {
+  createWorkerConfig,
+  selectNextReworkRequest
+} from "./ga-random-pet-worker.js";
 
 const request = (requestId) => ({
   schema: "gamer.ga-pet-rework-request.v1",
@@ -82,4 +85,19 @@ test("selectNextReworkRequest treats completed and failed requests as terminal",
   );
 
   assert.equal(selected, null);
+});
+
+test("createWorkerConfig supports the l0veyou proxy provider", () => {
+  const config = createWorkerConfig({
+    GA_PET_API_PROVIDER: "l0veyou",
+    GA_PET_API_KEY: "test-secret",
+    GA_PET_IMAGE_MODEL: "nano-banana-2",
+    GA_PET_VIDEO_MODEL: "ltx-video"
+  });
+
+  assert.equal(config.apiProvider, "l0veyou");
+  assert.equal(config.apiBaseUrl, "https://l0veyou.com");
+  assert.equal(config.apiKey, "test-secret");
+  assert.equal(config.imageModel, "nano-banana-2");
+  assert.equal(config.videoModel, "ltx-video");
 });

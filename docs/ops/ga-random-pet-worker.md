@@ -1,15 +1,15 @@
 # GA Random Pet Worker
 
-This worker is a temporary high-throughput path for the 24-hour Google AI image/video quota window. It creates random original desktop-pet resource candidates, records prompts and outcomes, and defaults to a full package mode with base identity art plus desktop-pet motion sheets.
+This worker is a temporary high-throughput path for the 24-hour AI image/video quota window. It creates random original desktop-pet resource candidates, records prompts and outcomes, and defaults to a full package mode with base identity art plus desktop-pet motion sheets.
 
 It does not call admin APIs, does not publish to community, and does not mark any package as human-reviewed. Full candidates are tagged as `ga-auto-generated` / `auto-generated-unverified` so they can be accumulated first and reviewed or repaired later.
 
 ## Secret Handling
 
-- Put the key only in the server environment as `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+- Put the key only in the server environment as `GA_PET_API_KEY`, `GEMINI_API_KEY`, or `GOOGLE_API_KEY`.
 - Put Supabase admin credentials only in the server environment or server-only `.env.local`.
 - Do not paste the key into code, Android, admin UI, docs, commits, or logs.
-- The worker sends the key via the `x-goog-api-key` header and redacts API-key-looking strings from error logs.
+- The default Google/Gemini provider sends the key via the `x-goog-api-key` header. The `l0veyou` proxy provider sends it via `Authorization: Bearer ...`. Error logs redact API-key-looking strings.
 - If the key comes from `image.docx`, extract it on the server or into the server panel environment only. Do not commit the document.
 
 ## Fast 24-Hour Server Run
@@ -17,7 +17,11 @@ It does not call admin APIs, does not publish to community, and does not mark an
 Recommended server environment:
 
 ```powershell
-GEMINI_API_KEY=<server-secret>
+GA_PET_API_PROVIDER=l0veyou
+GA_PET_API_BASE_URL=https://l0veyou.com
+GA_PET_API_KEY=<server-secret>
+GA_PET_IMAGE_MODEL=nano-banana-2
+GA_PET_VIDEO_MODEL=ltx-video
 GA_PET_RUN_ROOT=/data/ga-random-pets
 GA_PET_PACKAGE_MODE=full
 GA_PET_QUALITY_PRESET=high
@@ -33,7 +37,6 @@ GA_PET_ACTION_INTERVAL_SECONDS=0
 GA_PET_REWORK_STARTED_TIMEOUT_MINUTES=180
 GA_PET_ENABLE_VIDEO=1
 GA_PET_VIDEO_DURATION_SECONDS=5
-GA_PET_VIDEO_MAX_POLLS=30
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<server-secret>
 SUPABASE_STORAGE_BUCKET=pet-assets
@@ -58,12 +61,12 @@ Equivalent direct command:
 node services/pet-generator/src/ga-random-pet-worker.js --config-check
 ```
 
-Confirm the output shows `apiKeyPresent: true`, `packageMode: full`, the intended image sizes, and `backgroundMode: transparent` for nano-style transparent PNG generation. This check does not call GA and does not print the key.
+Confirm the output shows `apiKeyPresent: true`, `apiProvider`, `packageMode: full`, the intended image sizes, and `backgroundMode: transparent` for nano-style transparent PNG generation. This check does not call GA and does not print the key.
 When Supabase variables are present it should also show `supabaseSync.ready: true`.
 
 For a cautious first run, set `GA_PET_MAX_RUNS=1`. A full resource package calls image generation once for the identity image and then once per planned motion sheet, so one candidate is already a meaningful server test. After confirming output folders are being created, change it back to `0` for continuous generation during the quota window.
 
-If the proxy documented in `image.docx` uses different size or output names, keep the key in the server panel and change only the environment variables. For example, nano-style transparent PNG generation should keep `GA_PET_BACKGROUND_MODE=transparent` and `GA_PET_OUTPUT_MIME_TYPE=image/png`. A channel that cannot generate transparency should use `GA_PET_BACKGROUND_MODE=chroma` or `light`, then post-process later.
+If the proxy documented in `image.docx` uses different size or output names, keep the key in the server panel and change only the environment variables. For example, nano-style transparent PNG generation should keep `GA_PET_IMAGE_MODEL=nano-banana-2`, `GA_PET_BACKGROUND_MODE=transparent`, and `GA_PET_OUTPUT_MIME_TYPE=image/png`. A channel that cannot generate transparency should use `GA_PET_BACKGROUND_MODE=chroma` or `light`, then post-process later.
 
 ## Output Layout
 
@@ -172,7 +175,10 @@ Each generated action is requested as a single horizontal spritesheet. `meta/mot
 
 ## Important Environment Variables
 
-- `GA_PET_IMAGE_MODEL`: defaults to `gemini-3.1-flash-image`.
+- `GA_PET_API_PROVIDER`: defaults to `google-genai`; set to `l0veyou` for the `image.docx` proxy.
+- `GA_PET_API_BASE_URL`: defaults to Google GenAI; set to `https://l0veyou.com` for the proxy.
+- `GA_PET_API_KEY`: provider key for proxy mode. `GEMINI_API_KEY` / `GOOGLE_API_KEY` are still accepted for Google mode.
+- `GA_PET_IMAGE_MODEL`: defaults to `gemini-3.1-flash-image`; use `nano-banana-2` for the transparent PNG proxy path.
 - `GA_PET_PACKAGE_MODE`: `full` creates base art plus motion sheets; `identity` creates only the base identity package.
 - `GA_PET_QUALITY_PRESET`: `high` defaults identity art to `2K` and spritesheets to `4K`; `balanced` uses `2K`/`2K`; `fast` uses `1K`/`2K`.
 - `GA_PET_IMAGE_SIZE`: defaults to the quality preset's identity size.
@@ -189,7 +195,7 @@ Each generated action is requested as a single horizontal spritesheet. `meta/mot
 - `GA_PET_REWORK_STARTED_TIMEOUT_MINUTES`: defaults to `180`; set to `0` to never retry requests already marked `started`.
 - `GA_PET_CONFIG_CHECK`: set to `1` to print a safe config summary and exit without generation.
 - `GA_PET_ENABLE_VIDEO`: defaults to off.
-- `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`.
+- `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`; use `ltx-video` for the proxy video path.
 - `GA_PET_MAX_RUNS`: `0` means unlimited until the process is stopped.
 - `GA_PET_INTERVAL_SECONDS`: pause between batches when loop mode is enabled.
 - `GA_PET_ACTION_INTERVAL_SECONDS`: optional pause between per-action image calls.

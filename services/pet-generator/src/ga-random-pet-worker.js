@@ -17,6 +17,7 @@ import {
 } from "./supabase-pet-sync.js";
 
 const DEFAULT_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+const DEFAULT_L0VEYOU_API_BASE_URL = "https://l0veyou.com";
 const DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image";
 const DEFAULT_VIDEO_MODEL = "veo-3.1-generate-preview";
 const API_REVISION = "2026-05-20";
@@ -290,9 +291,13 @@ const ELEMENT_ACTIONS = {
 export function createWorkerConfig(env = process.env) {
   const qualityPreset = parseQualityPreset(env.GA_PET_QUALITY_PRESET, "high");
   const qualityDefaults = qualityDefaultsFor(qualityPreset);
+  const apiProvider = parseApiProvider(env.GA_PET_API_PROVIDER, env.GA_PET_API_BASE_URL);
   return {
-    apiKey: env.GEMINI_API_KEY || env.GOOGLE_API_KEY || "",
-    apiBaseUrl: env.GA_PET_API_BASE_URL || DEFAULT_API_BASE_URL,
+    apiProvider,
+    apiKey: env.GA_PET_API_KEY || env.GEMINI_API_KEY || env.GOOGLE_API_KEY || "",
+    apiBaseUrl:
+      env.GA_PET_API_BASE_URL ||
+      (apiProvider === "l0veyou" ? DEFAULT_L0VEYOU_API_BASE_URL : DEFAULT_API_BASE_URL),
     packageMode: parsePackageMode(env.GA_PET_PACKAGE_MODE, "full"),
     qualityPreset,
     backgroundMode: parseBackgroundMode(env.GA_PET_BACKGROUND_MODE, "transparent"),
@@ -342,7 +347,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
   }
 
   if (!config.apiKey.trim()) {
-    throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY is required.");
+    throw new Error("GA_PET_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY is required.");
   }
 
   await mkdir(config.runRoot, { recursive: true });
@@ -352,6 +357,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     type: "worker-started",
     startedAt,
     packageMode: config.packageMode,
+    apiProvider: config.apiProvider,
     qualityPreset: config.qualityPreset,
     backgroundMode: config.backgroundMode,
     outputMimeType: config.outputMimeType,
@@ -1007,7 +1013,7 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     sourceTaskId: `${runId}:ga-random-pet-worker`,
     sourceDownloadId: plan.packageMode === "full" ? "ga-full-resource-package" : "ga-base-identity",
     generatedBy: {
-      provider: "google-genai",
+      provider: config.apiProvider,
       imageModel: config.imageModel,
       videoModel: config.enableVideo ? config.videoModel : "",
       qualityPreset: config.qualityPreset,
@@ -1020,6 +1026,8 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
   await writeJsonFile(path.join(runDir, manifestPath), packageManifest);
 
   await writeJsonFile(path.join(runDir, apiTracePath), {
+    provider: config.apiProvider,
+    apiBaseUrl: config.apiBaseUrl,
     image: {
       model: config.imageModel,
       imageSize: config.imageSize,
@@ -1221,6 +1229,16 @@ async function generateImage({
   aspectRatio = config.imageAspectRatio,
   imageSize = config.imageSize
 }) {
+  if (config.apiProvider === "l0veyou") {
+    return generateL0veYouImage({
+      config,
+      prompt,
+      inputImage,
+      aspectRatio,
+      imageSize
+    });
+  }
+
   const input = [
     {
       type: "text",
@@ -1247,6 +1265,7 @@ async function generateImage({
   }
 
   const responseJson = await postJson({
+    apiProvider: config.apiProvider,
     apiKey: config.apiKey,
     url: `${config.apiBaseUrl}/interactions`,
     timeoutMs: config.requestTimeoutMs,
@@ -1269,6 +1288,7 @@ async function generateImage({
   const bytes = image.base64
     ? Buffer.from(stripDataUrl(image.base64), "base64")
     : await downloadBinary({
+        apiProvider: config.apiProvider,
         apiKey: config.apiKey,
         url: resolveApiUrl(config.apiBaseUrl, image.uri),
         timeoutMs: config.requestTimeoutMs
@@ -1278,6 +1298,90 @@ async function generateImage({
     bytes,
     mimeType: image.mimeType || "image/png",
     responseShape: summarizeResponseShape(responseJson)
+  };
+}
+
+async function generateL0veYouImage({
+  config,
+  prompt,
+  inputImage = null,
+  aspectRatio = config.imageAspectRatio,
+  imageSize = config.imageSize
+}) {
+  const model = String(config.imageModel || "nano-banana-2").trim();
+  const hasInputImage = Boolean(inputImage?.bytes);
+  const url = `${config.apiBaseUrl.replace(/\/+$/u, "")}/api/generate/${encodeURIComponent(model)}${hasInputImage ? "/image" : ""}`;
+  const body = buildL0veYouImageBody({
+    config,
+    prompt,
+    inputImage,
+    aspectRatio,
+    imageSize,
+    model
+  });
+
+  const responseJson = await postJson({
+    apiProvider: config.apiProvider,
+    apiKey: config.apiKey,
+    url,
+    timeoutMs: config.requestTimeoutMs,
+    body
+  });
+
+  const image = extractGeneratedImage(responseJson);
+  if (!image) {
+    throw new Error(
+      `image_response_missing_data shape=${summarizeResponseShape(responseJson)}`
+    );
+  }
+  const bytes = image.base64
+    ? Buffer.from(stripDataUrl(image.base64), "base64")
+    : await downloadBinary({
+        apiProvider: config.apiProvider,
+        apiKey: config.apiKey,
+        url: resolveApiUrl(config.apiBaseUrl, image.uri),
+        timeoutMs: config.requestTimeoutMs
+      });
+
+  return {
+    bytes,
+    mimeType: image.mimeType || "image/png",
+    responseShape: summarizeResponseShape(responseJson)
+  };
+}
+
+function buildL0veYouImageBody({
+  config,
+  prompt,
+  inputImage = null,
+  aspectRatio,
+  imageSize,
+  model
+}) {
+  const baseBody = {
+    client_task_id: createClientTaskId("gamer-image"),
+    prompt
+  };
+  if (inputImage?.bytes) {
+    baseBody.image_data = toDataUrl(
+      inputImage.bytes,
+      inputImage.mimeType || "image/png"
+    );
+  }
+
+  if (String(model).toLowerCase().includes("gpt-image")) {
+    return {
+      ...baseBody,
+      n: 1,
+      size: l0veYouSquareSize(imageSize),
+      output_format: mimeTypeToImageFormat(config.outputMimeType)
+    };
+  }
+
+  return {
+    ...baseBody,
+    resolution: l0veYouResolution(imageSize),
+    aspect_ratio: aspectRatio
   };
 }
 
@@ -1448,6 +1552,7 @@ function printConfigCheck(config) {
     schema: "gamer.ga-random-pet-worker-config-check.v1",
     ok: true,
     apiKeyPresent: Boolean(config.apiKey.trim()),
+    apiProvider: config.apiProvider,
     apiBaseUrl: config.apiBaseUrl,
     packageMode: config.packageMode,
     qualityPreset: config.qualityPreset,
@@ -1636,7 +1741,12 @@ async function readPromptPlanForRework(config, request) {
 }
 
 async function generateVideoReference({ config, prompt, runDir }) {
+  if (config.apiProvider === "l0veyou") {
+    return generateL0veYouVideoReference({ config, prompt, runDir });
+  }
+
   const operation = await postJson({
+    apiProvider: config.apiProvider,
     apiKey: config.apiKey,
     url: `${config.apiBaseUrl}/models/${encodeURIComponent(config.videoModel)}:predictLongRunning`,
     timeoutMs: config.requestTimeoutMs,
@@ -1662,6 +1772,7 @@ async function generateVideoReference({ config, prompt, runDir }) {
     if (latestOperation.done) break;
     await sleep(config.videoPollSeconds * 1000);
     latestOperation = await getJson({
+      apiProvider: config.apiProvider,
       apiKey: config.apiKey,
       url: resolveApiUrl(config.apiBaseUrl, latestOperation.name),
       timeoutMs: config.requestTimeoutMs
@@ -1685,6 +1796,7 @@ async function generateVideoReference({ config, prompt, runDir }) {
     await writeFile(path.join(runDir, filePath), Buffer.from(stripDataUrl(video.base64), "base64"));
   } else if (video.uri) {
     const videoBytes = await downloadBinary({
+      apiProvider: config.apiProvider,
       apiKey: config.apiKey,
       url: resolveApiUrl(config.apiBaseUrl, video.uri),
       timeoutMs: config.requestTimeoutMs
@@ -1699,8 +1811,55 @@ async function generateVideoReference({ config, prompt, runDir }) {
   };
 }
 
-async function postJson({ apiKey, url, body, timeoutMs, headers = {} }) {
+async function generateL0veYouVideoReference({ config, prompt, runDir }) {
+  const responseJson = await postJson({
+    apiProvider: config.apiProvider,
+    apiKey: config.apiKey,
+    url: `${config.apiBaseUrl.replace(/\/+$/u, "")}/api/generate/${encodeURIComponent(config.videoModel)}`,
+    timeoutMs: config.requestTimeoutMs,
+    body: {
+      client_task_id: createClientTaskId("gamer-video"),
+      prompt,
+      duration: config.videoDurationSeconds,
+      aspect_ratio: config.spriteSheetAspectRatio || config.imageAspectRatio
+    }
+  });
+
+  const operationPath = "artifacts/video/operation.json";
+  await writeJsonFile(path.join(runDir, operationPath), redactOperationForLog(responseJson));
+
+  const video = extractGeneratedVideo(responseJson);
+  if (!video) {
+    return {
+      done: Boolean(responseJson.done || responseJson.completed || responseJson.status === "completed"),
+      filePath: "",
+      operationPath
+    };
+  }
+
+  const filePath = "artifacts/video/motion-reference.mp4";
+  if (video.base64) {
+    await writeFile(path.join(runDir, filePath), Buffer.from(stripDataUrl(video.base64), "base64"));
+  } else if (video.uri) {
+    const videoBytes = await downloadBinary({
+      apiProvider: config.apiProvider,
+      apiKey: config.apiKey,
+      url: resolveApiUrl(config.apiBaseUrl, video.uri),
+      timeoutMs: config.requestTimeoutMs
+    });
+    await writeFile(path.join(runDir, filePath), videoBytes);
+  }
+
+  return {
+    done: true,
+    filePath,
+    operationPath
+  };
+}
+
+async function postJson({ apiProvider, apiKey, url, body, timeoutMs, headers = {} }) {
   return requestJson({
+    apiProvider,
     apiKey,
     url,
     timeoutMs,
@@ -1715,8 +1874,9 @@ async function postJson({ apiKey, url, body, timeoutMs, headers = {} }) {
   });
 }
 
-async function getJson({ apiKey, url, timeoutMs }) {
+async function getJson({ apiProvider, apiKey, url, timeoutMs }) {
   return requestJson({
+    apiProvider,
     apiKey,
     url,
     timeoutMs,
@@ -1726,7 +1886,7 @@ async function getJson({ apiKey, url, timeoutMs }) {
   });
 }
 
-async function requestJson({ apiKey, url, init, timeoutMs }) {
+async function requestJson({ apiProvider, apiKey, url, init, timeoutMs }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -1734,7 +1894,7 @@ async function requestJson({ apiKey, url, init, timeoutMs }) {
       ...init,
       headers: {
         ...(init.headers || {}),
-        "x-goog-api-key": apiKey
+        ...authHeadersForProvider(apiProvider, apiKey)
       },
       signal: controller.signal
     });
@@ -1749,14 +1909,12 @@ async function requestJson({ apiKey, url, init, timeoutMs }) {
   }
 }
 
-async function downloadBinary({ apiKey, url, timeoutMs }) {
+async function downloadBinary({ apiProvider, apiKey, url, timeoutMs }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, {
-      headers: {
-        "x-goog-api-key": apiKey
-      },
+      headers: authHeadersForProvider(apiProvider, apiKey),
       signal: controller.signal
     });
     if (!response.ok) {
@@ -1770,8 +1928,22 @@ async function downloadBinary({ apiKey, url, timeoutMs }) {
 
 function extractGeneratedImage(responseJson) {
   const candidates = [
+    responseJson?.image,
+    responseJson?.image_data,
+    responseJson?.imageData,
+    responseJson?.image_url,
+    responseJson?.imageUrl,
+    responseJson?.url,
+    responseJson?.result,
+    responseJson?.output,
     responseJson?.output_image,
     responseJson?.outputImage,
+    responseJson?.images?.[0],
+    responseJson?.files?.[0],
+    responseJson?.artifacts?.[0],
+    responseJson?.data?.image,
+    responseJson?.data?.image_url,
+    responseJson?.data?.imageUrl,
     responseJson?.generatedImages?.[0]?.image,
     responseJson?.predictions?.[0],
     responseJson?.data?.[0]
@@ -1802,9 +1974,32 @@ function extractGeneratedImage(responseJson) {
 }
 
 function imageFromCandidate(candidate) {
+  if (typeof candidate === "string") {
+    if (candidate.startsWith("data:image/")) {
+      return {
+        base64: candidate,
+        uri: "",
+        mimeType: mimeTypeFromDataUrl(candidate) || "image/png"
+      };
+    }
+    if (/^https?:\/\//iu.test(candidate) || candidate.startsWith("/")) {
+      return {
+        base64: "",
+        uri: candidate,
+        mimeType: "image/png"
+      };
+    }
+    return null;
+  }
   if (!candidate || typeof candidate !== "object") return null;
   const base64 =
     candidate.data ||
+    candidate.image ||
+    candidate.imageData ||
+    candidate.image_data ||
+    candidate.imageBase64 ||
+    candidate.image_base64 ||
+    candidate.base64 ||
     candidate.imageBytes ||
     candidate.image_bytes ||
     candidate.bytesBase64Encoded ||
@@ -1812,7 +2007,15 @@ function imageFromCandidate(candidate) {
     candidate.b64Json ||
     candidate.inlineData?.data ||
     candidate.inline_data?.data;
-  const uri = candidate.uri || candidate.url || candidate.gcsUri || candidate.gcs_uri;
+  const uri =
+    candidate.uri ||
+    candidate.url ||
+    candidate.imageUrl ||
+    candidate.image_url ||
+    candidate.outputUrl ||
+    candidate.output_url ||
+    candidate.gcsUri ||
+    candidate.gcs_uri;
   if (
     (typeof base64 !== "string" || base64.trim() === "") &&
     (typeof uri !== "string" || uri.trim() === "")
@@ -1825,6 +2028,7 @@ function imageFromCandidate(candidate) {
     mimeType:
       candidate.mime_type ||
       candidate.mimeType ||
+      mimeTypeFromDataUrl(base64) ||
       candidate.inlineData?.mimeType ||
       candidate.inline_data?.mime_type ||
       "image/png"
@@ -1833,20 +2037,47 @@ function imageFromCandidate(candidate) {
 
 function extractGeneratedVideo(operation) {
   const videos = [
+    operation?.video,
+    operation?.video_url,
+    operation?.videoUrl,
+    operation?.output_video,
+    operation?.outputVideo,
+    operation?.result,
+    operation?.output,
+    operation?.data,
     operation?.response?.generatedVideos?.[0]?.video,
     operation?.response?.generated_videos?.[0]?.video,
     operation?.response?.videos?.[0],
     operation?.response?.predictions?.[0]?.video
   ];
   for (const video of videos) {
+    if (typeof video === "string") {
+      if (video.startsWith("data:video/")) return { base64: video, uri: "" };
+      if (/^https?:\/\//iu.test(video) || video.startsWith("/")) {
+        return { base64: "", uri: video };
+      }
+    }
     if (!video || typeof video !== "object") continue;
     const base64 =
+      video.video_data ||
+      video.videoData ||
+      video.video_base64 ||
+      video.videoBase64 ||
+      video.base64 ||
       video.bytesBase64Encoded ||
       video.bytes_base64_encoded ||
       video.data ||
       video.inlineData?.data ||
       video.inline_data?.data;
-    const uri = video.uri || video.gcsUri || video.gcs_uri || video.url;
+    const uri =
+      video.uri ||
+      video.video_url ||
+      video.videoUrl ||
+      video.output_url ||
+      video.outputUrl ||
+      video.gcsUri ||
+      video.gcs_uri ||
+      video.url;
     if (base64 || uri) {
       return { base64, uri };
     }
@@ -1861,6 +2092,15 @@ function stripDataUrl(value) {
     return text.slice(commaIndex + 1);
   }
   return text;
+}
+
+function mimeTypeFromDataUrl(value) {
+  const match = /^data:([^;,]+)[;,]/iu.exec(String(value ?? ""));
+  return match?.[1] || "";
+}
+
+function toDataUrl(bytes, mimeType) {
+  return `data:${mimeType || "image/png"};base64,${Buffer.from(bytes).toString("base64")}`;
 }
 
 function resolveApiUrl(baseUrl, maybeUrl) {
@@ -2042,6 +2282,20 @@ function parseOptionalString(value, fallback) {
   return text;
 }
 
+function parseApiProvider(value, apiBaseUrl = "") {
+  const provider = String(value || "").trim().toLowerCase();
+  if (["l0veyou", "l0ve-you", "love-you", "love-you-proxy"].includes(provider)) {
+    return "l0veyou";
+  }
+  if (["google", "google-genai", "gemini"].includes(provider)) {
+    return "google-genai";
+  }
+  if (String(apiBaseUrl || "").toLowerCase().includes("l0veyou.com")) {
+    return "l0veyou";
+  }
+  return "google-genai";
+}
+
 function parsePackageMode(value, fallback) {
   const mode = String(value || fallback || "full").trim().toLowerCase();
   return ["identity", "full"].includes(mode) ? mode : fallback;
@@ -2079,6 +2333,43 @@ function qualityDefaultsFor(preset) {
 function parseImageSize(value, fallback) {
   const size = String(value || fallback || "2K").trim();
   return size || fallback;
+}
+
+function l0veYouResolution(imageSize) {
+  const size = String(imageSize || "2K").trim().toLowerCase();
+  if (size === "4k") return "4k";
+  if (size === "2k") return "2k";
+  if (size === "1k") return "1k";
+  return size || "2k";
+}
+
+function l0veYouSquareSize(imageSize) {
+  const resolution = l0veYouResolution(imageSize);
+  if (resolution === "4k") return "4096x4096";
+  if (resolution === "1k") return "1024x1024";
+  return "2048x2048";
+}
+
+function mimeTypeToImageFormat(mimeType) {
+  const text = String(mimeType || "image/png").toLowerCase();
+  if (text.includes("jpeg") || text.includes("jpg")) return "jpeg";
+  if (text.includes("webp")) return "webp";
+  return "png";
+}
+
+function authHeadersForProvider(apiProvider, apiKey) {
+  if (apiProvider === "l0veyou") {
+    return {
+      Authorization: `Bearer ${apiKey}`
+    };
+  }
+  return {
+    "x-goog-api-key": apiKey
+  };
+}
+
+function createClientTaskId(prefix) {
+  return `${prefix}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
 }
 
 function parsePositiveInteger(value, fallback) {
