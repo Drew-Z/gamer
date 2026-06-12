@@ -269,7 +269,7 @@ class PetShellUiModelTest {
 
         assertEquals("\u684C\u5BA0\u5BFC\u822A\u53F0", zh.communityPetCommandTitle)
         assertEquals(
-            "\u4ECA\u65E5\u793E\u533A\u7531\u684C\u5BA0\u5E26\u8DEF\uFF1A\u7B7E\u5230\u3001\u751F\u6210\u3001\u5BA1\u6838\u548C\u5C55\u793A\u90FD\u4ECE\u8FD9\u91CC\u51FA\u53D1\u3002",
+            "今日社区由桌宠带路：签到、孵化、审核和展示都从这里出发。",
             zh.communityPetCommandDetail
         )
         assertEquals("\u770B\u4E0B\u4E00\u6761", zh.communityPetCommandNextPost)
@@ -284,7 +284,7 @@ class PetShellUiModelTest {
         )
         assertEquals("Pet navigator", en.communityPetCommandTitle)
         assertEquals(
-            "Your desktop pet leads today's check-in, creation, review, and showcase loop.",
+            "Your desktop pet leads today's check-in, hatching, review, and showcase loop.",
             en.communityPetCommandDetail
         )
         assertEquals("Next post", en.communityPetCommandNextPost)

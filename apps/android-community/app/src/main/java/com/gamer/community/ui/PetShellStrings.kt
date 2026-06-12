@@ -74,8 +74,8 @@ class PetShellStrings internal constructor(
     val communityPetCommandTitle: String get() = text("\u684C\u5BA0\u5BFC\u822A\u53F0", "Pet navigator")
     val communityPetCommandDetail: String
         get() = text(
-            "\u4ECA\u65E5\u793E\u533A\u7531\u684C\u5BA0\u5E26\u8DEF\uFF1A\u7B7E\u5230\u3001\u751F\u6210\u3001\u5BA1\u6838\u548C\u5C55\u793A\u90FD\u4ECE\u8FD9\u91CC\u51FA\u53D1\u3002",
-            "Your desktop pet leads today's check-in, creation, review, and showcase loop."
+            "今日社区由桌宠带路：签到、孵化、审核和展示都从这里出发。",
+            "Your desktop pet leads today's check-in, hatching, review, and showcase loop."
         )
     val communityPetCommandNextPost: String get() = text("\u770B\u4E0B\u4E00\u6761", "Next post")
     val communityPetCommandShowcase: String get() = text("\u53BB\u5C55\u793A", "Showcase")
@@ -92,8 +92,8 @@ class PetShellStrings internal constructor(
     val desktopPetModeTitle: String get() = text("桌宠模式", "Desktop pet mode")
     val desktopPetModeSubtitle: String
         get() = text(
-            "让桌宠先出现，再进入社区、生成或我的主页。",
-            "Let the pet appear first, then enter community, generation, or profile."
+            "让桌宠先出现，再进入社区、孵化或我的主页。",
+            "Let the pet appear first, then enter community, hatch, or profile."
         )
     val desktopPetReadyLine: String
         get() = text(
