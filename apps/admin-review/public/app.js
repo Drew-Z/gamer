@@ -504,6 +504,152 @@ function renderGenerationJob() {
     : "claim-app-job-id";
 }
 
+function formatGaFileSize(sizeBytes) {
+  const bytes = Number(sizeBytes) || 0;
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+function formatGaDate(value) {
+  const time = String(value || "").trim();
+  return time ? time.replace("T", " ").replace(/\.\d{3}Z$/u, "Z") : "unknown time";
+}
+
+function createGaEvidenceLink(file) {
+  const link = document.createElement("a");
+  link.className = "ga-evidence-link";
+  link.href = file.url || "#";
+  link.target = "_blank";
+  link.rel = "noreferrer";
+
+  const title = document.createElement("strong");
+  title.textContent = file.label || file.path || "Evidence";
+
+  const pathLabel = document.createElement("code");
+  pathLabel.textContent = file.path || "missing path";
+
+  const meta = document.createElement("small");
+  meta.textContent = `${formatGaFileSize(file.sizeBytes)} / ${formatGaDate(file.updatedAt)}`;
+
+  link.append(title, pathLabel, meta);
+  return link;
+}
+
+function createGaHistoryItem(item, emptyLabel) {
+  const node = document.createElement("li");
+  if (!item) {
+    node.textContent = emptyLabel;
+    return node;
+  }
+
+  const heading = document.createElement("strong");
+  heading.textContent = [
+    item.decision || item.status || item.mode || "note",
+    item.severity,
+    item.actionId
+  ]
+    .filter(Boolean)
+    .join(" / ");
+
+  const meta = document.createElement("small");
+  meta.textContent = [
+    item.feedbackId || item.requestId,
+    formatGaDate(item.createdAt),
+    Array.isArray(item.tags) && item.tags.length > 0
+      ? `tags: ${item.tags.join(", ")}`
+      : ""
+  ]
+    .filter(Boolean)
+    .join(" / ");
+
+  node.append(heading, meta);
+  if (item.notes) {
+    const notes = document.createElement("p");
+    notes.textContent = item.notes;
+    node.append(notes);
+  }
+  if (item.promptPatch) {
+    const patch = document.createElement("code");
+    patch.textContent = item.promptPatch;
+    node.append(patch);
+  }
+  return node;
+}
+
+function createGaCandidateDetails(candidate) {
+  const details = document.createElement("details");
+  details.className = "ga-review-details";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "Evidence and history";
+  details.append(summary);
+
+  const grid = document.createElement("div");
+  grid.className = "ga-review-detail-grid";
+
+  const evidenceSection = document.createElement("section");
+  const evidenceTitle = document.createElement("h4");
+  evidenceTitle.textContent = "Evidence files";
+  const evidenceList = document.createElement("div");
+  evidenceList.className = "ga-evidence-list";
+  const evidenceFiles = Array.isArray(candidate.evidenceFiles)
+    ? candidate.evidenceFiles
+    : [];
+  if (evidenceFiles.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "No evidence files found.";
+    evidenceList.append(empty);
+  } else {
+    for (const file of evidenceFiles) {
+      evidenceList.append(createGaEvidenceLink(file));
+    }
+  }
+  evidenceSection.append(evidenceTitle, evidenceList);
+
+  const feedbackSection = document.createElement("section");
+  const feedbackTitle = document.createElement("h4");
+  feedbackTitle.textContent = "Feedback history";
+  const feedbackList = document.createElement("ul");
+  feedbackList.className = "ga-history-list";
+  const feedbackHistory = Array.isArray(candidate.feedback?.history)
+    ? candidate.feedback.history
+    : [];
+  if (feedbackHistory.length === 0) {
+    feedbackList.append(createGaHistoryItem(null, "No feedback entries yet."));
+  } else {
+    for (const entry of feedbackHistory) {
+      feedbackList.append(createGaHistoryItem(entry, "No feedback entries yet."));
+    }
+  }
+  feedbackSection.append(feedbackTitle, feedbackList);
+
+  const reworkSection = document.createElement("section");
+  const reworkTitle = document.createElement("h4");
+  reworkTitle.textContent = "Rework queue";
+  const reworkList = document.createElement("ul");
+  reworkList.className = "ga-history-list";
+  const reworkRequests = Array.isArray(candidate.rework?.requests)
+    ? candidate.rework.requests
+    : [];
+  if (reworkRequests.length === 0) {
+    reworkList.append(createGaHistoryItem(null, "No rework requests yet."));
+  } else {
+    for (const request of reworkRequests) {
+      reworkList.append(createGaHistoryItem(request, "No rework requests yet."));
+    }
+  }
+  reworkSection.append(reworkTitle, reworkList);
+
+  grid.append(evidenceSection, feedbackSection, reworkSection);
+  details.append(grid);
+  return details;
+}
+
 function renderGaReviewList() {
   renderGaReviewSummary();
   elements.gaReviewList.replaceChildren();
@@ -571,6 +717,9 @@ function renderGaReviewList() {
     const motionStrip = document.createElement("div");
     motionStrip.className = "ga-motion-strip";
     for (const motion of candidate.motionSheets || []) {
+      const motionCell = document.createElement("div");
+      motionCell.className = "ga-motion-cell";
+
       const motionItem = document.createElement("button");
       motionItem.className = "ga-motion-item";
       motionItem.type = "button";
@@ -594,7 +743,17 @@ function renderGaReviewList() {
         }
         motionItem.classList.add("is-selected");
       });
-      motionStrip.append(motionItem);
+      motionCell.append(motionItem);
+      if (motion.imageUrl) {
+        const originalLink = document.createElement("a");
+        originalLink.className = "ga-motion-original-link";
+        originalLink.href = motion.imageUrl;
+        originalLink.target = "_blank";
+        originalLink.rel = "noreferrer";
+        originalLink.textContent = "Open original";
+        motionCell.append(originalLink);
+      }
+      motionStrip.append(motionCell);
     }
 
     const form = document.createElement("form");
@@ -671,7 +830,14 @@ function renderGaReviewList() {
     form.append(decision, severity, actionId, customTags, tagGroup, notes, promptPatch, submit);
     form.addEventListener("submit", submitGaFeedback);
 
-    body.append(heading, summary, feedback, motionStrip, form);
+    body.append(
+      heading,
+      summary,
+      feedback,
+      motionStrip,
+      createGaCandidateDetails(candidate),
+      form
+    );
     node.append(preview, body);
     elements.gaReviewList.append(node);
   }

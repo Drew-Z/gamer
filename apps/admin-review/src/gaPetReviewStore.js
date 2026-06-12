@@ -23,6 +23,23 @@ const ISSUE_GUIDANCE = {
   "style-mismatch": "Keep the same render style, line weight, lighting, and material treatment as the accepted identity."
 };
 
+const EVIDENCE_FILES = [
+  ["Prompt plan", "source/generation/prompt-plan.json", "prompt"],
+  ["API trace", "source/generation/api-trace.json", "trace"],
+  ["Motion map", "meta/motion_map.json", "motion"],
+  ["Runtime", "meta/runtime.json", "runtime"],
+  ["Review card", "review-card.md", "review"],
+  ["Manifest", "manifest.json", "manifest"],
+  ["Package manifest", "package-manifest.json", "manifest"],
+  ["Score report", "score-report.json", "score"],
+  ["Ownership claim", "ownership-claim.json", "ownership"],
+  ["Video reference", "artifacts/video/motion-reference.mp4", "video"],
+  ["Video operation", "artifacts/video/operation.json", "video-meta"],
+  ["Latest feedback", "human-feedback-latest.json", "feedback"],
+  ["Feedback log", "human-feedback.jsonl", "feedback"],
+  ["Rework requests", "source/generation/rework-requests.jsonl", "rework"]
+];
+
 export function createGaPetReviewStore(options = {}) {
   const runRoot = path.resolve(options.runRoot || process.env.GA_PET_RUN_ROOT || DEFAULT_RUN_ROOT);
 
@@ -140,6 +157,7 @@ async function createCandidateSummary({
   const latestFeedback = await readJsonIfExists(path.join(runDir, "human-feedback-latest.json"));
   const feedbackEntries = await readJsonLinesIfExists(path.join(runDir, "human-feedback.jsonl"));
   const reworkRequests = await readJsonLinesIfExists(path.join(runDir, "source", "generation", "rework-requests.jsonl"));
+  const evidenceFiles = await summarizeEvidenceFiles({ runDir, runId });
   const previewPath = await firstExistingRelativePath(runDir, [
     "previews/preview.png",
     "assets/base_identity.png",
@@ -176,13 +194,17 @@ async function createCandidateSummary({
       ? gaReviewFileUrl({ runId, relativePath: packageFile })
       : "",
     motionSheets: summarizeMotionSheets(motionMap, runId),
+    evidenceFiles,
+    videoReferenceUrl: evidenceFiles.find((file) => file.path.endsWith(".mp4"))?.url || "",
     feedback: {
       latest: latestFeedback,
-      count: feedbackEntries.length
+      count: feedbackEntries.length,
+      history: feedbackEntries.slice(-8).reverse().map(summarizeFeedbackEntry)
     },
     rework: {
       count: reworkRequests.length,
-      latest: reworkRequests.at(-1) || null
+      latest: reworkRequests.at(-1) || null,
+      requests: reworkRequests.slice(-8).reverse().map(summarizeReworkRequest)
     }
   };
 }
@@ -304,6 +326,53 @@ function summarizeMotionSheets(motionMap, runId = "") {
       ? gaReviewFileUrl({ runId, relativePath: action.sheet })
       : ""
   }));
+}
+
+async function summarizeEvidenceFiles({ runDir, runId }) {
+  const files = [];
+  for (const [label, relativePath, kind] of EVIDENCE_FILES) {
+    try {
+      const info = await stat(path.join(runDir, relativePath));
+      if (!info.isFile()) continue;
+      files.push({
+        label,
+        kind,
+        path: relativePath,
+        url: gaReviewFileUrl({ runId, relativePath }),
+        sizeBytes: info.size,
+        updatedAt: new Date(info.mtimeMs).toISOString()
+      });
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  return files;
+}
+
+function summarizeFeedbackEntry(entry) {
+  return {
+    feedbackId: entry?.feedbackId || "",
+    createdAt: entry?.createdAt || "",
+    decision: entry?.decision || "",
+    severity: entry?.severity || "",
+    actionId: entry?.actionId || "",
+    tags: Array.isArray(entry?.tags) ? entry.tags : [],
+    notes: entry?.notes || "",
+    promptPatch: entry?.promptPatch || ""
+  };
+}
+
+function summarizeReworkRequest(entry) {
+  return {
+    requestId: entry?.requestId || "",
+    createdAt: entry?.createdAt || "",
+    status: entry?.status || "",
+    mode: entry?.mode || "",
+    actionId: entry?.actionId || "",
+    tags: Array.isArray(entry?.tags) ? entry.tags : [],
+    notes: entry?.notes || "",
+    promptPatch: entry?.promptPatch || ""
+  };
 }
 
 function idsWithStatus(records, status) {

@@ -764,9 +764,16 @@ h1 {
   gap: 8px;
 }
 
+.ga-motion-cell {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
 .ga-motion-item {
   display: grid;
   gap: 5px;
+  width: 100%;
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -798,6 +805,130 @@ h1 {
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ga-motion-original-link {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.ga-motion-original-link:hover {
+  text-decoration: underline;
+}
+
+.ga-review-details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px;
+}
+
+.ga-review-details summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ga-review-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding-top: 10px;
+}
+
+.ga-review-detail-grid section {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ga-review-detail-grid h4 {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ga-evidence-list {
+  display: grid;
+  gap: 6px;
+}
+
+.ga-evidence-list p,
+.ga-history-list {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ga-evidence-link {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  padding: 8px;
+  text-decoration: none;
+}
+
+.ga-evidence-link:hover {
+  border-color: #b8d4d8;
+}
+
+.ga-evidence-link strong,
+.ga-history-list strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ga-evidence-link code,
+.ga-history-list code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--muted);
+  font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 3px 5px;
+}
+
+.ga-evidence-link small,
+.ga-history-list small,
+.ga-history-list p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ga-history-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ga-history-list li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 8px;
+}
+
+.ga-history-list p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .ga-feedback-form {
@@ -1121,6 +1252,10 @@ h1 {
 
   .ga-review-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ga-review-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .ga-review-preview {

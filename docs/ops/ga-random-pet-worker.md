@@ -109,6 +109,8 @@ GA_PET_RUN_ROOT/
     source/generation/rework-requests.jsonl
 ```
 
+Each candidate card has an expandable `Evidence and history` section. Use it to open `prompt-plan.json`, `api-trace.json`, `motion_map.json`, `runtime.json`, manifests, `review-card.md`, feedback logs, rework requests, and video references when present. Motion sheets also expose an `Open original` link so the spritesheet can be inspected at source size before writing feedback.
+
 The panel also shows a live review summary: total candidates, shown candidates, learning notes, feedback count, queued/running/completed/failed reworks, and the most frequent issue tags.
 
 Feedback decisions:

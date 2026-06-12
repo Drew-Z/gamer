@@ -12,7 +12,9 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   await mkdir(path.join(runDir, "source", "generation"), { recursive: true });
   await mkdir(path.join(runDir, "previews"), { recursive: true });
   await mkdir(path.join(runDir, "meta"), { recursive: true });
+  await mkdir(path.join(runDir, "exports"), { recursive: true });
   await writeFile(path.join(runDir, "previews", "preview.png"), "png");
+  await writeFile(path.join(runDir, "exports", `${runId}-full-resource-candidate.zip`), "zip");
   await writeFile(
     path.join(runDir, "source", "generation", "prompt-plan.json"),
     JSON.stringify({
@@ -25,12 +27,25 @@ test("GA pet review store lists candidates and writes learning feedback", async 
     })
   );
   await writeFile(
+    path.join(runDir, "source", "generation", "api-trace.json"),
+    JSON.stringify({
+      model: "test-model",
+      redacted: true
+    })
+  );
+  await writeFile(
     path.join(runDir, "package-manifest.json"),
     JSON.stringify({
       resourceStatus: "full-resource-candidate-ready",
       generatedBy: {
         createdAt: "2026-06-12T00:00:00.000Z"
       }
+    })
+  );
+  await writeFile(
+    path.join(runDir, "meta", "runtime.json"),
+    JSON.stringify({
+      packageMode: "full"
     })
   );
   await writeFile(
@@ -46,6 +61,7 @@ test("GA pet review store lists candidates and writes learning feedback", async 
       }
     })
   );
+  await writeFile(path.join(runDir, "review-card.md"), "# Test Pet\n");
 
   const store = createGaPetReviewStore({ runRoot });
   const list = await store.listCandidates();
@@ -53,6 +69,17 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   assert.equal(list.summary.totalCandidates, 1);
   assert.equal(list.candidates[0].displayName, "Test Pet");
   assert.equal(list.candidates[0].motionSheets[0].actionId, "idle");
+  assert.equal(list.candidates[0].packagePath, `exports/${runId}-full-resource-candidate.zip`);
+  assert.ok(
+    list.candidates[0].evidenceFiles.some(
+      (file) => file.path === "source/generation/prompt-plan.json"
+    )
+  );
+  assert.ok(
+    list.candidates[0].evidenceFiles.every((file) =>
+      file.url.startsWith(`/ga-review/files/${runId}?path=`)
+    )
+  );
 
   const result = await store.writeFeedback({
     runId,
@@ -82,4 +109,11 @@ test("GA pet review store lists candidates and writes learning feedback", async 
     label: "identity-drift",
     count: 1
   });
+  assert.equal(updated.candidates[0].feedback.history[0].decision, "rework");
+  assert.equal(updated.candidates[0].rework.requests[0].mode, "rework");
+  assert.ok(
+    updated.candidates[0].evidenceFiles.some(
+      (file) => file.path === "human-feedback-latest.json"
+    )
+  );
 });
