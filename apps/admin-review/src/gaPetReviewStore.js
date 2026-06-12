@@ -1,5 +1,9 @@
 import { appendFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createDatabaseConfig } from "../../../services/community-api/src/database/config.js";
+import { listCommunityMigrations } from "../../../services/community-api/src/database/migrations.js";
+import { createPgClientOptions } from "../../../services/community-api/src/database/pg-options.js";
+import { runCommunityMigrations } from "../../../services/community-api/src/database/runner.js";
 
 const DEFAULT_RUN_ROOT = path.resolve(
   "services",
@@ -42,12 +46,339 @@ const EVIDENCE_FILES = [
 
 export function createGaPetReviewStore(options = {}) {
   const runRoot = path.resolve(options.runRoot || process.env.GA_PET_RUN_ROOT || DEFAULT_RUN_ROOT);
+  const fileStore = createFileGaPetReviewStore({ runRoot });
+  const databaseStore = createDatabaseGaPetReviewStore({
+    env: options.env || process.env
+  });
+
+  if (!databaseStore) {
+    return fileStore;
+  }
+
+  return createHybridGaPetReviewStore({
+    databaseStore,
+    fileStore
+  });
+}
+
+function createFileGaPetReviewStore({ runRoot }) {
+  const root = path.resolve(runRoot || DEFAULT_RUN_ROOT);
 
   return {
-    runRoot,
-    listCandidates: (input) => listCandidates({ runRoot, ...input }),
-    readAsset: (input) => readAsset({ runRoot, ...input }),
-    writeFeedback: (input) => writeFeedback({ runRoot, ...input })
+    runRoot: root,
+    listCandidates: (input) => listCandidates({ runRoot: root, ...input }),
+    readAsset: (input) => readAsset({ runRoot: root, ...input }),
+    writeFeedback: (input) => writeFeedback({ runRoot: root, ...input })
+  };
+}
+
+function createHybridGaPetReviewStore({ databaseStore, fileStore }) {
+  return {
+    runRoot: fileStore.runRoot,
+
+    async listCandidates(input) {
+      try {
+        const databaseList = await databaseStore.listCandidates(input);
+        if (databaseList.count > 0) {
+          return databaseList;
+        }
+      } catch {
+        // Keep the admin panel usable if Supabase/Data API configuration is still settling.
+      }
+
+      return fileStore.listCandidates(input);
+    },
+
+    async readAsset(input) {
+      try {
+        const asset = await databaseStore.readAsset(input);
+        if (asset) {
+          return asset;
+        }
+      } catch {
+        // Fall back to the local run root when the requested candidate is local-only.
+      }
+
+      return fileStore.readAsset(input);
+    },
+
+    async writeFeedback(input) {
+      const databaseResult = await databaseStore.writeFeedback(input);
+      if (databaseResult) {
+        return databaseResult;
+      }
+
+      return fileStore.writeFeedback(input);
+    }
+  };
+}
+
+function createDatabaseGaPetReviewStore({ env }) {
+  let config;
+  try {
+    config = createDatabaseConfig(env);
+  } catch {
+    return null;
+  }
+
+  const supabaseUrl = String(env.SUPABASE_URL || "").trim().replace(/\/+$/u, "");
+  const serviceKey = String(
+    env.SUPABASE_SERVICE_ROLE_KEY ||
+    env.SUPABASE_SECRET_KEY ||
+    ""
+  ).trim();
+  const bucket = String(env.SUPABASE_STORAGE_BUCKET || "pet-assets").trim();
+
+  if (config.mode !== "postgres" || !supabaseUrl || !serviceKey || !bucket) {
+    return null;
+  }
+
+  let poolPromise;
+  let migratePromise;
+
+  const getPool = async () => {
+    if (!poolPromise) {
+      poolPromise = import("pg").then((pgModule) => {
+        const { Pool } = pgModule.default ?? pgModule;
+        return new Pool(createPgClientOptions(config));
+      });
+    }
+    return poolPromise;
+  };
+
+  const ensureMigrated = async () => {
+    if (!migratePromise) {
+      migratePromise = getPool().then(async (pool) => {
+        const client = await pool.connect();
+        try {
+          await runCommunityMigrations({
+            client,
+            migrations: listCommunityMigrations()
+          });
+        } finally {
+          client.release();
+        }
+      });
+    }
+    return migratePromise;
+  };
+
+  const query = async (sql, params = []) => {
+    await ensureMigrated();
+    const pool = await getPool();
+    return pool.query(sql, params);
+  };
+
+  return {
+    async listCandidates({ limit = 40 } = {}) {
+      const candidateResult = await query(
+        `select *
+         from ga_pet_candidates
+         order by updated_at desc, run_id asc
+         limit $1`,
+        [limit]
+      );
+      const candidates = candidateResult.rows;
+      const runIds = candidates.map((candidate) => candidate.run_id);
+
+      if (runIds.length === 0) {
+        return {
+          schema: "gamer.ga-pet-review-list.v1",
+          runRoot: "supabase:pet-assets",
+          count: 0,
+          summary: createDatabaseReviewSummary({
+            totalCandidates: 0,
+            shownCandidates: 0,
+            candidates: [],
+            feedbackRows: [],
+            reworkRows: [],
+            reworkStatusRows: []
+          }),
+          candidates: []
+        };
+      }
+
+      const [assetResult, feedbackResult, reworkResult, reworkStatusResult, totalResult] =
+        await Promise.all([
+          query(
+            `select *
+             from ga_pet_assets
+             where run_id = any($1::text[])
+             order by run_id asc, kind asc, id asc`,
+            [runIds]
+          ),
+          query(
+            `select *
+             from ga_pet_feedback
+             where run_id = any($1::text[])
+             order by created_at desc`,
+            [runIds]
+          ),
+          query(
+            `select *
+             from ga_pet_rework_requests
+             where source_run_id = any($1::text[])
+             order by created_at desc`,
+            [runIds]
+          ),
+          query(
+            `select *
+             from ga_pet_rework_statuses
+             where source_run_id = any($1::text[]) or target_run_id = any($1::text[])
+             order by created_at desc, id desc`,
+            [runIds]
+          ),
+          query("select count(*)::int as count from ga_pet_candidates")
+        ]);
+
+      const assetsByRun = groupRowsBy(assetResult.rows, "run_id");
+      const feedbackByRun = groupRowsBy(feedbackResult.rows, "run_id");
+      const reworksByRun = groupRowsBy(reworkResult.rows, "source_run_id");
+      const statuses = reworkStatusResult.rows.map(mapDatabaseReworkStatus);
+      const lineageIndex = createDatabaseLineageIndex({
+        reworkRows: reworkResult.rows,
+        statusRows: reworkStatusResult.rows
+      });
+      const mappedCandidates = candidates.map((candidate) =>
+        createDatabaseCandidateSummary({
+          candidate,
+          assets: assetsByRun.get(candidate.run_id) || [],
+          feedbackRows: feedbackByRun.get(candidate.run_id) || [],
+          reworkRows: reworksByRun.get(candidate.run_id) || [],
+          lineageIndex
+        })
+      );
+
+      return {
+        schema: "gamer.ga-pet-review-list.v1",
+        runRoot: "supabase:pet-assets",
+        count: mappedCandidates.length,
+        summary: createDatabaseReviewSummary({
+          totalCandidates: Number(totalResult.rows[0]?.count ?? mappedCandidates.length),
+          shownCandidates: mappedCandidates.length,
+          candidates: mappedCandidates,
+          feedbackRows: feedbackResult.rows,
+          reworkRows: reworkResult.rows,
+          reworkStatusRows: statuses
+        }),
+        candidates: mappedCandidates
+      };
+    },
+
+    async readAsset({ runId, relativePath }) {
+      const normalizedPath = normalizeRelativePath(relativePath);
+      if (!normalizedPath) {
+        return null;
+      }
+
+      const result = await query(
+        `select *
+         from ga_pet_assets
+         where run_id = $1 and relative_path = $2
+         limit 1`,
+        [runId, normalizedPath]
+      );
+      const asset = result.rows[0];
+      if (!asset?.storage_key) {
+        return null;
+      }
+
+      const response = await fetch(
+        `${supabaseUrl}/storage/v1/object/authenticated/${encodeURIComponent(asset.storage_bucket || bucket)}/${encodeStoragePath(asset.storage_key)}`,
+        {
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`supabase_storage_read_${response.status}`);
+      }
+
+      return {
+        file: Buffer.from(await response.arrayBuffer()),
+        contentType:
+          response.headers.get("content-type") ||
+          asset.content_type ||
+          contentTypeFor(asset.relative_path)
+      };
+    },
+
+    async writeFeedback({ runId, body }) {
+      const exists = await query(
+        "select run_id from ga_pet_candidates where run_id = $1 limit 1",
+        [runId]
+      );
+
+      if (exists.rows.length === 0) {
+        return null;
+      }
+
+      const feedback = createFeedbackRecord({ runId, body });
+      const learningNote = createLearningNote(feedback);
+      let reworkRequest = null;
+
+      await query(
+        `insert into ga_pet_feedback
+          (feedback_id, run_id, reviewer, decision, severity, action_id,
+           tags, notes, prompt_patch, rework_mode, metadata, created_at)
+         values ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9, $10, $11::jsonb, $12)
+         on conflict (feedback_id) do nothing`,
+        [
+          feedback.feedbackId,
+          feedback.runId,
+          feedback.reviewer,
+          feedback.decision,
+          feedback.severity,
+          feedback.actionId,
+          feedback.tags,
+          feedback.notes,
+          feedback.promptPatch,
+          feedback.reworkMode,
+          JSON.stringify({
+            schema: "gamer.ga-pet-feedback-metadata.v1",
+            learningNote
+          }),
+          feedback.createdAt
+        ]
+      );
+
+      if (["rework", "regenerate"].includes(feedback.decision) || feedback.reworkMode) {
+        reworkRequest = createReworkRequest(feedback);
+        await query(
+          `insert into ga_pet_rework_requests
+            (request_id, source_run_id, source_feedback_id, status, mode,
+             action_id, tags, notes, prompt_patch, metadata, created_at, updated_at)
+           values ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9, $10::jsonb, $11, $11)
+           on conflict (request_id) do nothing`,
+          [
+            reworkRequest.requestId,
+            reworkRequest.sourceRunId,
+            reworkRequest.sourceFeedbackId,
+            reworkRequest.status,
+            normalizeReworkMode(reworkRequest.mode),
+            reworkRequest.actionId,
+            reworkRequest.tags,
+            reworkRequest.notes,
+            reworkRequest.promptPatch,
+            JSON.stringify({
+              schema: "gamer.ga-pet-rework-request-metadata.v1",
+              source: "admin-review"
+            }),
+            reworkRequest.createdAt
+          ]
+        );
+      }
+
+      return {
+        ok: true,
+        feedback,
+        learningNote,
+        reworkRequest
+      };
+    }
   };
 }
 
@@ -234,13 +565,7 @@ async function readAsset({ runRoot, runId, relativePath }) {
   };
 }
 
-async function writeFeedback({ runRoot, runId, body }) {
-  const runDir = safeRunDirectory({ runRoot, runId });
-  const runInfo = await stat(runDir);
-  if (!runInfo.isDirectory()) {
-    throw new Error("GA pet candidate is not a directory.");
-  }
-
+function createFeedbackRecord({ runId, body }) {
   const now = new Date().toISOString();
   const feedbackId = `feedback-${now.replace(/[-:.]/gu, "")}-${shortId()}`;
   const feedback = {
@@ -262,6 +587,50 @@ async function writeFeedback({ runRoot, runId, body }) {
     throw new Error("Feedback needs notes or tags.");
   }
 
+  return feedback;
+}
+
+function createLearningNote(feedback) {
+  return {
+    schema: "gamer.ga-pet-learning-note.v1",
+    noteId: `lesson-${feedback.feedbackId}`,
+    sourceRunId: feedback.runId,
+    sourceFeedbackId: feedback.feedbackId,
+    createdAt: feedback.createdAt,
+    decision: feedback.decision,
+    severity: feedback.severity,
+    actionId: feedback.actionId,
+    tags: feedback.tags,
+    guidance: guidanceForTags(feedback.tags),
+    lesson: buildLearningLesson(feedback)
+  };
+}
+
+function createReworkRequest(feedback) {
+  return {
+    schema: "gamer.ga-pet-rework-request.v1",
+    requestId: `rework-${feedback.feedbackId}`,
+    sourceRunId: feedback.runId,
+    sourceFeedbackId: feedback.feedbackId,
+    createdAt: feedback.createdAt,
+    status: "requested",
+    mode: feedback.reworkMode || feedback.decision,
+    actionId: feedback.actionId,
+    tags: feedback.tags,
+    notes: feedback.notes,
+    promptPatch: feedback.promptPatch
+  };
+}
+
+async function writeFeedback({ runRoot, runId, body }) {
+  const runDir = safeRunDirectory({ runRoot, runId });
+  const runInfo = await stat(runDir);
+  if (!runInfo.isDirectory()) {
+    throw new Error("GA pet candidate is not a directory.");
+  }
+
+  const feedback = createFeedbackRecord({ runId, body });
+
   const feedbackLine = `${JSON.stringify(feedback)}\n`;
   await appendFile(path.join(runDir, "human-feedback.jsonl"), feedbackLine, "utf8");
   await writeFile(
@@ -270,19 +639,7 @@ async function writeFeedback({ runRoot, runId, body }) {
     "utf8"
   );
 
-  const learningNote = {
-    schema: "gamer.ga-pet-learning-note.v1",
-    noteId: `lesson-${feedbackId}`,
-    sourceRunId: runId,
-    sourceFeedbackId: feedbackId,
-    createdAt: now,
-    decision: feedback.decision,
-    severity: feedback.severity,
-    actionId: feedback.actionId,
-    tags: feedback.tags,
-    guidance: guidanceForTags(feedback.tags),
-    lesson: buildLearningLesson(feedback)
-  };
+  const learningNote = createLearningNote(feedback);
   await appendFile(
     path.join(path.resolve(runRoot), "ga-learning-notes.jsonl"),
     `${JSON.stringify(learningNote)}\n`,
@@ -291,19 +648,7 @@ async function writeFeedback({ runRoot, runId, body }) {
 
   let reworkRequest = null;
   if (["rework", "regenerate"].includes(feedback.decision) || feedback.reworkMode) {
-    reworkRequest = {
-      schema: "gamer.ga-pet-rework-request.v1",
-      requestId: `rework-${feedbackId}`,
-      sourceRunId: runId,
-      sourceFeedbackId: feedbackId,
-      createdAt: now,
-      status: "requested",
-      mode: feedback.reworkMode || feedback.decision,
-      actionId: feedback.actionId,
-      tags: feedback.tags,
-      notes: feedback.notes,
-      promptPatch: feedback.promptPatch
-    };
+    reworkRequest = createReworkRequest(feedback);
     await mkdir(path.join(runDir, "source", "generation"), { recursive: true });
     await appendFile(
       path.join(runDir, "source", "generation", "rework-requests.jsonl"),
@@ -363,6 +708,199 @@ async function summarizeEvidenceFiles({ runDir, runId }) {
     }
   }
   return files;
+}
+
+function createDatabaseCandidateSummary({
+  candidate,
+  assets,
+  feedbackRows,
+  reworkRows,
+  lineageIndex
+}) {
+  const runId = candidate.run_id;
+  const promptPlan = candidate.prompt_plan || {};
+  const packageManifest = candidate.package_manifest || {};
+  const motionMap = candidate.motion_map || {};
+  const previewAsset =
+    findAssetByStorageKey(assets, candidate.preview_storage_key) ||
+    assets.find((asset) => asset.kind === "preview") ||
+    assets.find((asset) => asset.relative_path === "previews/preview.png");
+  const packageAsset =
+    findAssetByStorageKey(assets, candidate.package_storage_key) ||
+    assets.find((asset) => asset.kind === "package");
+  const feedbackEntries = feedbackRows.map(mapDatabaseFeedback).sort(compareCreatedAsc);
+  const reworkRequests = reworkRows.map(mapDatabaseReworkRequest).sort(compareCreatedAsc);
+  const evidenceFiles = assets.map((asset) => ({
+    label: asset.label || labelFromPath(asset.relative_path),
+    kind: asset.kind || "asset",
+    path: asset.relative_path,
+    url: gaReviewFileUrl({ runId, relativePath: asset.relative_path }),
+    sizeBytes: Number(asset.byte_count || 0),
+    updatedAt: dateIso(asset.created_at)
+  }));
+
+  return {
+    schema: "gamer.ga-pet-review-candidate.v1",
+    runId,
+    displayName: candidate.display_name || promptPlan.name || runId,
+    summary: candidate.summary || promptPlan.summary || "",
+    species: candidate.species || promptPlan.species || "",
+    element: candidate.element || promptPlan.element || "",
+    status:
+      candidate.status ||
+      packageManifest.resourceStatus ||
+      packageManifest.qualityGate ||
+      "unknown",
+    packageMode: candidate.package_mode || promptPlan.packageMode || "",
+    backgroundMode: candidate.background_mode || promptPlan.backgroundMode || "",
+    createdAt: dateIso(candidate.created_at || packageManifest.generatedBy?.createdAt),
+    updatedAt: dateIso(candidate.updated_at),
+    previewPath: previewAsset?.relative_path || "",
+    previewUrl: previewAsset
+      ? gaReviewFileUrl({ runId, relativePath: previewAsset.relative_path })
+      : "",
+    packagePath: packageAsset?.relative_path || "",
+    packageUrl: packageAsset
+      ? gaReviewFileUrl({ runId, relativePath: packageAsset.relative_path })
+      : "",
+    motionSheets: summarizeMotionSheets(motionMap, runId),
+    evidenceFiles,
+    videoReferenceUrl: evidenceFiles.find((file) => file.path.endsWith(".mp4"))?.url || "",
+    lineage: summarizeLineage({
+      runId,
+      promptPlan: {
+        ...promptPlan,
+        sourceRunId: candidate.source_run_id || promptPlan.sourceRunId || "",
+        reworkRequestId: candidate.rework_request_id || promptPlan.reworkRequestId || ""
+      },
+      lineageIndex
+    }),
+    feedback: {
+      latest: feedbackEntries.at(-1) || null,
+      count: feedbackEntries.length,
+      history: feedbackEntries.slice(-8).reverse().map(summarizeFeedbackEntry)
+    },
+    rework: {
+      count: reworkRequests.length,
+      latest: reworkRequests.at(-1) || null,
+      requests: reworkRequests.slice(-8).reverse().map(summarizeReworkRequest)
+    }
+  };
+}
+
+function createDatabaseReviewSummary({
+  totalCandidates,
+  shownCandidates,
+  candidates,
+  feedbackRows,
+  reworkRows,
+  reworkStatusRows
+}) {
+  const mappedFeedback = feedbackRows.map(mapDatabaseFeedback);
+  const mappedReworks = reworkRows.map(mapDatabaseReworkRequest);
+  const statuses = reworkStatusRows.map((row) =>
+    row?.schema === "gamer.ga-pet-rework-status.v1"
+      ? row
+      : mapDatabaseReworkStatus(row)
+  );
+  const completed = idsWithStatus(statuses, "completed");
+  const failed = idsWithStatus(statuses, "failed");
+  const started = idsWithStatus(statuses, "started");
+  const terminal = new Set([...completed, ...failed]);
+  const queued = mappedReworks.filter(
+    (request) => !started.has(request.requestId) && !terminal.has(request.requestId)
+  );
+  const running = mappedReworks.filter(
+    (request) => started.has(request.requestId) && !terminal.has(request.requestId)
+  );
+
+  return {
+    schema: "gamer.ga-pet-review-summary.v1",
+    totalCandidates,
+    shownCandidates,
+    feedbackCount: mappedFeedback.length,
+    learningNoteCount: mappedFeedback.length,
+    decisions: countBy(mappedFeedback.map((feedback) => feedback.decision).filter(Boolean)),
+    topTags: countBy(mappedFeedback.flatMap((feedback) => feedback.tags)).slice(0, 8),
+    rework: {
+      requested: mappedReworks.length,
+      queued: queued.length,
+      running: running.length,
+      completed: completed.size,
+      failed: failed.size
+    }
+  };
+}
+
+function createDatabaseLineageIndex({ reworkRows, statusRows }) {
+  const requestsById = new Map();
+  const requestsBySource = new Map();
+  const statusesByRequest = new Map();
+
+  for (const row of reworkRows) {
+    const request = mapDatabaseReworkRequest(row);
+    requestsById.set(request.requestId, request);
+    appendMapList(requestsBySource, request.sourceRunId, request);
+  }
+
+  for (const row of statusRows) {
+    const statusEntry = mapDatabaseReworkStatus(row);
+    if (!statusesByRequest.has(statusEntry.requestId)) {
+      statusesByRequest.set(statusEntry.requestId, statusEntry);
+    }
+  }
+
+  return {
+    requestsById,
+    requestsBySource,
+    statusesByRequest
+  };
+}
+
+function mapDatabaseFeedback(row) {
+  return {
+    schema: "gamer.ga-pet-human-feedback.v1",
+    feedbackId: row.feedback_id,
+    runId: row.run_id,
+    createdAt: dateIso(row.created_at),
+    reviewer: row.reviewer || "admin-ui",
+    decision: row.decision || "",
+    severity: row.severity || "",
+    actionId: row.action_id || "",
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    notes: row.notes || "",
+    promptPatch: row.prompt_patch || "",
+    reworkMode: row.rework_mode || ""
+  };
+}
+
+function mapDatabaseReworkRequest(row) {
+  return {
+    schema: "gamer.ga-pet-rework-request.v1",
+    requestId: row.request_id,
+    sourceRunId: row.source_run_id,
+    sourceFeedbackId: row.source_feedback_id || "",
+    targetRunId: row.target_run_id || "",
+    createdAt: dateIso(row.created_at),
+    status: row.status || "requested",
+    mode: row.mode || "rework",
+    actionId: row.action_id || "",
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    notes: row.notes || "",
+    promptPatch: row.prompt_patch || ""
+  };
+}
+
+function mapDatabaseReworkStatus(row) {
+  return {
+    schema: "gamer.ga-pet-rework-status.v1",
+    requestId: row.request_id,
+    sourceRunId: row.source_run_id || "",
+    targetRunId: row.target_run_id || "",
+    status: row.status || "",
+    error: row.error || "",
+    createdAt: dateIso(row.created_at)
+  };
 }
 
 function summarizeFeedbackEntry(entry) {
@@ -525,9 +1063,35 @@ function normalizeRunId(value) {
   return runId;
 }
 
+function normalizeRelativePath(value) {
+  const clean = String(value ?? "")
+    .replace(/\\/gu, "/")
+    .replace(/^\/+/u, "");
+  const parts = clean.split("/").filter(Boolean);
+  if (parts.some((part) => part === "..")) {
+    return "";
+  }
+  return parts.join("/");
+}
+
+function encodeStoragePath(value) {
+  return normalizeRelativePath(value)
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+}
+
 function normalizeField(value, fallback) {
   const text = String(value ?? "").trim();
   return text || fallback;
+}
+
+function normalizeReworkMode(value) {
+  const mode = normalizeField(value, "rework");
+  if (["rework", "regenerate", "action-only", "identity-lock"].includes(mode)) {
+    return mode;
+  }
+  return "rework";
 }
 
 function parseTags(value) {
@@ -571,6 +1135,38 @@ function guidanceForTags(tags) {
 
 function shortId() {
   return Math.random().toString(36).slice(2, 8);
+}
+
+function groupRowsBy(rows, key) {
+  const grouped = new Map();
+  for (const row of rows) {
+    const value = row[key];
+    if (!value) continue;
+    const group = grouped.get(value) || [];
+    group.push(row);
+    grouped.set(value, group);
+  }
+  return grouped;
+}
+
+function findAssetByStorageKey(assets, storageKey) {
+  if (!storageKey) return null;
+  return assets.find((asset) => asset.storage_key === storageKey) || null;
+}
+
+function compareCreatedAsc(left, right) {
+  return Date.parse(left.createdAt || "") - Date.parse(right.createdAt || "");
+}
+
+function dateIso(value) {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString();
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : String(value);
+}
+
+function labelFromPath(value) {
+  return path.basename(String(value || ""));
 }
 
 async function safeReadDirectory(directory) {
