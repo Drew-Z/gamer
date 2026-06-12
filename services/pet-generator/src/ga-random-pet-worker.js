@@ -1327,11 +1327,15 @@ async function generateL0veYouImage({
     timeoutMs: config.requestTimeoutMs,
     body
   });
+  const resultJson = await waitForL0veYouTask({
+    config,
+    initialResponse: responseJson
+  });
 
-  const image = extractGeneratedImage(responseJson);
+  const image = extractGeneratedImage(resultJson);
   if (!image) {
     throw new Error(
-      `image_response_missing_data shape=${summarizeResponseShape(responseJson)}`
+      `image_response_missing_data shape=${summarizeResponseShape(resultJson)}`
     );
   }
   const bytes = image.base64
@@ -1346,7 +1350,7 @@ async function generateL0veYouImage({
   return {
     bytes,
     mimeType: image.mimeType || "image/png",
-    responseShape: summarizeResponseShape(responseJson)
+    responseShape: summarizeResponseShape(resultJson)
   };
 }
 
@@ -1383,6 +1387,63 @@ function buildL0veYouImageBody({
     resolution: l0veYouResolution(imageSize),
     aspect_ratio: aspectRatio
   };
+}
+
+async function waitForL0veYouTask({ config, initialResponse }) {
+  if (extractGeneratedImage(initialResponse) || extractGeneratedVideo(initialResponse)) {
+    return initialResponse;
+  }
+
+  const taskId = l0veYouTaskId(initialResponse);
+  if (!taskId) return initialResponse;
+
+  let latest = initialResponse;
+  for (let pollIndex = 0; pollIndex < config.videoMaxPolls; pollIndex += 1) {
+    const task = selectL0veYouTask(latest, taskId);
+    if (task) {
+      latest = task;
+    }
+    if (isL0veYouTaskSuccess(latest)) return latest;
+    if (isL0veYouTaskFailure(latest)) {
+      throw new Error(`l0veyou_task_failed:${safeApiError(latest)}`);
+    }
+
+    await sleep(config.videoPollSeconds * 1000);
+    latest = await getJson({
+      apiProvider: config.apiProvider,
+      apiKey: config.apiKey,
+      url: `${config.apiBaseUrl.replace(/\/+$/u, "")}/api/creation-tasks?client_task_id=${encodeURIComponent(taskId)}`,
+      timeoutMs: config.requestTimeoutMs
+    });
+  }
+
+  const task = selectL0veYouTask(latest, taskId);
+  return task || latest;
+}
+
+function l0veYouTaskId(responseJson) {
+  return String(
+    responseJson?.id ||
+    responseJson?.client_task_id ||
+    responseJson?.clientTaskId ||
+    ""
+  ).trim();
+}
+
+function selectL0veYouTask(responseJson, taskId) {
+  if (!responseJson || typeof responseJson !== "object") return null;
+  const items = Array.isArray(responseJson.items) ? responseJson.items : [];
+  return items.find((item) => String(item?.id || item?.client_task_id || "") === taskId) || null;
+}
+
+function isL0veYouTaskSuccess(responseJson) {
+  const status = String(responseJson?.status || "").trim().toLowerCase();
+  return ["success", "succeeded", "completed", "done"].includes(status);
+}
+
+function isL0veYouTaskFailure(responseJson) {
+  const status = String(responseJson?.status || "").trim().toLowerCase();
+  return ["failed", "failure", "error", "cancelled", "canceled"].includes(status);
 }
 
 function buildMotionMap({ motionResults }) {
@@ -1824,14 +1885,23 @@ async function generateL0veYouVideoReference({ config, prompt, runDir }) {
       aspect_ratio: config.spriteSheetAspectRatio || config.imageAspectRatio
     }
   });
+  const resultJson = await waitForL0veYouTask({
+    config,
+    initialResponse: responseJson
+  });
 
   const operationPath = "artifacts/video/operation.json";
-  await writeJsonFile(path.join(runDir, operationPath), redactOperationForLog(responseJson));
+  await writeJsonFile(path.join(runDir, operationPath), redactOperationForLog(resultJson));
 
-  const video = extractGeneratedVideo(responseJson);
+  const video = extractGeneratedVideo(resultJson);
   if (!video) {
     return {
-      done: Boolean(responseJson.done || responseJson.completed || responseJson.status === "completed"),
+      done: Boolean(
+        resultJson.done ||
+        resultJson.completed ||
+        resultJson.status === "completed" ||
+        resultJson.status === "success"
+      ),
       filePath: "",
       operationPath
     };
@@ -1899,13 +1969,24 @@ async function requestJson({ apiProvider, apiKey, url, init, timeoutMs }) {
       signal: controller.signal
     });
     const text = await response.text();
-    const json = text.trim() ? JSON.parse(text) : {};
+    const json = parseJsonResponse(text);
     if (!response.ok) {
       throw new Error(`ga_api_${response.status}:${safeApiError(json)}`);
     }
     return json;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function parseJsonResponse(text) {
+  if (!String(text || "").trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      raw: String(text).slice(0, 1000)
+    };
   }
 }
 
