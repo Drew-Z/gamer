@@ -299,6 +299,8 @@ export function createWorkerConfig(env = process.env) {
     actionIntervalSeconds: parseNonNegativeInteger(env.GA_PET_ACTION_INTERVAL_SECONDS, 0),
     customActionCount: parseNonNegativeInteger(env.GA_PET_CUSTOM_ACTION_COUNT, 3),
     requireAllActions: parseBoolean(env.GA_PET_REQUIRE_ALL_ACTIONS, false),
+    learningNoteLimit: parseNonNegativeInteger(env.GA_PET_LEARNING_NOTE_LIMIT, 12),
+    reworkQueue: parseBoolean(env.GA_PET_REWORK_QUEUE, true),
     configCheck:
       parseBoolean(env.GA_PET_CONFIG_CHECK, false) ||
       process.argv.includes("--config-check"),
@@ -336,7 +338,9 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     enableVideo: config.enableVideo,
     loop: config.loop,
     batchSize: config.batchSize,
-    maxRuns: config.maxRuns
+    maxRuns: config.maxRuns,
+    learningNoteLimit: config.learningNoteLimit,
+    reworkQueue: config.reworkQueue
   });
 
   let completedRuns = 0;
@@ -347,17 +351,42 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     for (let itemIndex = 0; itemIndex < config.batchSize; itemIndex += 1) {
       if (!shouldContinue(config, completedRuns)) break;
       completedRuns += 1;
-      const plan = buildRandomPetPromptPlan({
-        runOrdinal: completedRuns,
-        seed: crypto.randomBytes(8).toString("hex"),
-        packageMode: config.packageMode,
-        customActionCount: config.customActionCount,
-        backgroundMode: config.backgroundMode
+      const seed = crypto.randomBytes(8).toString("hex");
+      const learningContext = await loadLearningContext({
+        runRoot: config.runRoot,
+        limit: config.learningNoteLimit
       });
+      const reworkRequest = config.reworkQueue
+        ? await findNextReworkRequest(config.runRoot)
+        : null;
+      const plan = reworkRequest
+        ? await buildReworkPetPromptPlan({
+            config,
+            runOrdinal: completedRuns,
+            seed,
+            request: reworkRequest,
+            learningInstruction: learningContext.instruction
+          })
+        : buildRandomPetPromptPlan({
+            runOrdinal: completedRuns,
+            seed,
+            packageMode: config.packageMode,
+            customActionCount: config.customActionCount,
+            backgroundMode: config.backgroundMode,
+            learningInstruction: learningContext.instruction
+          });
       const runId = createRunId(plan, completedRuns);
       const runDir = path.join(config.runRoot, runId);
 
       try {
+        if (reworkRequest) {
+          await appendReworkStatus(config.runRoot, {
+            requestId: reworkRequest.requestId,
+            sourceRunId: reworkRequest.sourceRunId,
+            targetRunId: runId,
+            status: "started"
+          });
+        }
         const result = await generateCandidateRun({
           config,
           plan,
@@ -374,6 +403,9 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
           packageMode: config.packageMode,
           qualityPreset: config.qualityPreset,
           backgroundMode: config.backgroundMode,
+          runKind: reworkRequest ? "rework" : "random",
+          reworkRequestId: reworkRequest?.requestId || "",
+          learningNoteCount: learningContext.count,
           imageModel: config.imageModel,
           imageSize: config.imageSize,
           spriteSheetImageSize: config.spriteSheetImageSize,
@@ -383,11 +415,28 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
           expectedActionCount: result.expectedActionCount,
           status: result.status
         });
+        if (reworkRequest) {
+          await appendReworkStatus(config.runRoot, {
+            requestId: reworkRequest.requestId,
+            sourceRunId: reworkRequest.sourceRunId,
+            targetRunId: runId,
+            status: "completed"
+          });
+        }
         console.log(
           `[ga-worker] candidate-ready ${runId} status=${result.status} actions=${result.generatedActionCount}/${result.expectedActionCount} zip=${result.packageZip}`
         );
       } catch (error) {
         const safeError = safeErrorMessage(error);
+        if (reworkRequest) {
+          await appendReworkStatus(config.runRoot, {
+            requestId: reworkRequest.requestId,
+            sourceRunId: reworkRequest.sourceRunId,
+            targetRunId: runId,
+            status: "failed",
+            error: safeError
+          });
+        }
         await mkdir(runDir, { recursive: true });
         await writeJsonFile(path.join(runDir, "failure.json"), {
           runId,
@@ -428,7 +477,8 @@ export function buildRandomPetPromptPlan({
   seed,
   packageMode = "full",
   customActionCount = 3,
-  backgroundMode = "transparent"
+  backgroundMode = "transparent",
+  learningInstruction = ""
 }) {
   const pick = (items, offset) => items[indexFromSeed(seed, offset, items.length)];
   const species = pick(SPECIES, 0);
@@ -447,6 +497,7 @@ export function buildRandomPetPromptPlan({
     `Temperament: ${temperament}.`,
     `Animation direction: ${motionIdea}.`,
     `Full body, centered, no cropping. ${backgroundInstruction}`,
+    learningInstruction ? `Human review lessons to apply: ${learningInstruction}` : "",
     "Cute game companion, readable at 128px, strong silhouette, separated ears, paws, tail, and effects.",
     "No text, no watermark, no UI, no existing IP, no photorealistic human features.",
     "Design it as a source identity image for later sprite-sheet animation."
@@ -481,6 +532,7 @@ export function buildRandomPetPromptPlan({
     imagePrompt: identityPrompt,
     videoPrompt,
     backgroundInstruction,
+    learningInstruction,
     actions,
     reviewChecklist: [
       "Original creature, not recognizable as existing IP",
@@ -582,6 +634,104 @@ function dedupeActions(actions) {
     result.push(action);
   }
   return result;
+}
+
+async function buildReworkPetPromptPlan({
+  config,
+  runOrdinal,
+  seed,
+  request,
+  learningInstruction
+}) {
+  const originalPlan = await readPromptPlanForRework(config.runRoot, request);
+  const species = originalPlan?.species || "fantasy desktop pet";
+  const element = originalPlan?.element || "bright original";
+  const temperament = originalPlan?.temperament || "friendly";
+  const motionIdea = originalPlan?.motionIdea || "polished desktop-pet motion";
+  const palette = originalPlan?.palette || "bright readable companion colors";
+  const name = `${originalPlan?.name || titleCase(species)} Rework`;
+  const summary = `Rework ${request.sourceRunId}: ${request.notes || request.promptPatch || motionIdea}`;
+  const backgroundMode = config.backgroundMode || originalPlan?.backgroundMode || "transparent";
+  const backgroundInstruction = backgroundInstructionFor(backgroundMode);
+  const feedbackInstruction = buildReworkInstruction(request);
+  const combinedLearningInstruction = [learningInstruction, feedbackInstruction]
+    .filter(Boolean)
+    .join(" ");
+  const actions = Array.isArray(originalPlan?.actions) && originalPlan.actions.length > 0
+    ? originalPlan.actions
+    : buildAdaptiveActionPlan({
+        species,
+        element,
+        temperament,
+        motionIdea,
+        seed,
+        customActionCount: config.customActionCount
+      });
+
+  const imagePrompt = [
+    "Create a revised original fantasy desktop pet character from a prior generated candidate.",
+    `Source run: ${request.sourceRunId}.`,
+    `Creature: ${species}.`,
+    `Element and palette: ${element}; ${palette}.`,
+    `Temperament: ${temperament}.`,
+    `Human feedback to fix: ${feedbackInstruction}`,
+    `Full body, centered, no cropping. ${backgroundInstruction}`,
+    combinedLearningInstruction
+      ? `Also apply accumulated review lessons: ${combinedLearningInstruction}`
+      : "",
+    "Preserve the strongest parts of the original concept while correcting the reviewed problems.",
+    "No text, no watermark, no UI, no existing IP, no photorealistic human features.",
+    "Design it as a source identity image for later sprite-sheet animation."
+  ].join(" ");
+
+  const videoPrompt = [
+    "Create a short motion reference for the revised original fantasy desktop pet.",
+    `Pet: ${name}, based on ${species} with ${element} styling.`,
+    `Human feedback to fix: ${feedbackInstruction}`,
+    "Keep the body centered with no camera zoom, no scene cuts, no text, no watermark."
+  ].join(" ");
+
+  return {
+    schema: "gamer.ga-random-pet-rework-prompt-plan.v1",
+    packageMode: config.packageMode,
+    backgroundMode,
+    runOrdinal,
+    seed,
+    name,
+    summary,
+    sourceRunId: request.sourceRunId,
+    reworkRequestId: request.requestId,
+    species,
+    element,
+    temperament,
+    motionIdea,
+    palette,
+    imagePrompt,
+    videoPrompt,
+    backgroundInstruction,
+    learningInstruction: combinedLearningInstruction,
+    actions,
+    reviewChecklist: [
+      "Rework directly addresses the human feedback",
+      "Original creature, not recognizable as existing IP",
+      "Full body readable at Android small-avatar scale",
+      "No text or watermark",
+      "Core and adaptive action sheets preserve identity",
+      "Effects support transparent PNG cleanup"
+    ]
+  };
+}
+
+function buildReworkInstruction(request) {
+  const pieces = [];
+  if (request.actionId) pieces.push(`focus action ${request.actionId}`);
+  if (Array.isArray(request.tags) && request.tags.length > 0) {
+    pieces.push(`problem tags: ${request.tags.join(", ")}`);
+  }
+  if (request.notes) pieces.push(request.notes);
+  if (request.promptPatch) pieces.push(`specific prompt patch: ${request.promptPatch}`);
+  if (request.mode) pieces.push(`requested mode: ${request.mode}`);
+  return pieces.join("; ") || "improve identity consistency, transparency, and motion readability";
 }
 
 function backgroundInstructionFor(backgroundMode) {
@@ -947,6 +1097,9 @@ function buildMotionSheetPrompt({ plan, action }) {
     `Action id: ${action.id}.`,
     `Desktop trigger: ${action.trigger}.`,
     `Motion: ${action.prompt}.`,
+    plan.learningInstruction
+      ? `Human review lessons to apply before drawing this sheet: ${plan.learningInstruction}`
+      : "",
     `Create exactly ${action.frameCount} animation frames in one single horizontal row.`,
     "Every frame must have the same canvas size and the same body scale.",
     "Keep the ground anchor and body center stable unless the action clearly jumps or lands.",
@@ -1213,6 +1366,8 @@ function printConfigCheck(config) {
     actionIntervalSeconds: config.actionIntervalSeconds,
     customActionCount: config.customActionCount,
     requireAllActions: config.requireAllActions,
+    learningNoteLimit: config.learningNoteLimit,
+    reworkQueue: config.reworkQueue,
     estimatedCallsPerCandidate: {
       image: expectedImageCalls,
       video: expectedVideoCalls
@@ -1237,6 +1392,69 @@ function fxForAction(action) {
   if (action.id.includes("attention")) return "friendly_ping";
   if (action.category === "adaptive-habit") return "species_signature";
   return "none";
+}
+
+async function loadLearningContext({ runRoot, limit }) {
+  const notes = await readJsonLinesIfExists(path.join(runRoot, "ga-learning-notes.jsonl"));
+  const recent = notes
+    .filter((note) => typeof note?.lesson === "string" && note.lesson.trim())
+    .slice(-limit);
+  const instruction = recent
+    .map((note) => {
+      const action = note.actionId ? `action ${note.actionId}: ` : "";
+      const tags = Array.isArray(note.tags) && note.tags.length > 0
+        ? `[${note.tags.join(", ")}] `
+        : "";
+      return `${action}${tags}${note.lesson}`;
+    })
+    .join(" | ")
+    .slice(0, 2400);
+  return {
+    count: recent.length,
+    instruction
+  };
+}
+
+async function findNextReworkRequest(runRoot) {
+  const records = await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
+  const consumed = new Set(
+    records
+      .filter((record) =>
+        record?.schema === "gamer.ga-pet-rework-status.v1" &&
+        ["started", "completed", "failed"].includes(record.status)
+      )
+      .map((record) => record.requestId)
+  );
+  return records.find(
+    (record) =>
+      record?.schema === "gamer.ga-pet-rework-request.v1" &&
+      record.status === "requested" &&
+      record.requestId &&
+      !consumed.has(record.requestId)
+  ) || null;
+}
+
+async function appendReworkStatus(runRoot, status) {
+  await appendFile(
+    path.join(runRoot, "ga-rework-queue.jsonl"),
+    `${JSON.stringify({
+      schema: "gamer.ga-pet-rework-status.v1",
+      requestId: status.requestId,
+      sourceRunId: status.sourceRunId || "",
+      targetRunId: status.targetRunId || "",
+      status: status.status,
+      error: status.error || "",
+      createdAt: new Date().toISOString()
+    })}\n`,
+    "utf8"
+  );
+}
+
+async function readPromptPlanForRework(runRoot, request) {
+  if (!request?.sourceRunId) return null;
+  return readJsonIfExists(
+    path.join(runRoot, request.sourceRunId, "source", "generation", "prompt-plan.json")
+  );
 }
 
 async function generateVideoReference({ config, prompt, runDir }) {
@@ -1729,6 +1947,29 @@ async function writeJsonFile(filePath, value) {
 async function appendExperience(filePath, value) {
   await mkdir(path.dirname(filePath), { recursive: true });
   await appendFile(filePath, `${JSON.stringify(value)}\n`, "utf8");
+}
+
+async function readJsonIfExists(filePath) {
+  try {
+    return JSON.parse(await readFile(filePath, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    return null;
+  }
+}
+
+async function readJsonLinesIfExists(filePath) {
+  try {
+    const text = await readFile(filePath, "utf8");
+    return text
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+  } catch (error) {
+    if (error?.code === "ENOENT") return [];
+    return [];
+  }
 }
 
 function safeApiError(json) {

@@ -88,6 +88,37 @@ GA_PET_RUN_ROOT/
 
 Video files appear only when `GA_PET_ENABLE_VIDEO=1` and the Veo operation returns downloadable media.
 
+## Human Review Console
+
+The admin review app now exposes a GA random pet review panel. Start the existing admin console and point it at the same run root:
+
+```powershell
+GA_PET_RUN_ROOT=/data/ga-random-pets
+npm run start:admin-review
+```
+
+Open the admin console and use the `GA Random Pets` section. It reads candidates directly from `GA_PET_RUN_ROOT`, displays previews and motion sheets, and writes:
+
+```text
+GA_PET_RUN_ROOT/
+  ga-learning-notes.jsonl
+  ga-rework-queue.jsonl
+  ga-<run-id>/
+    human-feedback.jsonl
+    human-feedback-latest.json
+    source/generation/rework-requests.jsonl
+```
+
+Feedback decisions:
+
+- `Looks good`: records a positive note for later triage.
+- `Hold`: records an observation without queueing a rework.
+- `Rework`: queues a repair-style request for the same pet concept.
+- `Regenerate pet`: queues a stronger regeneration request while preserving useful concept notes.
+- `Reject`: records a negative lesson so future prompts avoid similar failures.
+
+The worker reads recent `ga-learning-notes.jsonl` entries and injects them into later identity and motion-sheet prompts. When `GA_PET_REWORK_QUEUE=1` is enabled, it also consumes `ga-rework-queue.jsonl` before starting a random pet, producing a new rework run linked to the source candidate.
+
 ## Motion Plan
 
 Full mode uses two layers of actions:
@@ -119,6 +150,8 @@ Each generated action is requested as a single horizontal spritesheet. `meta/mot
 - `GA_PET_IMAGE_DELIVERY`: optional; set to the proxy's URI/inline value if needed.
 - `GA_PET_CUSTOM_ACTION_COUNT`: defaults to `3` species-habit actions in addition to core actions and signature.
 - `GA_PET_REQUIRE_ALL_ACTIONS`: set to `1` only if a missing action should fail the whole package.
+- `GA_PET_LEARNING_NOTE_LIMIT`: defaults to `12`; recent human notes injected into future prompts.
+- `GA_PET_REWORK_QUEUE`: defaults to on; set to `0` to ignore queued rework requests.
 - `GA_PET_CONFIG_CHECK`: set to `1` to print a safe config summary and exit without generation.
 - `GA_PET_ENABLE_VIDEO`: defaults to off.
 - `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`.

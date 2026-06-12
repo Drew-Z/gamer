@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createGaPetReviewStore, decodeBody } from "./src/gaPetReviewStore.js";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(rootDir, "public");
@@ -18,6 +19,14 @@ const writeJson = (response, status, body) => {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
 };
+
+const readRequestBody = async (request) =>
+  new Promise((resolve, reject) => {
+    const chunks = [];
+    request.on("data", (chunk) => chunks.push(chunk));
+    request.on("end", () => resolve(Buffer.concat(chunks)));
+    request.on("error", reject);
+  });
 
 const directProxyPrefixes = [
   "/health",
@@ -46,12 +55,7 @@ const proxyTargetPath = (url) => {
 
 const proxyRequest = async (request, response, url, communityApiUrl) => {
   const target = new URL(proxyTargetPath(url), communityApiUrl);
-  const body = await new Promise((resolve, reject) => {
-    const chunks = [];
-    request.on("data", (chunk) => chunks.push(chunk));
-    request.on("end", () => resolve(Buffer.concat(chunks)));
-    request.on("error", reject);
-  });
+  const body = await readRequestBody(request);
 
   const upstream = await fetch(target, {
     method: request.method,
@@ -65,6 +69,42 @@ const proxyRequest = async (request, response, url, communityApiUrl) => {
     "Content-Type": upstream.headers.get("content-type") ?? "application/json"
   });
   response.end(Buffer.from(await upstream.arrayBuffer()));
+};
+
+const handleGaReviewRequest = async (request, response, url, store) => {
+  if (request.method === "GET" && url.pathname === "/ga-review/candidates") {
+    const limit = Number.parseInt(url.searchParams.get("limit") || "40", 10);
+    writeJson(response, 200, await store.listCandidates({ limit }));
+    return true;
+  }
+
+  if (request.method === "GET" && url.pathname.startsWith("/ga-review/files/")) {
+    const runId = decodeURIComponent(url.pathname.slice("/ga-review/files/".length));
+    const relativePath = url.searchParams.get("path") || "";
+    const asset = await store.readAsset({ runId, relativePath });
+    response.writeHead(200, {
+      "Content-Type": asset.contentType,
+      "Cache-Control": "no-store"
+    });
+    response.end(asset.file);
+    return true;
+  }
+
+  const feedbackPrefix = "/ga-review/candidates/";
+  if (
+    request.method === "POST" &&
+    url.pathname.startsWith(feedbackPrefix) &&
+    url.pathname.endsWith("/feedback")
+  ) {
+    const runId = decodeURIComponent(
+      url.pathname.slice(feedbackPrefix.length, -"/feedback".length)
+    );
+    const body = decodeBody(await readRequestBody(request));
+    writeJson(response, 200, await store.writeFeedback({ runId, body }));
+    return true;
+  }
+
+  return false;
 };
 
 const resolveStaticPath = (url) => {
@@ -83,10 +123,26 @@ const isInside = (target, parent) => {
 
 export function createAdminReviewHttpHandler(options = {}) {
   const communityApiUrl = options.communityApiUrl ?? "http://127.0.0.1:4000";
+  const gaPetReviewStore = createGaPetReviewStore({
+    runRoot: options.gaPetRunRoot
+  });
 
   return async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://localhost");
+
+      if (url.pathname.startsWith("/ga-review/")) {
+        const handled = await handleGaReviewRequest(
+          request,
+          response,
+          url,
+          gaPetReviewStore
+        );
+        if (!handled) {
+          writeJson(response, 404, { error: "not_found" });
+        }
+        return;
+      }
 
       if (url.pathname.startsWith("/api/") || shouldProxyDirect(url.pathname)) {
         await proxyRequest(request, response, url, communityApiUrl);
@@ -125,7 +181,10 @@ export function startAdminReviewServer(options = {}) {
   const port = Number.parseInt(options.port ?? env.PORT ?? "4200", 10);
   const communityApiUrl =
     options.communityApiUrl ?? env.COMMUNITY_API_URL ?? "http://127.0.0.1:4000";
-  const server = http.createServer(createAdminReviewHttpHandler({ communityApiUrl }));
+  const gaPetRunRoot = options.gaPetRunRoot ?? env.GA_PET_RUN_ROOT;
+  const server = http.createServer(
+    createAdminReviewHttpHandler({ communityApiUrl, gaPetRunRoot })
+  );
 
   server.listen(port, "0.0.0.0", () => {
     console.log(`admin-review listening on ${port}`);

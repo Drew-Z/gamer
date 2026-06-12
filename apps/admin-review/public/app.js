@@ -17,6 +17,11 @@ const state = {
   approvedPetModel: createApprovedPetRegistryModel({ items: [] }),
   draftModel: createImportDraftListModel({ drafts: [] }),
   generationJobModel: createFantasyPetJobModel({}),
+  gaReviewModel: {
+    runRoot: "",
+    count: 0,
+    candidates: []
+  },
   healthStatus: formatHealthStatus({}),
   selectedGenerationCandidateId: "",
   model: createReviewDashboardModel({ items: [] })
@@ -45,6 +50,9 @@ const elements = {
     "#generation-import-package-button"
   ),
   generationImportStatus: document.querySelector("#generation-import-status"),
+  gaReviewStatus: document.querySelector("#ga-review-status"),
+  gaReviewRefreshButton: document.querySelector("#ga-review-refresh-button"),
+  gaReviewList: document.querySelector("#ga-review-list"),
   importForm: document.querySelector("#import-form"),
   importButton: document.querySelector("#import-button"),
   importStatus: document.querySelector("#import-status"),
@@ -214,6 +222,22 @@ function setActiveFilter(filter) {
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
+    headers: {
+      "Content-Type": "application/json"
+    },
+    ...options
+  });
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new Error(body.message ?? body.error ?? `Request failed: ${response.status}`);
+  }
+
+  return body;
+}
+
+async function requestLocalJson(path, options = {}) {
+  const response = await fetch(path, {
     headers: {
       "Content-Type": "application/json"
     },
@@ -466,6 +490,151 @@ function renderGenerationJob() {
     : "claim-app-job-id";
 }
 
+function renderGaReviewList() {
+  elements.gaReviewList.replaceChildren();
+
+  const candidates = state.gaReviewModel.candidates || [];
+  if (candidates.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "ga-review-empty";
+    empty.textContent = "No GA random pet candidates found yet.";
+    elements.gaReviewList.append(empty);
+    return;
+  }
+
+  for (const candidate of candidates) {
+    const node = document.createElement("article");
+    node.className = "ga-review-card";
+    node.dataset.runId = candidate.runId;
+
+    const preview = document.createElement("img");
+    preview.className = "ga-review-preview";
+    preview.alt = `${candidate.displayName} preview`;
+    preview.loading = "lazy";
+    preview.src = candidate.previewUrl || "";
+
+    const body = document.createElement("div");
+    body.className = "ga-review-body";
+
+    const heading = document.createElement("div");
+    heading.className = "ga-review-card-heading";
+
+    const titleBlock = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = candidate.displayName || candidate.runId;
+    const meta = document.createElement("p");
+    meta.textContent = [
+      candidate.status,
+      candidate.packageMode,
+      candidate.backgroundMode,
+      `${candidate.motionSheets?.length || 0} motions`
+    ]
+      .filter(Boolean)
+      .join(" / ");
+    titleBlock.append(title, meta);
+
+    const packageLink = document.createElement(candidate.packageUrl ? "a" : "span");
+    packageLink.className = "ga-review-package-link";
+    packageLink.textContent = candidate.packageUrl ? "Package" : "No package";
+    if (candidate.packageUrl) {
+      packageLink.href = candidate.packageUrl;
+      packageLink.download = "";
+    }
+    heading.append(titleBlock, packageLink);
+
+    const summary = document.createElement("p");
+    summary.className = "ga-review-summary";
+    summary.textContent = candidate.summary || candidate.runId;
+
+    const feedback = document.createElement("p");
+    feedback.className = "ga-review-feedback-summary";
+    const latest = candidate.feedback?.latest;
+    feedback.textContent = latest
+      ? `Latest: ${latest.decision} / ${latest.tags?.join(", ") || "no tags"}`
+      : "No human notes yet.";
+
+    const motionStrip = document.createElement("div");
+    motionStrip.className = "ga-motion-strip";
+    for (const motion of (candidate.motionSheets || []).slice(0, 8)) {
+      const motionItem = document.createElement("div");
+      motionItem.className = "ga-motion-item";
+      motionItem.title = motion.trigger || motion.actionId;
+      if (motion.imageUrl) {
+        const image = document.createElement("img");
+        image.alt = motion.actionId;
+        image.loading = "lazy";
+        image.src = motion.imageUrl;
+        motionItem.append(image);
+      }
+      const label = document.createElement("span");
+      label.textContent = motion.actionId;
+      motionItem.append(label);
+      motionStrip.append(motionItem);
+    }
+
+    const form = document.createElement("form");
+    form.className = "ga-feedback-form";
+    form.dataset.runId = candidate.runId;
+
+    const decision = document.createElement("select");
+    decision.name = "decision";
+    for (const [value, label] of [
+      ["hold", "Hold"],
+      ["accept-candidate", "Looks good"],
+      ["rework", "Rework"],
+      ["regenerate", "Regenerate pet"],
+      ["reject", "Reject"]
+    ]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      decision.append(option);
+    }
+
+    const severity = document.createElement("select");
+    severity.name = "severity";
+    for (const value of ["low", "medium", "high", "blocker"]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      severity.append(option);
+    }
+    severity.value = "medium";
+
+    const actionId = document.createElement("input");
+    actionId.name = "actionId";
+    actionId.placeholder = "action id";
+    actionId.autocomplete = "off";
+
+    const tags = document.createElement("input");
+    tags.name = "tags";
+    tags.placeholder = "tags: identity drift, static frames";
+    tags.autocomplete = "off";
+
+    const notes = document.createElement("textarea");
+    notes.name = "notes";
+    notes.placeholder = "What is wrong, what should GA preserve, and what should change?";
+    notes.rows = 3;
+
+    const promptPatch = document.createElement("textarea");
+    promptPatch.name = "promptPatch";
+    promptPatch.placeholder = "Optional prompt patch for rework/regeneration";
+    promptPatch.rows = 2;
+
+    const submit = document.createElement("button");
+    submit.className = "action-button primary";
+    submit.type = "submit";
+    submit.textContent = "Save note";
+
+    form.append(decision, severity, actionId, tags, notes, promptPatch, submit);
+    form.addEventListener("submit", submitGaFeedback);
+
+    body.append(heading, summary, feedback, motionStrip, form);
+    node.append(preview, body);
+    elements.gaReviewList.append(node);
+  }
+}
+
 function renderList() {
   elements.list.replaceChildren();
 
@@ -583,6 +752,7 @@ function renderList() {
 
 function render() {
   renderGenerationJob();
+  renderGaReviewList();
   renderSummary();
   renderApprovedPetList();
   renderDraftList();
@@ -599,19 +769,43 @@ async function loadQueue() {
 
 async function loadDashboard() {
   elements.statusLine.textContent = "Loading review queue...";
-  const [health, drafts, queue, approvedPets] = await Promise.all([
+  const [health, drafts, queue, approvedPets, gaReview] = await Promise.all([
     requestJson("/health"),
     requestJson("/v1/import-drafts"),
     requestJson("/v1/admin/review-queue"),
-    requestJson("/v1/pets/approved")
+    requestJson("/v1/pets/approved"),
+    loadGaReviewCandidates({ silent: true })
   ]);
   state.healthStatus = formatHealthStatus(health);
   state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
   state.approvedPetModel = createApprovedPetRegistryModel(approvedPets);
+  state.gaReviewModel = gaReview;
   elements.statusLine.textContent =
     `Loaded ${state.model.summary.total} submissions / ${state.healthStatus}`;
   render();
+}
+
+async function loadGaReviewCandidates({ silent = false } = {}) {
+  if (!silent) {
+    elements.gaReviewRefreshButton.disabled = true;
+    elements.gaReviewStatus.textContent = "Loading GA random pet candidates...";
+  }
+
+  try {
+    const model = await requestLocalJson("/ga-review/candidates?limit=30");
+    state.gaReviewModel = model;
+    elements.gaReviewStatus.textContent =
+      `${model.count} candidates from ${model.runRoot}`;
+    renderGaReviewList();
+    return model;
+  } catch (error) {
+    elements.gaReviewStatus.textContent =
+      error instanceof Error ? error.message : "Unable to load GA candidates";
+    return state.gaReviewModel;
+  } finally {
+    elements.gaReviewRefreshButton.disabled = false;
+  }
 }
 
 async function loadGenerationJob(appJobId) {
@@ -687,6 +881,53 @@ async function reviewGenerationCandidate(decision) {
   elements.generationStatus.textContent =
     `${state.generationJobModel.progressStatus || "updated"} / ${state.generationJobModel.nextAction || "wait"}`;
   renderGenerationJob();
+}
+
+async function submitGaFeedback(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const runId = form.dataset.runId;
+  if (!runId) return;
+
+  const submit = form.querySelector("button[type='submit']");
+  submit.disabled = true;
+  elements.gaReviewStatus.textContent = `Saving feedback for ${runId}...`;
+
+  try {
+    const formData = new FormData(form);
+    const payload = {
+      decision: String(formData.get("decision") || "hold"),
+      severity: String(formData.get("severity") || "medium"),
+      actionId: String(formData.get("actionId") || ""),
+      tags: String(formData.get("tags") || ""),
+      notes: String(formData.get("notes") || ""),
+      promptPatch: String(formData.get("promptPatch") || ""),
+      reworkMode:
+        String(formData.get("decision") || "") === "regenerate"
+          ? "regenerate"
+          : String(formData.get("decision") || "") === "rework"
+            ? "repair"
+            : ""
+    };
+    const response = await requestLocalJson(
+      `/ga-review/candidates/${pathSegment(runId)}/feedback`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }
+    );
+    const reworkLabel = response.reworkRequest
+      ? ` Rework queued: ${response.reworkRequest.requestId}.`
+      : "";
+    elements.gaReviewStatus.textContent = `Saved ${response.feedback.decision} for ${runId}.${reworkLabel}`;
+    form.reset();
+    await loadGaReviewCandidates({ silent: true });
+  } catch (error) {
+    elements.gaReviewStatus.textContent =
+      error instanceof Error ? error.message : "Unable to save GA feedback";
+  } finally {
+    submit.disabled = false;
+  }
 }
 
 async function submitImportDraft(draftId) {
@@ -849,6 +1090,10 @@ async function importFantasyPetState(event) {
 
 elements.refreshButton.addEventListener("click", () => {
   loadDashboard().catch(showError);
+});
+
+elements.gaReviewRefreshButton.addEventListener("click", () => {
+  loadGaReviewCandidates().catch(showError);
 });
 
 elements.importForm.addEventListener("submit", (event) => {
