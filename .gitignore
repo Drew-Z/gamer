@@ -4,6 +4,9 @@
 build/
 dist/
 node_modules/
+.env
+.env.*
+!.env.example
 services/community-api/data/
 services/pet-generator/data/
 .venv/
