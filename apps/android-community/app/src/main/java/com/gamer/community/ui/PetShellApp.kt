@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -172,35 +173,35 @@ internal data class PetShellHeaderBackgroundSpec(
 
 private object GamerUiTokens {
     object ColorRole {
-        val Ink = Color(0xFF172033)
-        val Muted = Color(0xFF66738A)
-        val Subtle = Color(0xFF4E5D73)
-        val Line = Color(0xFFE7EDF5)
-        val Raised = Color(0xFFFFFCF7)
+        val Ink = Color(0xFF142136)
+        val Muted = Color(0xFF5D6E87)
+        val Subtle = Color(0xFF465A73)
+        val Line = Color(0xFFE2EEF8)
+        val Raised = Color(0xFFFFFFFF)
         val Disabled = Color(0xFFA7B1C2)
-        val ShellBackground = Color(0xFFF7FBFF)
-        val DarkSurface = Color(0xFF075C72)
-        val DarkRaised = Color(0xFF0D7891)
-        val DarkLine = Color(0xFF4DB7C8)
-        val Identity = Color(0xFF08A99D)
+        val ShellBackground = Color(0xFFF8FCFF)
+        val DarkSurface = Color(0xFF0B7487)
+        val DarkRaised = Color(0xFF1597AA)
+        val DarkLine = Color(0xFF7BD8E3)
+        val Identity = Color(0xFF00B8AA)
         val IdentityDark = Color(0xFF064E4A)
-        val IdentitySoft = Color(0xFFD9FBF4)
-        val Reward = Color(0xFFFF8A1C)
+        val IdentitySoft = Color(0xFFD8FFF7)
+        val Reward = Color(0xFFFF9B2F)
         val RewardDark = Color(0xFF8A4200)
-        val RewardSoft = Color(0xFFFFE7C7)
-        val Review = Color(0xFF3B82F6)
+        val RewardSoft = Color(0xFFFFEED2)
+        val Review = Color(0xFF4F8CFF)
         val ReviewDark = Color(0xFF1D4ED8)
-        val ReviewSoft = Color(0xFFE7F0FF)
-        val Mystery = Color(0xFFA855F7)
+        val ReviewSoft = Color(0xFFEAF3FF)
+        val Mystery = Color(0xFFB962F7)
         val Success = Color(0xFF10A66B)
         val Warning = Color(0xFFE03B2D)
-        val WarningSoft = Color(0xFFFFF3D6)
+        val WarningSoft = Color(0xFFFFF4D8)
         val ChannelText = Color(0xFFFFFFFF)
-        val HatchSurface = Color(0xFFFFFCF2)
-        val HatchLine = Color(0xFFFFCA79)
-        val NeutralPill = Color(0xFFF2F7FB)
-        val EggShell = Color(0xFFFFD38A)
-        val EggShellIdle = Color(0xFFFFF1D9)
+        val HatchSurface = Color(0xFFFFFFF6)
+        val HatchLine = Color(0xFFFFD58B)
+        val NeutralPill = Color(0xFFF1F7FC)
+        val EggShell = Color(0xFFFFD892)
+        val EggShellIdle = Color(0xFFFFF4DF)
         val EggCrack = Color(0xFFD66A00)
     }
 
@@ -643,7 +644,7 @@ fun PetShellApp(
     }
 
     MaterialTheme(colorScheme = GamerColorScheme) {
-        Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF7F8FA)) {
+        Surface(modifier = Modifier.fillMaxSize(), color = GamerUiTokens.ColorRole.ShellBackground) {
             if (!defaultDesktopPetInitialized) {
                 DefaultDesktopPetOnboardingScreen(
                     state = state,
@@ -1266,9 +1267,9 @@ private fun DesktopPetScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0D3430),
-                        Color(0xFF123D39),
-                        Color(0xFFF1F5F9)
+                        Color(0xFFE3FFF8),
+                        Color(0xFFFFF5E6),
+                        GamerUiTokens.ColorRole.ShellBackground
                     )
                 )
             )
@@ -1289,12 +1290,12 @@ private fun DesktopPetScreen(
                 text = strings.desktopPetModeTitle,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = GamerUiTokens.ColorRole.Ink
             )
             Text(
                 text = strings.desktopPetModeSubtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFD7F3EE),
+                color = GamerUiTokens.ColorRole.Subtle,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -1331,13 +1332,17 @@ private fun DesktopPetScreen(
         WalletPill(
             balance = state.walletBalance,
             strings = strings,
-            modifier = Modifier.align(Alignment.TopStart)
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
         )
         LanguageToggle(
             language = language,
             strings = strings,
             onLanguageChange = onLanguageChange,
-            modifier = Modifier.align(Alignment.TopEnd),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding(),
             compact = true
         )
     }
@@ -2470,9 +2475,9 @@ private fun GenerationWorkspace(
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF0D3430),
-                            Color(0xFF0F766E),
-                            Color(0xFFFFA24D)
+                            GamerUiTokens.ColorRole.IdentitySoft,
+                            GamerUiTokens.ColorRole.ReviewSoft,
+                            GamerUiTokens.ColorRole.RewardSoft
                         )
                     )
                 )
@@ -2511,12 +2516,12 @@ private fun GenerationWorkspace(
                             text = strings.generationStudioHeroTitle,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = GamerUiTokens.ColorRole.Ink
                         )
                         Text(
                             text = strings.generationStudioHeroSubtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.86f),
+                            color = GamerUiTokens.ColorRole.Subtle,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -2562,7 +2567,7 @@ private fun GenerationSafetyStep(
 ) {
     Surface(
         modifier = modifier.height(34.dp),
-        color = Color.White.copy(alpha = 0.16f),
+        color = Color.White.copy(alpha = 0.72f),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
     ) {
@@ -2571,7 +2576,7 @@ private fun GenerationSafetyStep(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = GamerUiTokens.ColorRole.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -4396,21 +4401,21 @@ internal fun petShellHeaderBackgroundSpec(tab: PetShellTab): PetShellHeaderBackg
             endColor = GamerUiTokens.ColorRole.Review,
             accentColor = GamerUiTokens.ColorRole.Reward,
             titleColor = Color.White,
-            subtitleColor = GamerUiTokens.ColorRole.IdentitySoft
+            subtitleColor = Color(0xFFEFFFFB)
         )
         PetShellTab.Generate -> PetShellHeaderBackgroundSpec(
-            startColor = GamerUiTokens.ColorRole.Review,
-            endColor = GamerUiTokens.ColorRole.Mystery,
+            startColor = GamerUiTokens.ColorRole.ReviewDark,
+            endColor = GamerUiTokens.ColorRole.Reward,
             accentColor = GamerUiTokens.ColorRole.IdentitySoft,
             titleColor = Color.White,
-            subtitleColor = GamerUiTokens.ColorRole.ReviewSoft
+            subtitleColor = Color(0xFFFFF7E8)
         )
         PetShellTab.Profile -> PetShellHeaderBackgroundSpec(
             startColor = GamerUiTokens.ColorRole.Reward,
-            endColor = GamerUiTokens.ColorRole.Identity,
+            endColor = GamerUiTokens.ColorRole.DarkRaised,
             accentColor = GamerUiTokens.ColorRole.RewardSoft,
             titleColor = Color.White,
-            subtitleColor = GamerUiTokens.ColorRole.WarningSoft
+            subtitleColor = Color(0xFFFFFAEF)
         )
     }
 
@@ -4474,24 +4479,24 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.08f),
+                Color.White.copy(alpha = 0.18f),
                 Color.Transparent,
-                Color.Black.copy(alpha = 0.16f)
+                Color.Black.copy(alpha = 0.08f)
             )
         )
     )
     drawCircle(
-        color = spec.accentColor.copy(alpha = 0.24f),
+        color = spec.accentColor.copy(alpha = 0.30f),
         radius = size.minDimension * 0.64f,
         center = Offset(size.width * 0.92f, size.height * 0.12f)
     )
     drawCircle(
-        color = Color.White.copy(alpha = 0.10f),
+        color = Color.White.copy(alpha = 0.16f),
         radius = size.minDimension * 0.42f,
         center = Offset(size.width * 0.08f, size.height * 0.92f)
     )
     drawRoundRect(
-        color = Color.White.copy(alpha = 0.13f),
+        color = Color.White.copy(alpha = 0.18f),
         topLeft = Offset(size.width * 0.06f, size.height * 0.70f),
         size = Size(size.width * 0.88f, size.height * 0.16f),
         cornerRadius = CornerRadius(size.height * 0.08f, size.height * 0.08f)
@@ -4503,7 +4508,7 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
             lineTo(size.width * 0.78f, size.height * 1.02f)
             close()
         },
-        color = Color.White.copy(alpha = 0.08f)
+        color = Color.White.copy(alpha = 0.12f)
     )
     drawPath(
         path = Path().apply {
@@ -4517,7 +4522,7 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
                 size.height * 0.36f
             )
         },
-        color = Color.White.copy(alpha = 0.28f),
+        color = Color.White.copy(alpha = 0.34f),
         style = Stroke(width = size.height * 0.04f, cap = StrokeCap.Round)
     )
     drawPath(
@@ -4532,7 +4537,7 @@ private fun DrawScope.drawImmersiveHeaderPattern(spec: PetShellHeaderBackgroundS
                 size.height * 0.66f
             )
         },
-        color = spec.accentColor.copy(alpha = 0.26f),
+        color = spec.accentColor.copy(alpha = 0.32f),
         style = Stroke(width = size.height * 0.022f, cap = StrokeCap.Round)
     )
     drawRoundRect(

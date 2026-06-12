@@ -245,3 +245,10 @@ Use these persistent traits:
 - Opening the full app from the floating pet or its foreground notification should land on the in-app desktop pet surface, not the launch bubble, so the desktop pet remains the user's continuity anchor.
 - Do not show fixture feed posts or placeholder approved pets as if they were real community data during tab switches or remote loading. Use empty/loading states until HidenCloud returns real app data.
 - Approved-pet public UI may show source category and preview readiness, but must not expose artifact ids, job ids, paths, or URLs.
+
+2026-06-12 bright palette pass:
+
+- The Android shell palette is now brighter while staying pet-first: lighter app background, brighter teal identity, warmer reward orange, and softer review blues.
+- Desktop pet mode uses a light mint-to-warm background instead of a dark launch surface; keep wallet/language controls padded below the Android status bar.
+- Generation hero uses soft hatch colors with dark readable text. If a section moves from dark to light, re-check small status chips for contrast instead of only changing the parent background.
+- Emulator screenshots for this pass: `C:\Users\zhang\AppData\Local\Temp\gamer-bright-onboarding.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-bright-community.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-current-after-hatch-tap.png`, `C:\Users\zhang\AppData\Local\Temp\gamer-bright-profile.png`.
