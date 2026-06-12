@@ -86,8 +86,8 @@ class PetShellStrings internal constructor(
     val communityFeedEmptyTitle: String get() = text("等待远端社区内容", "Waiting for remote community posts")
     val communityFeedEmptyDetail: String
         get() = text(
-            "没有展示假帖子；远端同步后会显示真实社区内容。",
-            "No placeholder posts are shown; real community content appears after remote sync."
+            "远端同步后会显示真实社区内容；当前还没有可展示帖子。",
+            "Real community content appears after remote sync; nothing is ready to show yet."
         )
     val desktopPetModeTitle: String get() = text("桌宠模式", "Desktop pet mode")
     val desktopPetModeSubtitle: String
@@ -247,8 +247,8 @@ class PetShellStrings internal constructor(
     val hatcheryModeComingSoon: String get() = text("待开放", "Pending")
     val hatcheryFinePathNotice: String
         get() = text(
-            "精细孵化占位：以后可逐步返回人工审核，目前先使用标准自主孵化。",
-            "Fine hatch placeholder: step-by-step review will come later; use standard custom hatch now."
+            "精细孵化将在后续开放逐步人工审核；目前先使用标准自主孵化。",
+            "Fine hatch will add step-by-step review later; use standard custom hatch for now."
         )
     val hatcheryProgressTitle: String get() = text("孵化进度", "Hatch progress")
     val hatcheryStepEgg: String get() = text("蛋", "Egg")
