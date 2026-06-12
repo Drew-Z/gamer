@@ -1,26 +1,11 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDatabaseConfig } from "./config.js";
 import { listCommunityMigrations } from "./migrations.js";
+import { createPgClientOptions } from "./pg-options.js";
 import { runCommunityMigrations } from "./runner.js";
 
-export function createPgClientOptions(config, { readFile = readFileSync } = {}) {
-  const clientConfig = {
-    connectionString: config.databaseUrl
-  };
-
-  if (config.caCertPath !== "") {
-    const url = new URL(config.databaseUrl);
-    url.searchParams.delete("sslmode");
-    clientConfig.connectionString = url.toString();
-    clientConfig.ssl = {
-      ca: readFile(config.caCertPath, "utf8")
-    };
-  }
-
-  return clientConfig;
-}
+export { createPgClientOptions };
 
 async function createPgClient(config) {
   let pg;

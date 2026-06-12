@@ -8,7 +8,7 @@ import {
 } from "../../../packages/community-contracts/src/index.js";
 import { createScoreReportFromImportDraft } from "./scoring.js";
 
-const clone = (value) => JSON.parse(JSON.stringify(value));
+export const clone = (value) => JSON.parse(JSON.stringify(value));
 
 const defaultSeed = {
   users,
@@ -39,17 +39,17 @@ export const normalizeCommunityState = (seed = defaultSeed) => {
   return normalized;
 };
 
-const nowIso = () => new Date().toISOString();
+export const nowIso = () => new Date().toISOString();
 const isObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 const hasText = (value) => typeof value === "string" && value.trim() !== "";
 
-const sumPostedLedger = (entries, userId) =>
+export const sumPostedLedger = (entries, userId) =>
   entries
     .filter((entry) => entry.userId === userId && entry.status === "posted")
     .reduce((sum, entry) => sum + entry.amount, 0);
 
-const sumPostedSubmissionReward = (entries, submissionId) =>
+export const sumPostedSubmissionReward = (entries, submissionId) =>
   entries
     .filter(
       (entry) =>
@@ -60,7 +60,7 @@ const sumPostedSubmissionReward = (entries, submissionId) =>
     )
     .reduce((sum, entry) => sum + entry.amount, 0);
 
-const submissionRewardLedgerEntries = (entries, submissionId) =>
+export const submissionRewardLedgerEntries = (entries, submissionId) =>
   entries.filter(
     (entry) =>
       entry.sourceId === submissionId &&
@@ -68,7 +68,7 @@ const submissionRewardLedgerEntries = (entries, submissionId) =>
         entry.sourceType === "submission-reward-reversal")
   );
 
-const draftStatusFromReadiness = (readiness) => {
+export const draftStatusFromReadiness = (readiness) => {
   if (readiness?.status === "community-ready") {
     return "ready";
   }
@@ -80,7 +80,7 @@ const draftStatusFromReadiness = (readiness) => {
   return "in-progress";
 };
 
-const createImportSummaryFromPetPackageBundle = (bundle) => ({
+export const createImportSummaryFromPetPackageBundle = (bundle) => ({
   source: {
     petId: bundle.manifest.petId,
     displayName: bundle.manifest.displayName,
@@ -260,7 +260,7 @@ const publicArtifactUrl = (appJobId, targetDownloadId) => {
   return `/pet-generation-jobs/${encodeURIComponent(normalizedAppJobId)}/artifacts/${encodeURIComponent(normalizedTargetDownloadId)}`;
 };
 
-const validateFantasyPetPackageImport = (input) => {
+export const validateFantasyPetPackageImport = (input) => {
   const errors = [];
   const manifest = input.packageManifest;
 
@@ -320,7 +320,7 @@ const validateFantasyPetPackageImport = (input) => {
   return { ok: errors.length === 0, errors };
 };
 
-const createImportSummaryFromFantasyPetPackage = (input) => {
+export const createImportSummaryFromFantasyPetPackage = (input) => {
   const manifest = input.packageManifest;
   const candidateFiles = manifest.files
     .filter((file) => file.kind === "candidate")
@@ -358,12 +358,12 @@ const createImportSummaryFromFantasyPetPackage = (input) => {
   };
 };
 
-const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
-const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
-const isValidExplicitRewardAmount = (amount) =>
+export const TERMINAL_SUBMISSION_STATUSES = new Set(["rejected", "revoked"]);
+export const ALLOWED_REVIEW_STATUSES = ["approved", "held", "rejected", "revoked"];
+export const isValidExplicitRewardAmount = (amount) =>
   amount === undefined || (Number.isInteger(amount) && amount >= 0);
 
-const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
+export const createFeedPostFromApprovedImport = (submission, draft, scoreReport, rewardEntry) => ({
   id: `post-${submission.id}`,
   authorId: submission.userId,
   petId: submission.petId,
@@ -386,7 +386,7 @@ const createFeedPostFromApprovedImport = (submission, draft, scoreReport, reward
   }
 });
 
-const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
+export const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   petId: submission.petId,
   displayName: draft?.importSummary?.source?.displayName ?? submission.petId,
   ownerUserId: submission.userId,
@@ -410,7 +410,7 @@ const createApprovedPetFromImport = (submission, draft, scoreReport) => ({
   approvedAt: nowIso()
 });
 
-const createPublicApprovedPet = (pet) => {
+export const createPublicApprovedPet = (pet) => {
   const source = pet.source ?? {};
   const assets = pet.assets ?? {};
   const targetDownloadId = String(assets.previewPath ?? "").trim();
@@ -433,7 +433,7 @@ const createPublicApprovedPet = (pet) => {
   };
 };
 
-const createPublicSubmissionsSummary = (submissionsForUser) => {
+export const createPublicSubmissionsSummary = (submissionsForUser) => {
   const countStatus = (status) =>
     submissionsForUser.filter((submission) => submission.status === status).length;
 

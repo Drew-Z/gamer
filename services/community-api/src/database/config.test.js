@@ -31,6 +31,15 @@ test("database config accepts postgresql URL scheme", () => {
   assert.equal(config.sslMode, "verify-ca");
 });
 
+test("database config infers SSL for Supabase pooler hosts", () => {
+  const config = createDatabaseConfig({
+    DATABASE_URL: "postgresql://postgres.example:example@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+  });
+
+  assert.equal(config.mode, "postgres");
+  assert.equal(config.sslMode, "require");
+});
+
 test("database config rejects non-PostgreSQL URLs", () => {
   assert.throws(
     () => createDatabaseConfig({ DATABASE_URL: "mysql://example" }),

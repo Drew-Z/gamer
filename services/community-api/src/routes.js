@@ -12,6 +12,10 @@ import { createCommunityStore } from "./store.js";
 
 const json = (status, body) => ({ status, body });
 const defaultStore = createCommunityStore();
+const isPromiseLike = (value) =>
+  value !== null && typeof value === "object" && typeof value.then === "function";
+const withResult = (value, mapper) =>
+  isPromiseLike(value) ? value.then(mapper) : mapper(value);
 
 export function handleCommunityRequest(method, requestUrl, options = {}) {
   const url = new URL(requestUrl, "http://localhost");
@@ -31,16 +35,19 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
   }
 
   if (method === "GET" && url.pathname === "/v1/feed") {
-    return json(200, store.getFeed());
+    return withResult(store.getFeed(), (feed) => json(200, feed));
   }
 
   if (method === "GET" && url.pathname === "/v1/community-home") {
     const date = url.searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
-    return json(200, store.getCommunityHome(currentUserId, date));
+    return withResult(
+      store.getCommunityHome(currentUserId, date),
+      (home) => json(200, home)
+    );
   }
 
   if (method === "GET" && url.pathname === "/v1/pets/approved") {
-    return json(200, store.listApprovedPets());
+    return withResult(store.listApprovedPets(), (pets) => json(200, pets));
   }
 
   if (
@@ -51,45 +58,51 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     const petId = decodeURIComponent(
       url.pathname.slice("/v1/pets/approved/".length, -"/package".length)
     );
-    const descriptor = store.getApprovedPetPackage(petId);
+    return withResult(store.getApprovedPetPackage(petId), (descriptor) => {
+      if (!descriptor) {
+        return json(404, {
+          error: "approved_pet_package_not_found",
+          petId
+        });
+      }
 
-    if (!descriptor) {
-      return json(404, {
-        error: "approved_pet_package_not_found",
-        petId
-      });
-    }
-
-    return json(200, descriptor);
+      return json(200, descriptor);
+    });
   }
 
   if (method === "GET" && url.pathname === "/v1/wallet/me") {
-    return json(200, store.getWallet(currentUserId));
+    return withResult(store.getWallet(currentUserId), (wallet) => json(200, wallet));
   }
 
   if (method === "POST" && url.pathname === "/v1/check-in") {
     const date = body.date ?? new Date().toISOString().slice(0, 10);
-    return json(200, store.claimDailyCheckIn(currentUserId, date));
+    return withResult(
+      store.claimDailyCheckIn(currentUserId, date),
+      (checkIn) => json(200, checkIn)
+    );
   }
 
   if (method === "GET" && url.pathname === "/v1/submissions") {
-    return json(200, store.listSubmissions());
+    return withResult(
+      store.listSubmissions(),
+      (submissionsResponse) => json(200, submissionsResponse)
+    );
   }
 
   if (method === "GET" && url.pathname.startsWith("/v1/submissions/")) {
     const submissionId = decodeURIComponent(
       url.pathname.slice("/v1/submissions/".length)
     );
-    const submission = store.getSubmission(submissionId);
+    return withResult(store.getSubmission(submissionId), (submission) => {
+      if (!submission) {
+        return json(404, {
+          error: "submission_not_found",
+          submissionId
+        });
+      }
 
-    if (!submission) {
-      return json(404, {
-        error: "submission_not_found",
-        submissionId
-      });
-    }
-
-    return json(200, submission);
+      return json(200, submission);
+    });
   }
 
   if (method === "POST" && url.pathname === "/v1/pet-package-bundles/validate") {
@@ -111,20 +124,23 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
     const scoreReportId = decodeURIComponent(
       url.pathname.slice("/v1/score-reports/".length)
     );
-    const report = store.getScoreReport(scoreReportId);
+    return withResult(store.getScoreReport(scoreReportId), (report) => {
+      if (!report) {
+        return json(404, {
+          error: "score_report_not_found",
+          scoreReportId
+        });
+      }
 
-    if (!report) {
-      return json(404, {
-        error: "score_report_not_found",
-        scoreReportId
-      });
-    }
-
-    return json(200, report);
+      return json(200, report);
+    });
   }
 
   if (method === "GET" && url.pathname === "/v1/import-drafts") {
-    return json(200, store.listImportDrafts(currentUserId));
+    return withResult(
+      store.listImportDrafts(currentUserId),
+      (drafts) => json(200, drafts)
+    );
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts/from-pet-package-bundle") {
@@ -142,15 +158,17 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       bundle: body.bundle
     });
 
-    if (draft.error === "bundle_owner_mismatch") {
-      return json(403, draft);
-    }
+    return withResult(draft, (result) => {
+      if (result.error === "bundle_owner_mismatch") {
+        return json(403, result);
+      }
 
-    if (draft.error === "duplicate_import_draft") {
-      return json(409, draft);
-    }
+      if (result.error === "duplicate_import_draft") {
+        return json(409, result);
+      }
 
-    return json(201, draft);
+      return json(201, result);
+    });
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts/from-fantasy-pet-package") {
@@ -163,15 +181,17 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       ownershipClaimId: body.ownershipClaimId
     });
 
-    if (draft.error === "invalid_fantasy_pet_package") {
-      return json(400, draft);
-    }
+    return withResult(draft, (result) => {
+      if (result.error === "invalid_fantasy_pet_package") {
+        return json(400, result);
+      }
 
-    if (draft.error === "duplicate_import_draft") {
-      return json(409, draft);
-    }
+      if (result.error === "duplicate_import_draft") {
+        return json(409, result);
+      }
 
-    return json(201, draft);
+      return json(201, result);
+    });
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts") {
@@ -183,23 +203,22 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       scoreReportId: body.scoreReportId
     });
 
-    return json(201, draft);
+    return withResult(draft, (result) => json(201, result));
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts/from-fantasy-pet-rule") {
     return resolveFantasyPetRuleState(body, options)
       .then((state) => {
         const result = createFantasyPetRuleImportSummary(state);
-        const draft = store.createImportDraft({
+        return store.createImportDraft({
           userId: currentUserId,
           readiness: result.readiness,
           importSummary: result.importSummary,
           ownershipClaimId: body.ownershipClaimId,
           scoreReportId: body.scoreReportId
         });
-
-        return json(201, draft);
       })
+      .then((draft) => json(201, draft))
       .catch((error) => {
         if (error instanceof StateSourceError) {
           return json(error.status, {
@@ -209,7 +228,7 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
         }
 
         throw error;
-      });
+      })
   }
 
   if (method === "POST" && url.pathname === "/v1/import-drafts/submit") {
@@ -218,15 +237,17 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       userId: currentUserId
     });
 
-    if (result.error === "draft_not_found") {
-      return json(404, result);
-    }
+    return withResult(result, (submitResult) => {
+      if (submitResult.error === "draft_not_found") {
+        return json(404, submitResult);
+      }
 
-    if (result.error === "draft_not_ready") {
-      return json(409, result);
-    }
+      if (submitResult.error === "draft_not_ready") {
+        return json(409, submitResult);
+      }
 
-    return json(201, result);
+      return json(201, submitResult);
+    });
   }
 
   if (method === "POST" && url.pathname === "/v1/submissions") {
@@ -236,7 +257,7 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
       ownershipClaimId: body.ownershipClaimId,
       scoreReportId: body.scoreReportId
     });
-    return json(201, submission);
+    return withResult(submission, (result) => json(201, result));
   }
 
   if (method === "POST" && url.pathname === "/v1/admin/reviews") {
@@ -249,31 +270,36 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
         : undefined
     });
 
-    if (review.error) {
-      if (review.error === "invalid_review_status") {
-        return json(400, review);
+    return withResult(review, (result) => {
+      if (result.error) {
+        if (result.error === "invalid_review_status") {
+          return json(400, result);
+        }
+
+        if (result.error === "invalid_reward_amount") {
+          return json(400, result);
+        }
+
+        if (result.error === "submission_terminal") {
+          return json(409, result);
+        }
+
+        return json(404, result);
       }
 
-      if (review.error === "invalid_reward_amount") {
-        return json(400, review);
-      }
-
-      if (review.error === "submission_terminal") {
-        return json(409, review);
-      }
-
-      return json(404, review);
-    }
-
-    return json(200, review);
+      return json(200, result);
+    });
   }
 
   if (method === "GET" && url.pathname === "/v1/admin/review-queue") {
-    return json(200, store.listAdminReviewQueue());
+    return withResult(
+      store.listAdminReviewQueue(),
+      (queue) => json(200, queue)
+    );
   }
 
   if (method === "GET" && url.pathname === "/v1/me") {
-    return json(200, store.getMe());
+    return withResult(store.getMe(), (me) => json(200, me));
   }
 
   return json(404, {
