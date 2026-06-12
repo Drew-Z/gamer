@@ -299,12 +299,20 @@ export function createWorkerConfig(env = process.env) {
     actionIntervalSeconds: parseNonNegativeInteger(env.GA_PET_ACTION_INTERVAL_SECONDS, 0),
     customActionCount: parseNonNegativeInteger(env.GA_PET_CUSTOM_ACTION_COUNT, 3),
     requireAllActions: parseBoolean(env.GA_PET_REQUIRE_ALL_ACTIONS, false),
+    configCheck:
+      parseBoolean(env.GA_PET_CONFIG_CHECK, false) ||
+      process.argv.includes("--config-check"),
     requestTimeoutMs: parsePositiveInteger(env.GA_PET_REQUEST_TIMEOUT_MS, 180000),
     ownerUserId: env.GA_PET_OWNER_USER_ID || "user-demo-001"
   };
 }
 
 export async function runGaRandomPetWorker(config = createWorkerConfig()) {
+  if (config.configCheck) {
+    printConfigCheck(config);
+    return;
+  }
+
   if (!config.apiKey.trim()) {
     throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY is required.");
   }
@@ -1168,6 +1176,58 @@ function resourceStatusFor({ packageMode, generatedActionCount, expectedActionCo
     return "full-resource-candidate-ready";
   }
   return "partial-resource-candidate";
+}
+
+function printConfigCheck(config) {
+  const samplePlan = buildRandomPetPromptPlan({
+    runOrdinal: 1,
+    seed: "config-check",
+    packageMode: config.packageMode,
+    customActionCount: config.customActionCount,
+    backgroundMode: config.backgroundMode
+  });
+  const expectedImageCalls = 1 + samplePlan.actions.length;
+  const expectedVideoCalls = config.enableVideo ? 1 : 0;
+  const safeConfig = {
+    schema: "gamer.ga-random-pet-worker-config-check.v1",
+    ok: true,
+    apiKeyPresent: Boolean(config.apiKey.trim()),
+    apiBaseUrl: config.apiBaseUrl,
+    packageMode: config.packageMode,
+    qualityPreset: config.qualityPreset,
+    imageModel: config.imageModel,
+    imageSize: config.imageSize,
+    imageAspectRatio: config.imageAspectRatio,
+    spriteSheetImageSize: config.spriteSheetImageSize,
+    spriteSheetAspectRatio: config.spriteSheetAspectRatio,
+    backgroundMode: config.backgroundMode,
+    outputMimeType: config.outputMimeType || "(omitted)",
+    imageDelivery: config.imageDelivery || "(omitted)",
+    enableVideo: config.enableVideo,
+    videoModel: config.enableVideo ? config.videoModel : "",
+    runRoot: config.runRoot,
+    loop: config.loop,
+    maxRuns: config.maxRuns,
+    batchSize: config.batchSize,
+    intervalSeconds: config.intervalSeconds,
+    actionIntervalSeconds: config.actionIntervalSeconds,
+    customActionCount: config.customActionCount,
+    requireAllActions: config.requireAllActions,
+    estimatedCallsPerCandidate: {
+      image: expectedImageCalls,
+      video: expectedVideoCalls
+    },
+    samplePlan: {
+      name: samplePlan.name,
+      species: samplePlan.species,
+      element: samplePlan.element,
+      actionCount: samplePlan.actions.length,
+      actionIds: samplePlan.actions.map((action) => action.id)
+    },
+    note:
+      "Config check does not call GA and does not read or print API keys."
+  };
+  console.log(JSON.stringify(safeConfig, null, 2));
 }
 
 function fxForAction(action) {

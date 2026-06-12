@@ -40,6 +40,20 @@ Start command:
 npm run start:ga-random-pet-worker
 ```
 
+Before burning quota, run a no-network config check:
+
+```powershell
+npm run check:ga-random-pet-worker
+```
+
+Equivalent direct command:
+
+```powershell
+node services/pet-generator/src/ga-random-pet-worker.js --config-check
+```
+
+Confirm the output shows `apiKeyPresent: true`, `packageMode: full`, the intended image sizes, and `backgroundMode: transparent` for nano-style transparent PNG generation. This check does not call GA and does not print the key.
+
 For a cautious first run, set `GA_PET_MAX_RUNS=1`. A full resource package calls image generation once for the identity image and then once per planned motion sheet, so one candidate is already a meaningful server test. After confirming output folders are being created, change it back to `0` for continuous generation during the quota window.
 
 If the proxy documented in `image.docx` uses different size or output names, keep the key in the server panel and change only the environment variables. For example, nano-style transparent PNG generation should keep `GA_PET_BACKGROUND_MODE=transparent` and `GA_PET_OUTPUT_MIME_TYPE=image/png`. A channel that cannot generate transparency should use `GA_PET_BACKGROUND_MODE=chroma` or `light`, then post-process later.
@@ -105,6 +119,7 @@ Each generated action is requested as a single horizontal spritesheet. `meta/mot
 - `GA_PET_IMAGE_DELIVERY`: optional; set to the proxy's URI/inline value if needed.
 - `GA_PET_CUSTOM_ACTION_COUNT`: defaults to `3` species-habit actions in addition to core actions and signature.
 - `GA_PET_REQUIRE_ALL_ACTIONS`: set to `1` only if a missing action should fail the whole package.
+- `GA_PET_CONFIG_CHECK`: set to `1` to print a safe config summary and exit without generation.
 - `GA_PET_ENABLE_VIDEO`: defaults to off.
 - `GA_PET_VIDEO_MODEL`: defaults to `veo-3.1-generate-preview`.
 - `GA_PET_MAX_RUNS`: `0` means unlimited until the process is stopped.
