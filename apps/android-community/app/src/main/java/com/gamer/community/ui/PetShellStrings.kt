@@ -770,7 +770,7 @@ class PetShellStrings internal constructor(
             return "Local starter / ${pet.motionLabel}"
         }
 
-        return "${pet.sourceLabel} / ${pet.motionLabel}"
+        return "${pet.sourceLabel} / ${defaultDesktopPetMotionLabel(pet)}"
     }
 
     fun defaultDesktopPetName(pet: DefaultDesktopPet): String {
@@ -804,7 +804,20 @@ class PetShellStrings internal constructor(
             return "${defaultDesktopPetElementLabel(pet)} / ${pet.motionLabel} / local starter"
         }
 
-        return "${pet.elementLabel} / ${pet.motionLabel} / \u672c\u5730\u521d\u59cb\u8d44\u6e90"
+        return "${pet.elementLabel} / ${defaultDesktopPetMotionLabel(pet)} / \u672c\u5730\u521d\u59cb\u8d44\u6e90"
+    }
+
+    fun defaultDesktopPetMotionLabel(pet: DefaultDesktopPet): String {
+        if (language == PetShellLanguage.English) {
+            return pet.motionLabel
+        }
+
+        return when (pet.motionLabel) {
+            "12 motion sheets" -> "12 \u5f20\u52a8\u4f5c\u8868"
+            "4 motion sheets" -> "4 \u5f20\u52a8\u4f5c\u8868"
+            "static poses" -> "\u9759\u6001\u59ff\u6001"
+            else -> pet.motionLabel
+        }
     }
 
     private fun text(chinese: String, english: String): String =

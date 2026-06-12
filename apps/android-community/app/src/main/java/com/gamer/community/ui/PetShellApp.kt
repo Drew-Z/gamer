@@ -1558,7 +1558,7 @@ private fun DefaultDesktopPetSignalStrip(
                 )
                 ApprovedPetSignalToken(
                     label = strings.defaultDesktopPetMotionMetric,
-                    value = pet?.motionLabel ?: "-",
+                    value = pet?.let(strings::defaultDesktopPetMotionLabel) ?: "-",
                     accent = GamerUiTokens.ColorRole.Review,
                     modifier = Modifier.weight(1f)
                 )
