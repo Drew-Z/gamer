@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { createDatabaseConfig } from "./database/config.js";
+import { listCommunityMigrations } from "./database/migrations.js";
 import { createPgClientOptions } from "./database/pg-options.js";
+import { runCommunityMigrations } from "./database/runner.js";
 import { createScoreReportFromImportDraft } from "./scoring.js";
 import {
   ALLOWED_REVIEW_STATUSES,
@@ -362,6 +364,7 @@ async function insertSeedState(client, seed) {
 export function createPostgresCommunityStore(options = {}) {
   const env = options.env ?? process.env;
   const seed = normalizeCommunityState(options.seed ?? createDefaultCommunityState());
+  const autoMigrate = options.autoMigrate !== false;
   let poolPromise;
   let seedPromise;
 
@@ -379,6 +382,13 @@ export function createPostgresCommunityStore(options = {}) {
     const pool = await getPool();
     const client = await pool.connect();
     try {
+      if (autoMigrate) {
+        await runCommunityMigrations({
+          client,
+          migrations: listCommunityMigrations()
+        });
+      }
+
       await client.query("BEGIN");
       const result = await client.query("select count(*)::int as count from users");
       if (Number(result.rows[0]?.count ?? 0) === 0) {
