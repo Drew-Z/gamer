@@ -1,5 +1,8 @@
 import { startAdminReviewServer } from "./apps/admin-review/server.js";
+import { loadEnvFiles } from "./services/community-api/src/env-file.js";
 import { startCommunityApiServer } from "./services/community-api/src/server.js";
+
+loadEnvFiles();
 
 const publicPort = process.env.PORT ?? "24674";
 const communityApiPort = process.env.COMMUNITY_API_PORT ?? "4000";

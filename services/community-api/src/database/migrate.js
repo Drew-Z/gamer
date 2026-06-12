@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDatabaseConfig } from "./config.js";
+import { loadEnvFiles } from "../env-file.js";
 import { listCommunityMigrations } from "./migrations.js";
 import { createPgClientOptions } from "./pg-options.js";
 import { runCommunityMigrations } from "./runner.js";
@@ -76,6 +77,7 @@ const isDirectRun =
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
+  loadEnvFiles();
   const exitCode = await runMigrationCli();
   process.exitCode = exitCode;
 }

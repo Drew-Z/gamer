@@ -48,6 +48,11 @@ npm.cmd run migrate:community-db:dry-run
 npm.cmd run migrate:community-db
 ```
 
+For server deployments that cannot define custom environment variables in the
+panel, place the same server-only values in `.env.local` at the repository root.
+`index.js` and the migration CLI load `.env.local` automatically without adding
+another dependency. The file is ignored by git and must not be committed.
+
 The Community API runtime keeps state in a JSON snapshot by default at
 `services/community-api/data/community-store.json`, so imported drafts,
 submissions, review decisions, approved pets, feed posts, wallet entries, and
