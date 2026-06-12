@@ -66,7 +66,65 @@ async function listCandidates({ runRoot, limit = 40 } = {}) {
     schema: "gamer.ga-pet-review-list.v1",
     runRoot: root,
     count: candidates.length,
+    summary: await createReviewSummary({
+      runRoot: root,
+      totalCandidates: directories.length,
+      shownCandidates: candidates.length,
+      candidates
+    }),
     candidates
+  };
+}
+
+async function createReviewSummary({
+  runRoot,
+  totalCandidates,
+  shownCandidates,
+  candidates
+}) {
+  const learningNotes = await readJsonLinesIfExists(path.join(runRoot, "ga-learning-notes.jsonl"));
+  const reworkRecords = await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
+  const reworkRequests = reworkRecords.filter(
+    (record) => record?.schema === "gamer.ga-pet-rework-request.v1"
+  );
+  const reworkStatuses = reworkRecords.filter(
+    (record) => record?.schema === "gamer.ga-pet-rework-status.v1"
+  );
+  const completed = idsWithStatus(reworkStatuses, "completed");
+  const failed = idsWithStatus(reworkStatuses, "failed");
+  const started = idsWithStatus(reworkStatuses, "started");
+  const terminal = new Set([...completed, ...failed]);
+  const queued = reworkRequests.filter(
+    (request) => !started.has(request.requestId) && !terminal.has(request.requestId)
+  );
+  const running = reworkRequests.filter(
+    (request) => started.has(request.requestId) && !terminal.has(request.requestId)
+  );
+
+  return {
+    schema: "gamer.ga-pet-review-summary.v1",
+    totalCandidates,
+    shownCandidates,
+    feedbackCount: candidates.reduce(
+      (total, candidate) => total + (candidate.feedback?.count || 0),
+      0
+    ),
+    learningNoteCount: learningNotes.length,
+    decisions: countBy(
+      learningNotes
+        .map((note) => note.decision)
+        .filter(Boolean)
+    ),
+    topTags: countBy(
+      learningNotes.flatMap((note) => Array.isArray(note.tags) ? note.tags : [])
+    ).slice(0, 8),
+    rework: {
+      requested: reworkRequests.length,
+      queued: queued.length,
+      running: running.length,
+      completed: completed.size,
+      failed: failed.size
+    }
   };
 }
 
@@ -246,6 +304,26 @@ function summarizeMotionSheets(motionMap, runId = "") {
       ? gaReviewFileUrl({ runId, relativePath: action.sheet })
       : ""
   }));
+}
+
+function idsWithStatus(records, status) {
+  return new Set(
+    records
+      .filter((record) => record.status === status && record.requestId)
+      .map((record) => record.requestId)
+  );
+}
+
+function countBy(values) {
+  const counts = new Map();
+  for (const value of values) {
+    const key = normalizeField(value, "");
+    if (!key) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([label, count]) => ({ label, count }));
 }
 
 function gaReviewFileUrl({ runId, relativePath }) {

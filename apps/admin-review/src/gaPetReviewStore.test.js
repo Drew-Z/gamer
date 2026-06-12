@@ -50,6 +50,7 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   const store = createGaPetReviewStore({ runRoot });
   const list = await store.listCandidates();
   assert.equal(list.count, 1);
+  assert.equal(list.summary.totalCandidates, 1);
   assert.equal(list.candidates[0].displayName, "Test Pet");
   assert.equal(list.candidates[0].motionSheets[0].actionId, "idle");
 
@@ -72,4 +73,13 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   assert.match(learningText, /Lock the base identity/);
   const queueText = await readFile(path.join(runRoot, "ga-rework-queue.jsonl"), "utf8");
   assert.match(queueText, /ga-pet-rework-request/);
+
+  const updated = await store.listCandidates();
+  assert.equal(updated.summary.feedbackCount, 1);
+  assert.equal(updated.summary.learningNoteCount, 1);
+  assert.equal(updated.summary.rework.queued, 1);
+  assert.deepEqual(updated.summary.topTags[0], {
+    label: "identity-drift",
+    count: 1
+  });
 });

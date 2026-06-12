@@ -52,6 +52,7 @@ const elements = {
   generationImportStatus: document.querySelector("#generation-import-status"),
   gaReviewStatus: document.querySelector("#ga-review-status"),
   gaReviewRefreshButton: document.querySelector("#ga-review-refresh-button"),
+  gaReviewSummaryMetrics: document.querySelector("#ga-review-summary-metrics"),
   gaReviewList: document.querySelector("#ga-review-list"),
   importForm: document.querySelector("#import-form"),
   importButton: document.querySelector("#import-button"),
@@ -504,6 +505,7 @@ function renderGenerationJob() {
 }
 
 function renderGaReviewList() {
+  renderGaReviewSummary();
   elements.gaReviewList.replaceChildren();
 
   const candidates = state.gaReviewModel.candidates || [];
@@ -675,6 +677,41 @@ function renderGaReviewList() {
   }
 }
 
+function renderGaReviewSummary() {
+  const summary = state.gaReviewModel.summary || {};
+  const rework = summary.rework || {};
+  const topTags = Array.isArray(summary.topTags) ? summary.topTags : [];
+  const metrics = [
+    ["Candidates", summary.totalCandidates ?? state.gaReviewModel.count ?? 0],
+    ["Shown", summary.shownCandidates ?? state.gaReviewModel.count ?? 0],
+    ["Notes", summary.learningNoteCount ?? 0],
+    ["Feedback", summary.feedbackCount ?? 0],
+    ["Queued", rework.queued ?? 0],
+    ["Running", rework.running ?? 0],
+    ["Done", rework.completed ?? 0],
+    ["Failed", rework.failed ?? 0]
+  ];
+
+  elements.gaReviewSummaryMetrics.replaceChildren();
+  for (const [label, value] of metrics) {
+    const item = document.createElement("div");
+    item.className = "ga-review-metric";
+    const labelNode = document.createElement("span");
+    labelNode.textContent = label;
+    const valueNode = document.createElement("strong");
+    valueNode.textContent = value;
+    item.append(labelNode, valueNode);
+    elements.gaReviewSummaryMetrics.append(item);
+  }
+
+  const tagSummary = document.createElement("div");
+  tagSummary.className = "ga-review-top-tags";
+  tagSummary.textContent = topTags.length > 0
+    ? `Top issues: ${topTags.map((tag) => `${tag.label} ${tag.count}`).join(" / ")}`
+    : "Top issues: none yet";
+  elements.gaReviewSummaryMetrics.append(tagSummary);
+}
+
 function renderList() {
   elements.list.replaceChildren();
 
@@ -835,8 +872,9 @@ async function loadGaReviewCandidates({ silent = false } = {}) {
   try {
     const model = await requestLocalJson("/ga-review/candidates?limit=30");
     state.gaReviewModel = model;
+    const rework = model.summary?.rework || {};
     elements.gaReviewStatus.textContent =
-      `${model.count} candidates from ${model.runRoot}`;
+      `${model.count} shown / ${model.summary?.totalCandidates ?? model.count} total / ${rework.queued ?? 0} queued reworks`;
     renderGaReviewList();
     return model;
   } catch (error) {

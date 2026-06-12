@@ -652,6 +652,45 @@ h1 {
   gap: 14px;
 }
 
+.ga-review-metrics {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ga-review-metric {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 9px;
+}
+
+.ga-review-metric span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ga-review-metric strong {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.ga-review-top-tags {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 1px solid #b8d4d8;
+  border-radius: 8px;
+  background: #edf7f8;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 9px 10px;
+}
+
 .ga-review-card {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
@@ -1078,6 +1117,10 @@ h1 {
 
   .ga-review-card {
     grid-template-columns: 1fr;
+  }
+
+  .ga-review-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ga-review-preview {

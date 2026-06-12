@@ -109,6 +109,8 @@ GA_PET_RUN_ROOT/
     source/generation/rework-requests.jsonl
 ```
 
+The panel also shows a live review summary: total candidates, shown candidates, learning notes, feedback count, queued/running/completed/failed reworks, and the most frequent issue tags.
+
 Feedback decisions:
 
 - `Looks good`: records a positive note for later triage.
