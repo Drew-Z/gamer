@@ -54,6 +54,8 @@ export function createGaPetReviewStore(options = {}) {
 async function listCandidates({ runRoot, limit = 40 } = {}) {
   const root = path.resolve(runRoot || DEFAULT_RUN_ROOT);
   const entries = await safeReadDirectory(root);
+  const reworkRecords = await readJsonLinesIfExists(path.join(root, "ga-rework-queue.jsonl"));
+  const lineageIndex = createReworkLineageIndex(reworkRecords);
   const directories = [];
 
   for (const entry of entries) {
@@ -76,7 +78,11 @@ async function listCandidates({ runRoot, limit = 40 } = {}) {
 
   const candidates = [];
   for (const item of directories.slice(0, limit)) {
-    candidates.push(await createCandidateSummary({ runRoot: root, ...item }));
+    candidates.push(await createCandidateSummary({
+      runRoot: root,
+      lineageIndex,
+      ...item
+    }));
   }
 
   return {
@@ -87,7 +93,8 @@ async function listCandidates({ runRoot, limit = 40 } = {}) {
       runRoot: root,
       totalCandidates: directories.length,
       shownCandidates: candidates.length,
-      candidates
+      candidates,
+      reworkRecords
     }),
     candidates
   };
@@ -97,14 +104,17 @@ async function createReviewSummary({
   runRoot,
   totalCandidates,
   shownCandidates,
-  candidates
+  candidates,
+  reworkRecords
 }) {
   const learningNotes = await readJsonLinesIfExists(path.join(runRoot, "ga-learning-notes.jsonl"));
-  const reworkRecords = await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
-  const reworkRequests = reworkRecords.filter(
+  const queueRecords = Array.isArray(reworkRecords)
+    ? reworkRecords
+    : await readJsonLinesIfExists(path.join(runRoot, "ga-rework-queue.jsonl"));
+  const reworkRequests = queueRecords.filter(
     (record) => record?.schema === "gamer.ga-pet-rework-request.v1"
   );
-  const reworkStatuses = reworkRecords.filter(
+  const reworkStatuses = queueRecords.filter(
     (record) => record?.schema === "gamer.ga-pet-rework-status.v1"
   );
   const completed = idsWithStatus(reworkStatuses, "completed");
@@ -151,7 +161,8 @@ async function createCandidateSummary({
   runDir,
   packageManifest,
   promptPlan,
-  updatedAt
+  updatedAt,
+  lineageIndex
 }) {
   const motionMap = await readJsonIfExists(path.join(runDir, "meta", "motion_map.json"));
   const latestFeedback = await readJsonIfExists(path.join(runDir, "human-feedback-latest.json"));
@@ -196,6 +207,11 @@ async function createCandidateSummary({
     motionSheets: summarizeMotionSheets(motionMap, runId),
     evidenceFiles,
     videoReferenceUrl: evidenceFiles.find((file) => file.path.endsWith(".mp4"))?.url || "",
+    lineage: summarizeLineage({
+      runId,
+      promptPlan,
+      lineageIndex
+    }),
     feedback: {
       latest: latestFeedback,
       count: feedbackEntries.length,
@@ -365,6 +381,8 @@ function summarizeFeedbackEntry(entry) {
 function summarizeReworkRequest(entry) {
   return {
     requestId: entry?.requestId || "",
+    sourceRunId: entry?.sourceRunId || "",
+    sourceFeedbackId: entry?.sourceFeedbackId || "",
     createdAt: entry?.createdAt || "",
     status: entry?.status || "",
     mode: entry?.mode || "",
@@ -373,6 +391,80 @@ function summarizeReworkRequest(entry) {
     notes: entry?.notes || "",
     promptPatch: entry?.promptPatch || ""
   };
+}
+
+function createReworkLineageIndex(records = []) {
+  const requestsById = new Map();
+  const requestsBySource = new Map();
+  const statusesByRequest = new Map();
+
+  for (const record of records) {
+    if (record?.schema === "gamer.ga-pet-rework-request.v1" && record.requestId) {
+      requestsById.set(record.requestId, record);
+      appendMapList(requestsBySource, record.sourceRunId || "", record);
+    }
+
+    if (record?.schema === "gamer.ga-pet-rework-status.v1" && record.requestId) {
+      statusesByRequest.set(record.requestId, record);
+    }
+  }
+
+  return {
+    requestsById,
+    requestsBySource,
+    statusesByRequest
+  };
+}
+
+function summarizeLineage({ runId, promptPlan, lineageIndex }) {
+  const sourceRunId = promptPlan?.sourceRunId || "";
+  const reworkRequestId = promptPlan?.reworkRequestId || "";
+  const sourceRequest = reworkRequestId
+    ? lineageIndex?.requestsById?.get(reworkRequestId) || null
+    : null;
+  const workerStatus = reworkRequestId
+    ? summarizeReworkStatus(lineageIndex?.statusesByRequest?.get(reworkRequestId))
+    : null;
+  const outgoingReworks = (lineageIndex?.requestsBySource?.get(runId) || [])
+    .slice(-8)
+    .reverse()
+    .map((request) => {
+      const latestStatus = lineageIndex?.statusesByRequest?.get(request.requestId);
+      return {
+        ...summarizeReworkRequest(request),
+        workerStatus: summarizeReworkStatus(latestStatus),
+        targetRunId: latestStatus?.targetRunId || "",
+        error: latestStatus?.error || ""
+      };
+    });
+
+  return {
+    runKind: sourceRunId ? "rework" : "random",
+    sourceRunId,
+    reworkRequestId,
+    sourceFeedbackId: sourceRequest?.sourceFeedbackId || "",
+    workerStatus,
+    outgoingReworks
+  };
+}
+
+function summarizeReworkStatus(entry) {
+  if (!entry) return null;
+  return {
+    requestId: entry?.requestId || "",
+    sourceRunId: entry?.sourceRunId || "",
+    targetRunId: entry?.targetRunId || "",
+    status: entry?.status || "",
+    error: entry?.error || "",
+    createdAt: entry?.createdAt || ""
+  };
+}
+
+function appendMapList(map, key, value) {
+  if (!key) return;
+  const list = map.get(key) || [];
+  list.push(value);
+  map.set(key, list);
 }
 
 function idsWithStatus(records, status) {

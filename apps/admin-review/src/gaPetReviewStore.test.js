@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -111,9 +111,35 @@ test("GA pet review store lists candidates and writes learning feedback", async 
   });
   assert.equal(updated.candidates[0].feedback.history[0].decision, "rework");
   assert.equal(updated.candidates[0].rework.requests[0].mode, "rework");
+  assert.equal(updated.candidates[0].lineage.runKind, "random");
+  assert.equal(updated.candidates[0].lineage.outgoingReworks[0].requestId, result.reworkRequest.requestId);
   assert.ok(
     updated.candidates[0].evidenceFiles.some(
       (file) => file.path === "human-feedback-latest.json"
     )
+  );
+
+  await appendFile(
+    path.join(runRoot, "ga-rework-queue.jsonl"),
+    `${JSON.stringify({
+      schema: "gamer.ga-pet-rework-status.v1",
+      requestId: result.reworkRequest.requestId,
+      sourceRunId: runId,
+      targetRunId: "ga-test-001-rework",
+      status: "completed",
+      createdAt: "2026-06-12T00:10:00.000Z"
+    })}\n`,
+    "utf8"
+  );
+
+  const completed = await store.listCandidates();
+  assert.equal(completed.summary.rework.completed, 1);
+  assert.equal(
+    completed.candidates[0].lineage.outgoingReworks[0].targetRunId,
+    "ga-test-001-rework"
+  );
+  assert.equal(
+    completed.candidates[0].lineage.outgoingReworks[0].workerStatus.status,
+    "completed"
   );
 });

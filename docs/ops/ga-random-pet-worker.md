@@ -109,7 +109,7 @@ GA_PET_RUN_ROOT/
     source/generation/rework-requests.jsonl
 ```
 
-Each candidate card has an expandable `Evidence and history` section. Use it to open `prompt-plan.json`, `api-trace.json`, `motion_map.json`, `runtime.json`, manifests, `review-card.md`, feedback logs, rework requests, and video references when present. Motion sheets also expose an `Open original` link so the spritesheet can be inspected at source size before writing feedback.
+Each candidate card has an expandable `Evidence and history` section. Use it to open `prompt-plan.json`, `api-trace.json`, `motion_map.json`, `runtime.json`, manifests, `review-card.md`, feedback logs, rework requests, and video references when present. Motion sheets also expose an `Open original` link so the spritesheet can be inspected at source size before writing feedback. The `Lineage` block connects source candidates, queued rework requests, worker status, and generated target run IDs so you can compare a reviewed problem with the later GA repair run.
 
 The panel also shows a live review summary: total candidates, shown candidates, learning notes, feedback count, queued/running/completed/failed reworks, and the most frequent issue tags.
 

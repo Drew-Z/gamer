@@ -560,6 +560,8 @@ function createGaHistoryItem(item, emptyLabel) {
   meta.textContent = [
     item.feedbackId || item.requestId,
     formatGaDate(item.createdAt),
+    item.sourceRunId ? `source: ${item.sourceRunId}` : "",
+    item.targetRunId ? `target: ${item.targetRunId}` : "",
     Array.isArray(item.tags) && item.tags.length > 0
       ? `tags: ${item.tags.join(", ")}`
       : ""
@@ -573,12 +575,82 @@ function createGaHistoryItem(item, emptyLabel) {
     notes.textContent = item.notes;
     node.append(notes);
   }
+  if (item.error) {
+    const error = document.createElement("p");
+    error.textContent = `Error: ${item.error}`;
+    node.append(error);
+  }
   if (item.promptPatch) {
     const patch = document.createElement("code");
     patch.textContent = item.promptPatch;
     node.append(patch);
   }
   return node;
+}
+
+function createGaLineageSection(candidate) {
+  const lineage = candidate.lineage || {};
+  const section = document.createElement("section");
+  const title = document.createElement("h4");
+  title.textContent = "Lineage";
+  const list = document.createElement("ul");
+  list.className = "ga-history-list";
+  let itemCount = 0;
+
+  if (lineage.sourceRunId || lineage.reworkRequestId) {
+    list.append(
+      createGaHistoryItem(
+        {
+          status: "source",
+          requestId: lineage.reworkRequestId,
+          sourceRunId: lineage.sourceRunId,
+          notes: lineage.sourceFeedbackId
+            ? `Source feedback: ${lineage.sourceFeedbackId}`
+            : "Generated as a rework of the source candidate."
+        },
+        ""
+      )
+    );
+    itemCount += 1;
+  }
+
+  if (lineage.workerStatus) {
+    list.append(
+      createGaHistoryItem(
+        {
+          ...lineage.workerStatus,
+          status: `worker ${lineage.workerStatus.status || "status"}`
+        },
+        ""
+      )
+    );
+    itemCount += 1;
+  }
+
+  const outgoing = Array.isArray(lineage.outgoingReworks)
+    ? lineage.outgoingReworks
+    : [];
+  for (const request of outgoing) {
+    list.append(
+      createGaHistoryItem(
+        {
+          ...request,
+          status: request.workerStatus?.status || request.status || "requested",
+          targetRunId: request.targetRunId,
+          error: request.error
+        },
+        ""
+      )
+    );
+    itemCount += 1;
+  }
+
+  if (itemCount === 0) {
+    list.append(createGaHistoryItem(null, "Standalone random candidate."));
+  }
+
+  section.append(title, list);
+  return section;
 }
 
 function createGaCandidateDetails(candidate) {
@@ -645,7 +717,12 @@ function createGaCandidateDetails(candidate) {
   }
   reworkSection.append(reworkTitle, reworkList);
 
-  grid.append(evidenceSection, feedbackSection, reworkSection);
+  grid.append(
+    evidenceSection,
+    feedbackSection,
+    reworkSection,
+    createGaLineageSection(candidate)
+  );
   details.append(grid);
   return details;
 }
