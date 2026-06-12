@@ -8,6 +8,12 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadEnvFiles } from "../../community-api/src/env-file.js";
+import {
+  createSupabasePetSyncConfig,
+  isSupabasePetSyncReady,
+  syncGaPetCandidateToSupabase
+} from "./supabase-pet-sync.js";
 
 const DEFAULT_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image";
@@ -318,6 +324,7 @@ export function createWorkerConfig(env = process.env) {
       env.GA_PET_REWORK_STARTED_TIMEOUT_MINUTES,
       180
     ),
+    supabaseSync: createSupabasePetSyncConfig(env),
     configCheck:
       parseBoolean(env.GA_PET_CONFIG_CHECK, false) ||
       process.argv.includes("--config-check"),
@@ -358,7 +365,8 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
     maxRuns: config.maxRuns,
     learningNoteLimit: config.learningNoteLimit,
     reworkQueue: config.reworkQueue,
-    reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes
+    reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes,
+    supabaseSyncEnabled: isSupabasePetSyncReady(config.supabaseSync)
   });
 
   let completedRuns = 0;
@@ -431,6 +439,7 @@ export async function runGaRandomPetWorker(config = createWorkerConfig()) {
           spriteSheetImageSize: config.spriteSheetImageSize,
           videoModel: result.video ? config.videoModel : "",
           packageZip: result.packageZip,
+          supabaseSync: result.supabaseSync,
           generatedActionCount: result.generatedActionCount,
           expectedActionCount: result.expectedActionCount,
           status: result.status
@@ -858,10 +867,12 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
     });
   }
 
+  let motionMap = {};
   if (plan.packageMode === "full") {
+    motionMap = buildMotionMap({ motionResults });
     await writeJsonFile(
       path.join(runDir, motionMapPath),
-      buildMotionMap({ motionResults })
+      motionMap
     );
     await writeJsonFile(
       path.join(runDir, runtimePath),
@@ -1057,13 +1068,64 @@ async function generateCandidateRun({ config, plan, runId, runDir }) {
   const packageZipPath = path.join(runDir, exportArtifactPath);
   await createStoredZipFromDirectory(runDir, packageZipPath);
 
+  const supabaseSync = await syncCandidateIfConfigured({
+    config,
+    runId,
+    runDir,
+    plan,
+    packageManifest,
+    motionMap,
+    previewPath,
+    packagePath: exportArtifactPath,
+    videoPath: videoResult?.filePath || ""
+  });
+
   return {
     packageZip: packageZipPath,
     video: videoResult,
+    supabaseSync,
     status,
     generatedActionCount,
     expectedActionCount
   };
+}
+
+async function syncCandidateIfConfigured(input) {
+  if (!isSupabasePetSyncReady(input.config.supabaseSync)) {
+    return {
+      enabled: false,
+      uploadedAssets: 0
+    };
+  }
+
+  try {
+    return await syncGaPetCandidateToSupabase({
+      config: input.config.supabaseSync,
+      ownerUserId: input.config.ownerUserId,
+      runId: input.runId,
+      runDir: input.runDir,
+      plan: input.plan,
+      packageManifest: input.packageManifest,
+      motionMap: input.motionMap,
+      previewPath: input.previewPath,
+      packagePath: input.packagePath,
+      videoPath: input.videoPath
+    });
+  } catch (error) {
+    const safeError = safeErrorMessage(error);
+    await writeJsonFile(path.join(input.runDir, "meta", "supabase-sync-error.json"), {
+      schema: "gamer.ga-pet-supabase-sync-error.v1",
+      runId: input.runId,
+      failedAt: new Date().toISOString(),
+      error: safeError
+    });
+    console.error(`[ga-worker] supabase-sync-failed ${input.runId} error=${safeError}`);
+    return {
+      enabled: true,
+      uploadedAssets: 0,
+      error: safeError
+    };
+  }
 }
 
 async function generateMotionSheets({ config, plan, runDir, identityImage }) {
@@ -1407,6 +1469,13 @@ function printConfigCheck(config) {
     learningNoteLimit: config.learningNoteLimit,
     reworkQueue: config.reworkQueue,
     reworkStartedTimeoutMinutes: config.reworkStartedTimeoutMinutes,
+    supabaseSync: {
+      enabled: Boolean(config.supabaseSync.enabled),
+      ready: isSupabasePetSyncReady(config.supabaseSync),
+      urlConfigured: Boolean(config.supabaseSync.supabaseUrl),
+      serviceKeyPresent: Boolean(config.supabaseSync.serviceKey),
+      bucket: config.supabaseSync.bucket || ""
+    },
     estimatedCallsPerCandidate: {
       image: expectedImageCalls,
       video: expectedVideoCalls
@@ -2053,7 +2122,10 @@ function safeApiError(json) {
 
 function safeErrorMessage(error) {
   const message = error instanceof Error ? error.message : String(error);
-  return message.replace(/AIza[0-9A-Za-z_-]+/gu, "[REDACTED_API_KEY]");
+  return message
+    .replace(/AIza[0-9A-Za-z_-]+/gu, "[REDACTED_API_KEY]")
+    .replace(/sb_secret_[A-Za-z0-9_-]+/gu, "[REDACTED_SUPABASE_SECRET]")
+    .replace(/postgres(?:ql)?:\/\/[^@\s]+@/giu, "postgresql://[REDACTED]@");
 }
 
 function summarizeResponseShape(value) {
@@ -2078,6 +2150,7 @@ const isDirectRun =
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
+  loadEnvFiles();
   runGaRandomPetWorker().catch((error) => {
     console.error(`[ga-worker] fatal ${safeErrorMessage(error)}`);
     process.exitCode = 1;

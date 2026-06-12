@@ -7,6 +7,7 @@ It does not call admin APIs, does not publish to community, and does not mark an
 ## Secret Handling
 
 - Put the key only in the server environment as `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+- Put Supabase admin credentials only in the server environment or server-only `.env.local`.
 - Do not paste the key into code, Android, admin UI, docs, commits, or logs.
 - The worker sends the key via the `x-goog-api-key` header and redacts API-key-looking strings from error logs.
 - If the key comes from `image.docx`, extract it on the server or into the server panel environment only. Do not commit the document.
@@ -33,6 +34,10 @@ GA_PET_REWORK_STARTED_TIMEOUT_MINUTES=180
 GA_PET_ENABLE_VIDEO=1
 GA_PET_VIDEO_DURATION_SECONDS=5
 GA_PET_VIDEO_MAX_POLLS=30
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<server-secret>
+SUPABASE_STORAGE_BUCKET=pet-assets
+GA_PET_SYNC_SUPABASE=1
 ```
 
 Start command:
@@ -54,6 +59,7 @@ node services/pet-generator/src/ga-random-pet-worker.js --config-check
 ```
 
 Confirm the output shows `apiKeyPresent: true`, `packageMode: full`, the intended image sizes, and `backgroundMode: transparent` for nano-style transparent PNG generation. This check does not call GA and does not print the key.
+When Supabase variables are present it should also show `supabaseSync.ready: true`.
 
 For a cautious first run, set `GA_PET_MAX_RUNS=1`. A full resource package calls image generation once for the identity image and then once per planned motion sheet, so one candidate is already a meaningful server test. After confirming output folders are being created, change it back to `0` for continuous generation during the quota window.
 
@@ -88,6 +94,12 @@ GA_PET_RUN_ROOT/
 ```
 
 Video files appear only when `GA_PET_ENABLE_VIDEO=1` and the Veo operation returns downloadable media.
+
+When Supabase sync is configured, the worker also uploads reviewable assets to
+the private `pet-assets` bucket under `ga-random-pets/<run-id>/...` and upserts
+candidate/asset metadata into `ga_pet_candidates` and `ga_pet_assets`. If upload
+or metadata sync fails, the local candidate is kept and the error is written to
+`meta/supabase-sync-error.json` for later retry or diagnosis.
 
 ## Human Review Console
 
