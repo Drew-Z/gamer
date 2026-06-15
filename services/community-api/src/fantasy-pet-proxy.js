@@ -25,6 +25,10 @@ const PUBLIC_FANTASY_PET_PROXY_ENDPOINTS = [
   },
   {
     method: "GET",
+    pattern: /^\/admin\/pet-generation-jobs\/[^/]+\/review$/u
+  },
+  {
+    method: "GET",
     pattern: /^\/worker-readiness$/u
   },
   {
