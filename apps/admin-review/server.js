@@ -36,7 +36,17 @@ const directProxyPrefixes = [
   "/app-api-contract"
 ];
 
-const shouldProxyDirect = (pathname) =>
+const directProxyEndpoints = [
+  {
+    method: "GET",
+    pattern: /^\/admin\/pet-generation-jobs\/[^/]+\/review$/u
+  }
+];
+
+const shouldProxyDirect = (method, pathname) =>
+  directProxyEndpoints.some(
+    (endpoint) => endpoint.method === method.toUpperCase() && endpoint.pattern.test(pathname)
+  ) ||
   directProxyPrefixes.some((prefix) => {
     if (prefix.endsWith("/")) {
       return pathname.startsWith(prefix);
@@ -144,7 +154,7 @@ export function createAdminReviewHttpHandler(options = {}) {
         return;
       }
 
-      if (url.pathname.startsWith("/api/") || shouldProxyDirect(url.pathname)) {
+      if (url.pathname.startsWith("/api/") || shouldProxyDirect(request.method ?? "GET", url.pathname)) {
         await proxyRequest(request, response, url, communityApiUrl);
         return;
       }
