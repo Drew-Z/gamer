@@ -248,6 +248,102 @@ class FantasyPetGenerationUiModelTest {
     }
 
     @Test
+    fun generationReviewLoopUiStateDistinguishesMotionReviewAndDeliverySteps() {
+        assertEquals(
+            GenerationReviewLoopPhase.Empty,
+            generationReviewLoopUiState(
+                job = null,
+                candidates = emptyList(),
+                selectedCandidateDownloadId = ""
+            ).phase
+        )
+
+        assertEquals(
+            GenerationReviewLoopPhase.WaitingForServer,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    progressStatus = "queued",
+                    nextAction = "wait"
+                ),
+                candidates = emptyList(),
+                selectedCandidateDownloadId = ""
+            ).phase
+        )
+
+        val idleCandidate = CandidateGalleryItem(
+            targetDownloadId = "artifact-1",
+            previewUrl = "https://example.com/artifact-1.png",
+            title = "Candidate 1",
+            status = "waiting-for-review",
+            actionId = "idle-breathe"
+        )
+        assertEquals(
+            GenerationReviewLoopPhase.SelectMotionCandidate,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    progressStatus = "waiting-for-review",
+                    nextAction = "human-review"
+                ),
+                candidates = listOf(idleCandidate),
+                selectedCandidateDownloadId = ""
+            ).phase
+        )
+        val selectedState = generationReviewLoopUiState(
+            job = PetGenerationJobResponseDto(
+                appJobId = "job-123",
+                progressStatus = "waiting-for-review",
+                nextAction = "human-review"
+            ),
+            candidates = listOf(idleCandidate),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertEquals(GenerationReviewLoopPhase.ReadyForHumanReview, selectedState.phase)
+        assertEquals("idle-breathe", selectedState.selectedActionId)
+
+        assertEquals(
+            GenerationReviewLoopPhase.ReworkRequested,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    progressStatus = "revision-requested",
+                    nextAction = "await-revision"
+                ),
+                candidates = listOf(idleCandidate.copy(reviewed = true)),
+                selectedCandidateDownloadId = "artifact-1"
+            ).phase
+        )
+        assertEquals(
+            GenerationReviewLoopPhase.AcceptedPackaging,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    progressStatus = "packaging",
+                    nextAction = "processing-package",
+                    generationProgress = PetGenerationProgressDto(
+                        summary = PetGenerationProgressSummaryDto(latestHumanDecision = "accept")
+                    )
+                ),
+                candidates = listOf(idleCandidate),
+                selectedCandidateDownloadId = "artifact-1"
+            ).phase
+        )
+        assertEquals(
+            GenerationReviewLoopPhase.PackageReady,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    nextAction = "download-package",
+                    downloadReady = true
+                ),
+                candidates = listOf(idleCandidate),
+                selectedCandidateDownloadId = "artifact-1"
+            ).phase
+        )
+    }
+
+    @Test
     fun packageDownloadStatusMessagesStayNearDownloadControlAndHideUnsafeDetails() {
         assertEquals(
             "Downloading pet.zip...",

@@ -218,6 +218,15 @@ class PetShellUiModelTest {
         assertEquals("已选择", zh.candidateActionSummary("C:/secret/runs/job/idle.png"))
         assertEquals("动作 idle-breathe-lo", zh.deliveryReviewTargetValue("动作 idle-breathe-long-loop"))
         assertEquals("已选择", zh.deliveryReviewTargetValue("C:/secret/runs/job/idle.png"))
+        assertEquals("generation-review-loop-status", zh.generationReviewLoopStatusContentDescription)
+        assertEquals("动作可进入人审", zh.generationReviewLoopTitle("Motion ready for human review"))
+        assertEquals(
+            "检查完整动作循环、身份一致性、透明边缘和触发语义。",
+            zh.generationReviewLoopDetail("Check the full action loop, identity, alpha edge, and trigger semantics.")
+        )
+        assertEquals("通过或回炉", zh.generationReviewLoopAction("Accept or request rework"))
+        assertEquals("当前动作：idle-breathe", zh.generationReviewLoopSelectedAction("idle-breathe"))
+        assertEquals("", zh.generationReviewLoopSelectedAction("C:/secret/runs/job/idle.png"))
         assertEquals(
             "动作 idle-breathe / 检查身份、流畅度和触发语义",
             zh.candidateActionFocus("idle-breathe")

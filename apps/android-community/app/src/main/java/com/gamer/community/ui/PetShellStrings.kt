@@ -477,6 +477,74 @@ class PetShellStrings internal constructor(
     val deliveryStatusPackageLocked: String get() = text("未就绪", "Locked")
     val deliveryStatusCommunityReady: String get() = text("可提交", "Ready")
     val deliveryStatusCommunityWaiting: String get() = text("待草稿", "Draft pending")
+    val generationReviewLoopStatusContentDescription: String get() = "generation-review-loop-status"
+    fun generationReviewLoopTitle(title: String): String =
+        if (language == PetShellLanguage.English) {
+            title.safeGenerationMessageDetail("Review loop")
+        } else {
+            when (title) {
+                "No hatch task yet" -> "还没有孵化任务"
+                "Server is hatching" -> "服务端正在孵化"
+                "Waiting for motion candidate" -> "等待动作候选"
+                "Choose a motion candidate" -> "选择动作候选"
+                "Motion ready for human review" -> "动作可进入人审"
+                "Rework requested" -> "已要求回炉"
+                "Motion accepted" -> "动作已通过"
+                "pet.zip ready" -> "pet.zip 已就绪"
+                "Reviewed motions locked" -> "已审核动作已锁定"
+                else -> title.safeGenerationMessageDetail("审核状态")
+            }
+        }
+    fun generationReviewLoopDetail(detail: String): String =
+        if (language == PetShellLanguage.English) {
+            detail.safeGenerationMessageDetail("Review full motion before delivery.")
+        } else {
+            when (detail) {
+                "Create or resume a hatch task before reviewing motion." ->
+                    "先创建或继续孵化任务，之后才能审核动作。"
+                "The app only polls public status; the trusted server worker publishes candidates." ->
+                    "App 只轮询公共状态，候选动作由可信服务端 worker 发布。"
+                "A candidate will appear here after server QA publishes a reviewable action." ->
+                    "服务端 QA 发布可审核动作后，候选会显示在这里。"
+                "Select one full action before sending a review decision." ->
+                    "先选择一个完整动作，再提交人审决定。"
+                "Check the full action loop, identity, alpha edge, and trigger semantics." ->
+                    "检查完整动作循环、身份一致性、透明边缘和触发语义。"
+                "Review feedback is recorded; wait for a revised motion candidate." ->
+                    "审核反馈已记录，等待服务端生成修订动作。"
+                "Human review passed; wait for the server to finish packaging." ->
+                    "人审已通过，等待服务端完成资源包打包。"
+                "The accepted motion package can now be received and imported." ->
+                    "已通过的动作资源包现在可以接收并导入。"
+                "No open candidate can be reviewed; refresh the task for the next server state." ->
+                    "当前没有可继续审核的候选，请刷新任务状态。"
+                else -> detail.safeGenerationMessageDetail("审核完整动作后再交付。")
+            }
+        }
+    fun generationReviewLoopAction(action: String): String =
+        if (language == PetShellLanguage.English) {
+            action.safeGenerationMessageDetail("Next")
+        } else {
+            when (action) {
+                "Start hatch" -> "开始孵化"
+                "Refresh hatch" -> "刷新孵化"
+                "Select motion" -> "选择动作"
+                "Accept or request rework" -> "通过或回炉"
+                "Wait for revised motion" -> "等修订动作"
+                "Wait for package" -> "等待打包"
+                "Receive pet.zip" -> "接收资源包"
+                "Refresh status" -> "刷新状态"
+                else -> action.safeGenerationMessageDetail("下一步")
+            }
+        }
+    fun generationReviewLoopSelectedAction(actionId: String): String {
+        val safeAction = actionId.safeGenerationMessageDetail("action").trim()
+        return if (safeAction.isBlank() || safeAction == "action") {
+            ""
+        } else {
+            text("当前动作：$safeAction", "Current action: $safeAction")
+        }
+    }
     val selectedForReview: String get() = text("已选为动作审核对象", "Selected for motion review")
     val selectCandidate: String get() = text("选择动作候选", "Select motion candidate")
     val reviewedCandidateLocked: String get() = text("动作已审核", "Motion reviewed")

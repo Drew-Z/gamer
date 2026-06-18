@@ -24,6 +24,26 @@ data class GenerationProgressStepItem(
     val message: String
 )
 
+enum class GenerationReviewLoopPhase {
+    Empty,
+    WaitingForServer,
+    WaitingForCandidate,
+    SelectMotionCandidate,
+    ReadyForHumanReview,
+    ReworkRequested,
+    AcceptedPackaging,
+    PackageReady,
+    PackageLocked
+}
+
+data class GenerationReviewLoopUiState(
+    val phase: GenerationReviewLoopPhase,
+    val title: String,
+    val detail: String,
+    val primaryAction: String,
+    val selectedActionId: String = ""
+)
+
 data class PetGenerationPackageImportCandidate(
     val appJobId: String,
     val targetDownloadId: String,
@@ -1125,6 +1145,111 @@ fun packageImportCandidateMessage(candidate: PetGenerationPackageImportCandidate
         ?: "candidate"
     val safeByteCount = candidate.packageByteCount.coerceAtLeast(0L)
     return "Community import pending: $safePackageFileName / $safeByteCount bytes / review target $safeTargetDownloadId."
+}
+
+fun generationReviewLoopUiState(
+    job: PetGenerationJobResponseDto?,
+    candidates: List<CandidateGalleryItem>,
+    selectedCandidateDownloadId: String
+): GenerationReviewLoopUiState {
+    job ?: return GenerationReviewLoopUiState(
+        phase = GenerationReviewLoopPhase.Empty,
+        title = "No hatch task yet",
+        detail = "Create or resume a hatch task before reviewing motion.",
+        primaryAction = "Start hatch"
+    )
+
+    val progressStatus = effectiveProgressStatus(job)
+    val selectedCandidate = candidates.firstOrNull { candidate ->
+        candidate.targetDownloadId == selectedCandidateDownloadId && !candidate.reviewed
+    }
+    val selectedActionId = selectedCandidate?.actionId.orEmpty()
+    val latestDecision = job.generationProgress.summary.latestHumanDecision.trim().lowercase()
+
+    if (canShowPackageDownload(job)) {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.PackageReady,
+            title = "pet.zip ready",
+            detail = "The accepted motion package can now be received and imported.",
+            primaryAction = "Receive pet.zip",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (latestDecision == "accept" || latestDecision == "accepted") {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.AcceptedPackaging,
+            title = "Motion accepted",
+            detail = "Human review passed; wait for the server to finish packaging.",
+            primaryAction = "Wait for package",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (progressStatus in setOf("revision-requested", "candidate-rejected")) {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.ReworkRequested,
+            title = "Rework requested",
+            detail = "Review feedback is recorded; wait for a revised motion candidate.",
+            primaryAction = "Wait for revised motion",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (
+        selectedCandidate != null &&
+        (progressStatus == "waiting-for-review" || job.nextAction == "human-review")
+    ) {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.ReadyForHumanReview,
+            title = "Motion ready for human review",
+            detail = "Check the full action loop, identity, alpha edge, and trigger semantics.",
+            primaryAction = "Accept or request rework",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (candidates.any { !it.reviewed }) {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.SelectMotionCandidate,
+            title = "Choose a motion candidate",
+            detail = "Select one full action before sending a review decision.",
+            primaryAction = "Select motion",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (candidates.isNotEmpty()) {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.PackageLocked,
+            title = "Reviewed motions locked",
+            detail = "No open candidate can be reviewed; refresh the task for the next server state.",
+            primaryAction = "Refresh status",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    val waitingForServer = progressStatus in setOf(
+        "queued",
+        "processing",
+        "waiting-for-worker-output",
+        "packaging"
+    )
+    return if (waitingForServer) {
+        GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.WaitingForServer,
+            title = "Server is hatching",
+            detail = "The app only polls public status; the trusted server worker publishes candidates.",
+            primaryAction = "Refresh hatch"
+        )
+    } else {
+        GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.WaitingForCandidate,
+            title = "Waiting for motion candidate",
+            detail = "A candidate will appear here after server QA publishes a reviewable action.",
+            primaryAction = "Refresh hatch"
+        )
+    }
 }
 
 fun generationPollDelayMillis(job: PetGenerationJobResponseDto): Long =

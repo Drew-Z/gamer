@@ -86,6 +86,8 @@ import com.gamer.community.generation.FantasyPetPackageImportRequestBuilder
 import com.gamer.community.generation.FantasyPetPreviewDownloader
 import com.gamer.community.generation.GENERATION_BODY_SHAPE_OPTIONS
 import com.gamer.community.generation.GenerationProgressStepItem
+import com.gamer.community.generation.GenerationReviewLoopPhase
+import com.gamer.community.generation.GenerationReviewLoopUiState
 import com.gamer.community.generation.HttpFantasyPetGenerationClient
 import com.gamer.community.generation.PetPreviewDownloadResult
 import com.gamer.community.generation.PetGenerationJobResponseDto
@@ -107,6 +109,7 @@ import com.gamer.community.generation.generationContractDemoNotice
 import com.gamer.community.generation.generationProgressSummaryLine
 import com.gamer.community.generation.generationCreateValidationMessage
 import com.gamer.community.generation.generationJobHistoryAfterRemove
+import com.gamer.community.generation.generationReviewLoopUiState
 import com.gamer.community.generation.initialGenerationJobHistory
 import com.gamer.community.generation.persistedGenerationJobId
 import com.gamer.community.generation.packageDownloadFailureMessage
@@ -5764,6 +5767,14 @@ private fun GenerationPanel(
                     modifier = Modifier.padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    GenerationReviewLoopNotice(
+                        strings = strings,
+                        state = generationReviewLoopUiState(
+                            job = job,
+                            candidates = candidates,
+                            selectedCandidateDownloadId = selectedCandidateDownloadId
+                        )
+                    )
                     GenerationDeliveryStatusStrip(
                         strings = strings,
                         selectedCandidateDownloadId = selectedCandidateDownloadId,
@@ -5922,6 +5933,98 @@ private fun GenerationPanel(
             }
         }
     }
+    }
+}
+
+@Composable
+private fun GenerationReviewLoopNotice(
+    strings: PetShellStrings,
+    state: GenerationReviewLoopUiState
+) {
+    val accent = when (state.phase) {
+        GenerationReviewLoopPhase.PackageReady,
+        GenerationReviewLoopPhase.AcceptedPackaging -> GamerUiTokens.ColorRole.Success
+        GenerationReviewLoopPhase.ReadyForHumanReview,
+        GenerationReviewLoopPhase.SelectMotionCandidate -> GamerUiTokens.ColorRole.Review
+        GenerationReviewLoopPhase.ReworkRequested -> GamerUiTokens.ColorRole.Warning
+        GenerationReviewLoopPhase.WaitingForServer,
+        GenerationReviewLoopPhase.WaitingForCandidate -> GamerUiTokens.ColorRole.Reward
+        GenerationReviewLoopPhase.Empty,
+        GenerationReviewLoopPhase.PackageLocked -> GamerUiTokens.ColorRole.Muted
+    }
+    val container = when (state.phase) {
+        GenerationReviewLoopPhase.PackageReady,
+        GenerationReviewLoopPhase.AcceptedPackaging -> GamerUiTokens.ColorRole.IdentitySoft.copy(alpha = 0.54f)
+        GenerationReviewLoopPhase.ReadyForHumanReview,
+        GenerationReviewLoopPhase.SelectMotionCandidate -> GamerUiTokens.ColorRole.ReviewSoft
+        GenerationReviewLoopPhase.ReworkRequested -> GamerUiTokens.ColorRole.WarningSoft
+        GenerationReviewLoopPhase.WaitingForServer,
+        GenerationReviewLoopPhase.WaitingForCandidate -> GamerUiTokens.ColorRole.RewardSoft.copy(alpha = 0.62f)
+        GenerationReviewLoopPhase.Empty,
+        GenerationReviewLoopPhase.PackageLocked -> Color.White
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.generationReviewLoopStatusContentDescription
+            },
+        color = container,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f))
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 4.dp, height = 30.dp)
+                        .clip(GamerUiTokens.Shape.Control)
+                        .background(accent)
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = strings.generationReviewLoopTitle(state.title),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = GamerUiTokens.ColorRole.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = strings.generationReviewLoopDetail(state.detail),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GamerUiTokens.ColorRole.Subtle,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                ReviewStatePill(
+                    text = strings.generationReviewLoopAction(state.primaryAction),
+                    selected = state.phase == GenerationReviewLoopPhase.ReadyForHumanReview ||
+                        state.phase == GenerationReviewLoopPhase.PackageReady
+                )
+            }
+            if (state.selectedActionId.isNotBlank()) {
+                Text(
+                    text = strings.generationReviewLoopSelectedAction(state.selectedActionId),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GamerUiTokens.ColorRole.Muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 
