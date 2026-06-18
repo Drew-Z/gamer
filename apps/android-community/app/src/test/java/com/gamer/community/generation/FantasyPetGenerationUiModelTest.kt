@@ -367,6 +367,124 @@ class FantasyPetGenerationUiModelTest {
     }
 
     @Test
+    fun selectedActionReviewConsoleAppearsOnlyForSelectedFullActionUnderHumanReview() {
+        val idleCandidate = CandidateGalleryItem(
+            targetDownloadId = "artifact-1",
+            previewUrl = "https://example.com/artifact-1.png",
+            title = "Candidate 1",
+            status = "waiting-for-review",
+            actionId = "idle-breathe"
+        )
+        val reviewJob = PetGenerationJobResponseDto(
+            appJobId = "job-123",
+            progressStatus = "waiting-for-review",
+            nextAction = "human-review"
+        )
+
+        val emptyConsole = selectedActionReviewConsoleUiState(
+            job = null,
+            candidates = emptyList(),
+            selectedCandidateDownloadId = ""
+        )
+        assertFalse(emptyConsole.available)
+        assertFalse(emptyConsole.visible)
+        assertEquals(SelectedActionReviewConsolePhase.Empty, emptyConsole.phase)
+        assertTrue(emptyConsole.checks.isEmpty())
+        assertEquals("", emptyConsole.actionId)
+
+        val unselectedConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob,
+            candidates = listOf(idleCandidate),
+            selectedCandidateDownloadId = ""
+        )
+        assertFalse(unselectedConsole.available)
+        assertTrue(unselectedConsole.visible)
+        assertEquals(SelectedActionReviewConsolePhase.SelectAction, unselectedConsole.phase)
+        assertEquals("Select one full action", unselectedConsole.nextStep)
+        assertTrue(unselectedConsole.checks.isEmpty())
+
+        val selectedConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob,
+            candidates = listOf(idleCandidate),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertTrue(selectedConsole.available)
+        assertEquals(SelectedActionReviewConsolePhase.ReadyForReview, selectedConsole.phase)
+        assertEquals("idle-breathe", selectedConsole.actionId)
+        assertEquals("Public preview artifact", selectedConsole.source)
+        assertEquals("Inspect all checks before deciding", selectedConsole.nextStep)
+        assertEquals(
+            listOf(
+                SelectedActionReviewCheckId.ActionLoop,
+                SelectedActionReviewCheckId.Identity,
+                SelectedActionReviewCheckId.AlphaEdge,
+                SelectedActionReviewCheckId.TriggerSemantics
+            ),
+            selectedConsole.checks.map { it.id }
+        )
+
+        val reworkConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob.copy(progressStatus = "revision-requested", nextAction = "await-revision"),
+            candidates = listOf(idleCandidate.copy(reviewed = true)),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertFalse(reworkConsole.available)
+        assertTrue(reworkConsole.visible)
+        assertEquals(SelectedActionReviewConsolePhase.ReworkRequested, reworkConsole.phase)
+        assertEquals("Wait for a revised action", reworkConsole.nextStep)
+        assertTrue(reworkConsole.checks.isEmpty())
+
+        val packagingConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob.copy(progressStatus = "packaging", nextAction = "processing-package"),
+            candidates = listOf(idleCandidate),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertFalse(packagingConsole.available)
+        assertEquals(SelectedActionReviewConsolePhase.AcceptedPackaging, packagingConsole.phase)
+        assertEquals("Wait for package readiness", packagingConsole.nextStep)
+
+        val lockedConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob,
+            candidates = listOf(idleCandidate.copy(reviewed = true)),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertFalse(lockedConsole.available)
+        assertTrue(lockedConsole.visible)
+        assertEquals(SelectedActionReviewConsolePhase.Locked, lockedConsole.phase)
+        assertEquals("Refresh status", lockedConsole.nextStep)
+        assertTrue(lockedConsole.checks.isEmpty())
+
+        val packagedConsole = selectedActionReviewConsoleUiState(
+            job = reviewJob.copy(
+                progressStatus = "ready-for-download",
+                nextAction = "download-package",
+                downloadReady = true
+            ),
+            candidates = listOf(idleCandidate),
+            selectedCandidateDownloadId = "artifact-1"
+        )
+        assertFalse(packagedConsole.available)
+        assertTrue(packagedConsole.visible)
+        assertEquals(SelectedActionReviewConsolePhase.PackageReady, packagedConsole.phase)
+        assertEquals("Receive pet.zip", packagedConsole.nextStep)
+        assertTrue(packagedConsole.checks.isEmpty())
+    }
+
+    @Test
+    fun selectedActionReviewChecksCoverTheFourFullActionDimensions() {
+        assertEquals(
+            listOf(
+                SelectedActionReviewCheckId.ActionLoop,
+                SelectedActionReviewCheckId.Identity,
+                SelectedActionReviewCheckId.AlphaEdge,
+                SelectedActionReviewCheckId.TriggerSemantics
+            ),
+            SELECTED_ACTION_REVIEW_CHECKS.map { it.id }
+        )
+        assertTrue(SELECTED_ACTION_REVIEW_CHECKS.all { it.title.isNotBlank() && it.detail.isNotBlank() })
+    }
+
+    @Test
     fun packageDownloadStatusMessagesStayNearDownloadControlAndHideUnsafeDetails() {
         assertEquals(
             "Downloading pet.zip...",

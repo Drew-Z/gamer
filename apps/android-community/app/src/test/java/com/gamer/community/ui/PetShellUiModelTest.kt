@@ -1,6 +1,7 @@
 package com.gamer.community.ui
 
 import com.gamer.community.generation.DEFAULT_GENERATION_MESSAGE
+import com.gamer.community.generation.SELECTED_ACTION_REVIEW_CHECKS
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.ApprovedPet
@@ -317,6 +318,84 @@ class PetShellUiModelTest {
         )
         assertEquals("Accept", en.reviewAccept)
         assertEquals("Submit to community review", en.submitToCommunityReview)
+    }
+
+    @Test
+    fun selectedActionReviewConsoleCopyStaysPolishedAndSafe() {
+        val zh = defaultPetShellStrings()
+        val en = petShellStrings(PetShellLanguage.English)
+
+        assertEquals(
+            "generation-selected-action-review-console",
+            zh.selectedActionReviewConsoleContentDescription
+        )
+        assertEquals("完整动作人审清单", zh.selectedActionReviewConsoleTitle)
+        assertEquals("Full action review checklist", en.selectedActionReviewConsoleTitle)
+        assertEquals(
+            "提交决定前，对选中的完整动作逐项确认。",
+            zh.selectedActionReviewConsoleHint
+        )
+        assertEquals(
+            "Confirm each item on the selected full action before deciding.",
+            en.selectedActionReviewConsoleHint
+        )
+
+        assertEquals("审核对象：动作 idle-breathe", zh.selectedActionReviewHeadline("idle-breathe"))
+        assertEquals("Reviewing: action idle-breathe", en.selectedActionReviewHeadline("idle-breathe"))
+        assertEquals("审核对象：完整动作", zh.selectedActionReviewHeadline(""))
+        assertEquals("审核对象：完整动作", zh.selectedActionReviewHeadline("C:/secret/runs/job/idle.png"))
+        assertEquals("Reviewing: full action", en.selectedActionReviewHeadline("C:/secret/runs/job/idle.png"))
+
+        assertEquals("尚未选择动作", zh.selectedActionReviewStateTitle("No action selected"))
+        assertEquals("选中动作可人审", zh.selectedActionReviewStateTitle("Selected action ready for review"))
+        assertEquals("动作已锁定", zh.selectedActionReviewStateTitle("Action locked"))
+        assertEquals("已要求回炉", zh.selectedActionReviewStateTitle("Rework requested"))
+        assertEquals("动作已通过", zh.selectedActionReviewStateTitle("Action accepted"))
+        assertEquals("资源包已就绪", zh.selectedActionReviewStateTitle("Package ready"))
+        assertEquals("Action accepted", en.selectedActionReviewStateTitle("Action accepted"))
+
+        assertEquals("公共动作候选已可选", zh.selectedActionReviewSource("Public motion candidates are available"))
+        assertEquals("公共预览资源", zh.selectedActionReviewSource("Public preview artifact"))
+        assertEquals("公共资源包就绪状态", zh.selectedActionReviewSource("Public package readiness"))
+        assertEquals("Public package readiness", en.selectedActionReviewSource("Public package readiness"))
+
+        assertEquals("选择一个完整动作", zh.selectedActionReviewNextStep("Select one full action"))
+        assertEquals("逐项检查后再决定", zh.selectedActionReviewNextStep("Inspect all checks before deciding"))
+        assertEquals("等待资源包就绪", zh.selectedActionReviewNextStep("Wait for package readiness"))
+        assertEquals("接收 pet.zip", zh.selectedActionReviewNextStep("Receive pet.zip"))
+        assertEquals("Receive pet.zip", en.selectedActionReviewNextStep("Receive pet.zip"))
+
+        assertEquals("完整动作循环", zh.selectedActionReviewCheckTitle("Full action loop"))
+        assertEquals("身份一致性", zh.selectedActionReviewCheckTitle("Identity consistency"))
+        assertEquals("透明边缘", zh.selectedActionReviewCheckTitle("Alpha edge"))
+        assertEquals("触发语义", zh.selectedActionReviewCheckTitle("Trigger semantics"))
+        assertEquals("Trigger semantics", en.selectedActionReviewCheckTitle("Trigger semantics"))
+
+        assertEquals(
+            "完整播放动作：每一帧都在，首尾帧能无缝衔接。",
+            zh.selectedActionReviewCheckDetail(
+                "Play the whole action: every frame is present and the first and last frame loop seamlessly."
+            )
+        )
+        assertEquals(
+            "透明边缘保持干净，没有脏点、描边光晕或过重阴影。",
+            zh.selectedActionReviewCheckDetail(
+                "Transparent edges stay clean with no dirty pixels, halo, or heavy shadow."
+            )
+        )
+        assertEquals(
+            "The motion matches its trigger meaning, such as idle, tap, drag, feed, or run.",
+            en.selectedActionReviewCheckDetail(
+                "The motion matches its trigger meaning, such as idle, tap, drag, feed, or run."
+            )
+        )
+
+        SELECTED_ACTION_REVIEW_CHECKS.forEach { check ->
+            assertFalse(zh.selectedActionReviewCheckTitle(check.title).isBlank())
+            assertFalse(zh.selectedActionReviewCheckDetail(check.detail).isBlank())
+            assertFalse(en.selectedActionReviewCheckTitle(check.title).isBlank())
+            assertFalse(en.selectedActionReviewCheckDetail(check.detail).isBlank())
+        }
     }
 
     @Test

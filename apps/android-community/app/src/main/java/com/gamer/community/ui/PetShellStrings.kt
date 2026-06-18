@@ -545,6 +545,93 @@ class PetShellStrings internal constructor(
             text("当前动作：$safeAction", "Current action: $safeAction")
         }
     }
+    val selectedActionReviewConsoleContentDescription: String get() = "generation-selected-action-review-console"
+    val selectedActionReviewConsoleTitle: String get() = text("完整动作人审清单", "Full action review checklist")
+    val selectedActionReviewConsoleHint: String
+        get() = text(
+            "提交决定前，对选中的完整动作逐项确认。",
+            "Confirm each item on the selected full action before deciding."
+        )
+    fun selectedActionReviewHeadline(actionId: String): String {
+        val safeAction = actionId.safeGenerationMessageDetail("action").trim()
+        return if (safeAction.isBlank() || safeAction == "action") {
+            text("审核对象：完整动作", "Reviewing: full action")
+        } else {
+            text("审核对象：动作 $safeAction", "Reviewing: action $safeAction")
+        }
+    }
+    fun selectedActionReviewStateTitle(rawTitle: String): String =
+        if (language == PetShellLanguage.English) {
+            rawTitle.safeGenerationMessageDetail("Action review")
+        } else {
+            when (rawTitle) {
+                "No action selected" -> "尚未选择动作"
+                "Selected action ready for review" -> "选中动作可人审"
+                "Action locked" -> "动作已锁定"
+                "Rework requested" -> "已要求回炉"
+                "Action accepted" -> "动作已通过"
+                "Package ready" -> "资源包已就绪"
+                else -> rawTitle.safeGenerationMessageDetail("动作人审")
+            }
+        }
+    fun selectedActionReviewSource(source: String): String =
+        if (language == PetShellLanguage.English) {
+            source.safeGenerationMessageDetail("Public review source")
+        } else {
+            when (source) {
+                "Waiting for a public motion candidate" -> "等待公共动作候选"
+                "Public motion candidates are available" -> "公共动作候选已可选"
+                "Public preview artifact" -> "公共预览资源"
+                "Human review feedback recorded" -> "人审反馈已记录"
+                "Public packaging status" -> "公共打包状态"
+                "Public package readiness" -> "公共资源包就绪状态"
+                "Reviewed public candidate" -> "已审核公共候选"
+                else -> source.safeGenerationMessageDetail("公共审核来源")
+            }
+        }
+    fun selectedActionReviewNextStep(nextStep: String): String =
+        if (language == PetShellLanguage.English) {
+            nextStep.safeGenerationMessageDetail("Next step")
+        } else {
+            when (nextStep) {
+                "Refresh hatch" -> "刷新孵化"
+                "Select one full action" -> "选择一个完整动作"
+                "Inspect all checks before deciding" -> "逐项检查后再决定"
+                "Wait for a revised action" -> "等待修订动作"
+                "Wait for package readiness" -> "等待资源包就绪"
+                "Receive pet.zip" -> "接收 pet.zip"
+                "Refresh status" -> "刷新状态"
+                else -> nextStep.safeGenerationMessageDetail("下一步")
+            }
+        }
+    fun selectedActionReviewCheckTitle(rawTitle: String): String =
+        if (language == PetShellLanguage.English) {
+            rawTitle
+        } else {
+            when (rawTitle) {
+                "Full action loop" -> "完整动作循环"
+                "Identity consistency" -> "身份一致性"
+                "Alpha edge" -> "透明边缘"
+                "Trigger semantics" -> "触发语义"
+                else -> rawTitle.safeGenerationMessageDetail("审核项")
+            }
+        }
+    fun selectedActionReviewCheckDetail(rawDetail: String): String =
+        if (language == PetShellLanguage.English) {
+            rawDetail.safeGenerationMessageDetail("Review this aspect of the full action.")
+        } else {
+            when (rawDetail) {
+                "Play the whole action: every frame is present and the first and last frame loop seamlessly." ->
+                    "完整播放动作：每一帧都在，首尾帧能无缝衔接。"
+                "The main subject keeps the same colors, shape, and silhouette across the full motion." ->
+                    "主体在整段动作中保持相同的配色、形状和轮廓。"
+                "Transparent edges stay clean with no dirty pixels, halo, or heavy shadow." ->
+                    "透明边缘保持干净，没有脏点、描边光晕或过重阴影。"
+                "The motion matches its trigger meaning, such as idle, tap, drag, feed, or run." ->
+                    "动作符合触发语义，例如待机、点击、拖拽、喂食或跑动。"
+                else -> rawDetail.safeGenerationMessageDetail("审核完整动作的这一方面。")
+            }
+        }
     val selectedForReview: String get() = text("已选为动作审核对象", "Selected for motion review")
     val selectCandidate: String get() = text("选择动作候选", "Select motion candidate")
     val reviewedCandidateLocked: String get() = text("动作已审核", "Motion reviewed")

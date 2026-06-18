@@ -93,6 +93,8 @@ import com.gamer.community.generation.PetPreviewDownloadResult
 import com.gamer.community.generation.PetGenerationJobResponseDto
 import com.gamer.community.generation.PetGenerationPackageImportCandidate
 import com.gamer.community.generation.REVIEW_NOTE_SUGGESTIONS
+import com.gamer.community.generation.SelectedActionReviewConsoleUiState
+import com.gamer.community.generation.selectedActionReviewConsoleUiState
 import com.gamer.community.generation.appendReviewNoteSuggestion
 import com.gamer.community.generation.canClearGenerationJob
 import com.gamer.community.generation.canCreateGenerationJob
@@ -5712,6 +5714,15 @@ private fun GenerationPanel(
                 GenerationWaitingCandidateNotice(strings = strings)
             }
 
+            SelectedActionReviewConsole(
+                strings = strings,
+                state = selectedActionReviewConsoleUiState(
+                    job = job,
+                    candidates = candidates,
+                    selectedCandidateDownloadId = selectedCandidateDownloadId
+                )
+            )
+
             if (candidates.isNotEmpty()) {
                 GenerationReviewStageHeader(
                     title = strings.reviewNotesStageTitle,
@@ -6024,6 +6035,130 @@ private fun GenerationReviewLoopNotice(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SelectedActionReviewConsole(
+    strings: PetShellStrings,
+    state: SelectedActionReviewConsoleUiState
+) {
+    if (!state.visible) {
+        return
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.selectedActionReviewConsoleContentDescription
+            },
+        color = GamerUiTokens.ColorRole.ReviewSoft,
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Review.copy(alpha = 0.30f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = strings.selectedActionReviewConsoleTitle,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = GamerUiTokens.ColorRole.Ink
+            )
+            Text(
+                text = strings.selectedActionReviewStateTitle(state.title),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = GamerUiTokens.ColorRole.Review,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = strings.selectedActionReviewHeadline(state.actionId),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = GamerUiTokens.ColorRole.Review,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                ReviewStatePill(
+                    text = strings.selectedActionReviewNextStep(state.nextStep),
+                    selected = state.available
+                )
+            }
+            Text(
+                text = strings.selectedActionReviewConsoleHint,
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Muted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = strings.selectedActionReviewSource(state.source),
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Subtle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            for (check in state.checks) {
+                SelectedActionReviewCheckRow(
+                    title = strings.selectedActionReviewCheckTitle(check.title),
+                    detail = strings.selectedActionReviewCheckDetail(check.detail)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectedActionReviewCheckRow(
+    title: String,
+    detail: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GamerUiTokens.Shape.Card)
+            .background(Color.White.copy(alpha = 0.74f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .size(width = 4.dp, height = 28.dp)
+                .clip(GamerUiTokens.Shape.Control)
+                .background(GamerUiTokens.ColorRole.Review)
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = GamerUiTokens.ColorRole.Ink
+            )
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Subtle,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

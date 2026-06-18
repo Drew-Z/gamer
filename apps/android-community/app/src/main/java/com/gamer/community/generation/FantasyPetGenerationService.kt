@@ -44,6 +44,42 @@ data class GenerationReviewLoopUiState(
     val selectedActionId: String = ""
 )
 
+enum class SelectedActionReviewCheckId {
+    ActionLoop,
+    Identity,
+    AlphaEdge,
+    TriggerSemantics
+}
+
+data class SelectedActionReviewCheckItem(
+    val id: SelectedActionReviewCheckId,
+    val title: String,
+    val detail: String
+)
+
+enum class SelectedActionReviewConsolePhase {
+    Empty,
+    SelectAction,
+    ReadyForReview,
+    Locked,
+    ReworkRequested,
+    AcceptedPackaging,
+    PackageReady
+}
+
+data class SelectedActionReviewConsoleUiState(
+    val phase: SelectedActionReviewConsolePhase,
+    val visible: Boolean,
+    val actionId: String,
+    val title: String,
+    val source: String,
+    val nextStep: String,
+    val checks: List<SelectedActionReviewCheckItem>
+) {
+    val available: Boolean
+        get() = phase == SelectedActionReviewConsolePhase.ReadyForReview
+}
+
 data class PetGenerationPackageImportCandidate(
     val appJobId: String,
     val targetDownloadId: String,
@@ -1259,6 +1295,108 @@ fun generationReviewLoopUiState(
             title = "Waiting for motion candidate",
             detail = "A candidate will appear here after server QA publishes a reviewable action.",
             primaryAction = "Refresh hatch"
+        )
+    }
+}
+
+val SELECTED_ACTION_REVIEW_CHECKS: List<SelectedActionReviewCheckItem> = listOf(
+    SelectedActionReviewCheckItem(
+        id = SelectedActionReviewCheckId.ActionLoop,
+        title = "Full action loop",
+        detail = "Play the whole action: every frame is present and the first and last frame loop seamlessly."
+    ),
+    SelectedActionReviewCheckItem(
+        id = SelectedActionReviewCheckId.Identity,
+        title = "Identity consistency",
+        detail = "The main subject keeps the same colors, shape, and silhouette across the full motion."
+    ),
+    SelectedActionReviewCheckItem(
+        id = SelectedActionReviewCheckId.AlphaEdge,
+        title = "Alpha edge",
+        detail = "Transparent edges stay clean with no dirty pixels, halo, or heavy shadow."
+    ),
+    SelectedActionReviewCheckItem(
+        id = SelectedActionReviewCheckId.TriggerSemantics,
+        title = "Trigger semantics",
+        detail = "The motion matches its trigger meaning, such as idle, tap, drag, feed, or run."
+    )
+)
+
+fun selectedActionReviewConsoleUiState(
+    job: PetGenerationJobResponseDto?,
+    candidates: List<CandidateGalleryItem>,
+    selectedCandidateDownloadId: String
+): SelectedActionReviewConsoleUiState {
+    val loopState = generationReviewLoopUiState(job, candidates, selectedCandidateDownloadId)
+    val selectedCandidate = candidates.firstOrNull { candidate ->
+        candidate.targetDownloadId == selectedCandidateDownloadId
+    }
+    val selectedActionId = selectedCandidate?.actionId.orEmpty()
+
+    fun state(
+        phase: SelectedActionReviewConsolePhase,
+        title: String,
+        source: String,
+        nextStep: String,
+        checks: List<SelectedActionReviewCheckItem> = emptyList(),
+        visible: Boolean = true
+    ): SelectedActionReviewConsoleUiState =
+        SelectedActionReviewConsoleUiState(
+            phase = phase,
+            visible = visible,
+            actionId = selectedActionId,
+            title = title,
+            source = source,
+            nextStep = nextStep,
+            checks = checks
+        )
+
+    return when (loopState.phase) {
+        GenerationReviewLoopPhase.Empty,
+        GenerationReviewLoopPhase.WaitingForServer,
+        GenerationReviewLoopPhase.WaitingForCandidate -> state(
+            phase = SelectedActionReviewConsolePhase.Empty,
+            title = "No action selected",
+            source = "Waiting for a public motion candidate",
+            nextStep = "Refresh hatch",
+            visible = false
+        )
+        GenerationReviewLoopPhase.SelectMotionCandidate -> state(
+            phase = SelectedActionReviewConsolePhase.SelectAction,
+            title = "No action selected",
+            source = "Public motion candidates are available",
+            nextStep = "Select one full action"
+        )
+        GenerationReviewLoopPhase.ReadyForHumanReview -> state(
+            phase = SelectedActionReviewConsolePhase.ReadyForReview,
+            title = "Selected action ready for review",
+            source = "Public preview artifact",
+            nextStep = "Inspect all checks before deciding",
+            checks = SELECTED_ACTION_REVIEW_CHECKS
+        )
+        GenerationReviewLoopPhase.ReworkRequested -> state(
+            phase = SelectedActionReviewConsolePhase.ReworkRequested,
+            title = "Rework requested",
+            source = "Human review feedback recorded",
+            nextStep = "Wait for a revised action"
+        )
+        GenerationReviewLoopPhase.AcceptedPackaging -> state(
+            phase = SelectedActionReviewConsolePhase.AcceptedPackaging,
+            title = "Action accepted",
+            source = "Public packaging status",
+            nextStep = "Wait for package readiness"
+        )
+        GenerationReviewLoopPhase.PackageReady -> state(
+            phase = SelectedActionReviewConsolePhase.PackageReady,
+            title = "Package ready",
+            source = "Public package readiness",
+            nextStep = "Receive pet.zip"
+        )
+        GenerationReviewLoopPhase.PackageLocked -> state(
+            phase = SelectedActionReviewConsolePhase.Locked,
+            title = "Action locked",
+            source = "Reviewed public candidate",
+            nextStep = "Refresh status"
         )
     }
 }
