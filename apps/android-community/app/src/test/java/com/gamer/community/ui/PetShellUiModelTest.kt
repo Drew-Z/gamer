@@ -179,6 +179,14 @@ class PetShellUiModelTest {
         assertEquals("自主孵化", zh.generationBriefPanelTitle)
         assertEquals("桌宠提示", zh.generationPromptStageTitle)
         assertEquals("随机设定", zh.generationPromptIdeaAction)
+        assertEquals("预计耗时", zh.hatcherySlaTitle)
+        assertEquals("备用 ≤ 2 分钟", zh.hatcheryReserveSla(120_000))
+        assertEquals("神秘 ≤ 10 分钟", zh.hatcheryMysterySla(600_000))
+        assertEquals("自主 ≤ 15 分钟", zh.hatcheryCustomSla(900_000))
+        assertEquals(
+            "建议每 3 秒轮询，连续 3 次失败后提示慢响应",
+            zh.hatcheryPollingSla(3_000, 3)
+        )
         assertEquals(
             "generation-prompt-idea-button",
             zh.generationPromptIdeaContentDescription
@@ -233,6 +241,14 @@ class PetShellUiModelTest {
         assertEquals("Custom hatch", en.generationBriefPanelTitle)
         assertEquals("Pet prompt", en.generationPromptStageTitle)
         assertEquals("Random prompt", en.generationPromptIdeaAction)
+        assertEquals("ETA", en.hatcherySlaTitle)
+        assertEquals("Reserve <= 2 min", en.hatcheryReserveSla(120_000))
+        assertEquals("Mystery <= 10 min", en.hatcheryMysterySla(600_000))
+        assertEquals("Custom <= 15 min", en.hatcheryCustomSla(900_000))
+        assertEquals(
+            "Poll every 3s; show slow notice after 3 failures",
+            en.hatcheryPollingSla(3_000, 3)
+        )
         assertEquals(
             "generation-prompt-idea-button",
             en.generationPromptIdeaContentDescription

@@ -24,6 +24,7 @@ import com.gamer.community.api.CheckInResponseDto
 import com.gamer.community.api.CommunityApiClient
 import com.gamer.community.api.CommunityHomeResponseDto
 import com.gamer.community.api.CommunityRepository
+import com.gamer.community.api.CommunitySlaDto
 import com.gamer.community.api.FantasyPetPackageImportDraftRequestDto
 import com.gamer.community.api.FeedResponseDto
 import com.gamer.community.api.HttpCommunityApiClient
@@ -606,6 +607,9 @@ private class FakeCommunityApiClient : CommunityApiClient {
     override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
         ApiCallResult.Failure("not_configured")
 
+    override suspend fun getCommunitySla(): ApiCallResult<CommunitySlaDto> =
+        ApiCallResult.Success(CommunitySlaDto())
+
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         ApiCallResult.Success(FeedResponseDto())
 
@@ -699,6 +703,9 @@ private class RecordingCommunityApiClient : CommunityApiClient {
 
     override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
         ApiCallResult.Failure("not_configured")
+
+    override suspend fun getCommunitySla(): ApiCallResult<CommunitySlaDto> =
+        ApiCallResult.Success(CommunitySlaDto())
 
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         ApiCallResult.Success(FeedResponseDto())

@@ -1,6 +1,7 @@
 package com.gamer.community.api
 
 import com.gamer.community.petshell.ApprovedPet
+import com.gamer.community.petshell.HatchSla
 import com.gamer.community.petshell.FeedPost
 
 data class InitialCommunityResult(
@@ -10,7 +11,8 @@ data class InitialCommunityResult(
     val message: String,
     val usedFallback: Boolean,
     val checkInClaimed: Boolean = false,
-    val pendingSubmissionCount: Int = 0
+    val pendingSubmissionCount: Int = 0,
+    val hatchSla: HatchSla = HatchSla()
 )
 
 data class CheckInResult(
@@ -25,9 +27,11 @@ class CommunityRepository(
     private val client: CommunityApiClient
 ) {
     suspend fun loadInitialCommunity(): InitialCommunityResult {
+        val hatchSla = loadHatchSla()
+
         when (val homeResult = client.getCommunityHome()) {
             is ApiCallResult.Success -> {
-                return homeResult.value.toInitialCommunityResult()
+                return homeResult.value.toInitialCommunityResult(hatchSla)
             }
             is ApiCallResult.Failure -> Unit
         }
@@ -56,7 +60,8 @@ class CommunityRepository(
                     approvedPets = approvedPets,
                     walletBalance = walletBalance,
                     message = "Community ready.",
-                    usedFallback = false
+                    usedFallback = false,
+                    hatchSla = hatchSla
                 )
         } else {
                 InitialCommunityResult(
@@ -64,10 +69,17 @@ class CommunityRepository(
                     approvedPets = approvedPets,
                     walletBalance = walletBalance,
                     message = "Remote community unavailable.",
-                    usedFallback = true
+                    usedFallback = true,
+                    hatchSla = hatchSla
                 )
         }
     }
+
+    private suspend fun loadHatchSla(): HatchSla =
+        when (val result = client.getCommunitySla()) {
+            is ApiCallResult.Success -> result.value.toHatchSla()
+            is ApiCallResult.Failure -> HatchSla()
+        }
 
     suspend fun claimDailyCheckIn(): CheckInResult =
         when (val checkInResult = client.claimDailyCheckIn()) {
@@ -124,7 +136,7 @@ class CommunityRepository(
     }
 }
 
-private fun CommunityHomeResponseDto.toInitialCommunityResult(): InitialCommunityResult {
+private fun CommunityHomeResponseDto.toInitialCommunityResult(hatchSla: HatchSla): InitialCommunityResult {
     val remotePosts = feed.toFeedPosts()
     return InitialCommunityResult(
         posts = remotePosts,
@@ -133,9 +145,20 @@ private fun CommunityHomeResponseDto.toInitialCommunityResult(): InitialCommunit
         message = "Community home ready.",
         usedFallback = false,
         checkInClaimed = dailyCheckIn.claimed,
-        pendingSubmissionCount = submissionsSummary.pendingCount
+        pendingSubmissionCount = submissionsSummary.pendingCount,
+        hatchSla = hatchSla
     )
 }
+
+private fun CommunitySlaDto.toHatchSla(): HatchSla =
+    HatchSla(
+        reserveEggMaxMs = hatch.reserveEggMaxMs,
+        mysteryEggMaxMs = hatch.mysteryEggMaxMs,
+        customHatchMaxMs = hatch.customHatchMaxMs,
+        suggestedPollIntervalMs = polling.suggestedIntervalMs,
+        consecutivePollFailuresBeforeSlowNotice =
+            failureThresholds.consecutivePollFailuresBeforeSlowNotice
+    )
 
 private fun String.isSafePublicToken(): Boolean {
     val trimmed = trim()

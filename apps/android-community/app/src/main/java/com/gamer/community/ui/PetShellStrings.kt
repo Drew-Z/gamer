@@ -243,6 +243,18 @@ class PetShellStrings internal constructor(
     val hatcheryMysteryActionContentDescription: String get() = "generation-mystery-hatch-button"
     val hatcheryCustomTitle: String get() = text("自主孵化", "Custom hatch")
     val hatcheryCustomDetail: String get() = text("提示词、人审、资源包", "Prompt, review, package")
+    val hatcherySlaTitle: String get() = text("预计耗时", "ETA")
+    fun hatcheryReserveSla(maxMs: Long): String =
+        text("备用 ≤ ${hatcheryDuration(maxMs)}", "Reserve <= ${hatcheryDuration(maxMs)}")
+    fun hatcheryMysterySla(maxMs: Long): String =
+        text("神秘 ≤ ${hatcheryDuration(maxMs)}", "Mystery <= ${hatcheryDuration(maxMs)}")
+    fun hatcheryCustomSla(maxMs: Long): String =
+        text("自主 ≤ ${hatcheryDuration(maxMs)}", "Custom <= ${hatcheryDuration(maxMs)}")
+    fun hatcheryPollingSla(intervalMs: Long, failureThreshold: Int): String =
+        text(
+            "建议每 ${hatcheryDuration(intervalMs)}轮询，连续 ${failureThreshold.coerceAtLeast(1)} 次失败后提示慢响应",
+            "Poll every ${hatcheryDuration(intervalMs)}; show slow notice after ${failureThreshold.coerceAtLeast(1)} failures"
+        )
     val hatcheryModeActive: String get() = text("当前开放", "Available")
     val hatcheryModeComingSoon: String get() = text("待开放", "Pending")
     val hatcheryFinePathNotice: String
@@ -822,6 +834,20 @@ class PetShellStrings internal constructor(
 
     private fun text(chinese: String, english: String): String =
         if (language == PetShellLanguage.Chinese) chinese else english
+
+    private fun hatcheryDuration(maxMs: Long): String {
+        val safeMs = maxMs.coerceAtLeast(1_000)
+        val totalSeconds = ((safeMs + 999) / 1_000).coerceAtLeast(1)
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return if (minutes > 0L && seconds == 0L) {
+            text("${minutes} 分钟", "${minutes} min")
+        } else if (minutes > 0L) {
+            text("${minutes} 分 ${seconds} 秒", "${minutes}m ${seconds}s")
+        } else {
+            text("${seconds} 秒", "${seconds}s")
+        }
+    }
 
     private fun englishGenerationMessage(rawMessage: String): String {
         englishDynamicGenerationMessage(rawMessage, "Generation poll failed: ")?.let { return it }

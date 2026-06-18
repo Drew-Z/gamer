@@ -7,6 +7,7 @@ sealed interface ApiCallResult<out T> {
 
 interface CommunityApiClient {
     suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto>
+    suspend fun getCommunitySla(): ApiCallResult<CommunitySlaDto>
     suspend fun getFeed(): ApiCallResult<FeedResponseDto>
     suspend fun getWallet(): ApiCallResult<WalletDto>
     suspend fun getApprovedPets(): ApiCallResult<ApprovedPetsResponseDto>

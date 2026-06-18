@@ -53,6 +53,14 @@ data class ApprovedPet(
     val totalScore: Int
 )
 
+data class HatchSla(
+    val reserveEggMaxMs: Long = 120_000,
+    val mysteryEggMaxMs: Long = 600_000,
+    val customHatchMaxMs: Long = 900_000,
+    val suggestedPollIntervalMs: Long = 3_000,
+    val consecutivePollFailuresBeforeSlowNotice: Int = 3
+)
+
 data class DefaultDesktopPetMotionSheet(
     val assetPath: String,
     val frameCount: Int,
@@ -80,6 +88,7 @@ data class PetShellState(
     val checkInClaimed: Boolean,
     val pendingSubmissionCount: Int = 0,
     val remoteCommunitySynced: Boolean = false,
+    val hatchSla: HatchSla = HatchSla(),
     val approvedPets: List<ApprovedPet>,
     val approvedPetIndex: Int,
     val defaultDesktopPets: List<DefaultDesktopPet>,

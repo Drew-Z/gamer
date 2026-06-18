@@ -105,6 +105,7 @@ class PetShellControllerTest {
             posts = listOf(remotePost),
             approvedPets = listOf(approvedPet),
             walletBalance = 123,
+            hatchSla = HatchSla(customHatchMaxMs = 777_000),
             usedFallback = false,
             message = "Community ready."
         )
@@ -112,6 +113,7 @@ class PetShellControllerTest {
         assertEquals(0, loaded.feedIndex)
         assertEquals(123, loaded.walletBalance)
         assertTrue(loaded.remoteCommunitySynced)
+        assertEquals(777_000L, loaded.hatchSla.customHatchMaxMs)
         assertEquals(1, loaded.approvedPets.size)
         assertEquals("Stardust Dragon", loaded.approvedPets[0].displayName)
         assertEquals("Live feed", loaded.posts[loaded.feedIndex].title)

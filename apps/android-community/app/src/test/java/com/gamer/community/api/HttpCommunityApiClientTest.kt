@@ -190,6 +190,36 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun decodesCommunitySlaJson() {
+        val json = """
+            {
+              "schema": "gamer.sla.v1",
+              "hatch": {
+                "reserveEggMaxMs": 60000,
+                "mysteryEggMaxMs": 300000,
+                "customHatchMaxMs": 777000
+              },
+              "polling": {
+                "suggestedIntervalMs": 5000,
+                "maxAttempts": 5,
+                "baseBackoffMs": 2000
+              },
+              "failureThresholds": {
+                "consecutivePollFailuresBeforeSlowNotice": 2
+              }
+            }
+        """.trimIndent()
+
+        val sla = HttpCommunityApiClient.decodeCommunitySla(json)
+
+        assertEquals("gamer.sla.v1", sla.schema)
+        assertEquals(60_000L, sla.hatch.reserveEggMaxMs)
+        assertEquals(777_000L, sla.hatch.customHatchMaxMs)
+        assertEquals(5_000L, sla.polling.suggestedIntervalMs)
+        assertEquals(2, sla.failureThresholds.consecutivePollFailuresBeforeSlowNotice)
+    }
+
+    @Test
     fun decodesImportDraftJson() {
         val json = """
             {
@@ -330,6 +360,40 @@ class HttpCommunityApiClientTest {
             assertTrue(result is ApiCallResult.Success)
             assertEquals("GET", recordedRequest.get()?.method)
             assertEquals("/v1/community-home", recordedRequest.get()?.path)
+        }
+    }
+
+    @Test
+    fun getCommunitySlaRequestsPublicSlaPath() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+        val responseBody = """
+            {
+              "schema": "gamer.sla.v1",
+              "hatch": {
+                "reserveEggMaxMs": 120000,
+                "mysteryEggMaxMs": 600000,
+                "customHatchMaxMs": 900000
+              },
+              "polling": {
+                "suggestedIntervalMs": 3000,
+                "maxAttempts": 3,
+                "baseBackoffMs": 1000
+              },
+              "failureThresholds": {
+                "consecutivePollFailuresBeforeSlowNotice": 3
+              }
+            }
+        """.trimIndent()
+
+        TestServer(
+            responseBody = responseBody,
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            val result = HttpCommunityApiClient(server.baseUrl).getCommunitySla()
+
+            assertTrue(result is ApiCallResult.Success)
+            assertEquals("GET", recordedRequest.get()?.method)
+            assertEquals("/v1/sla", recordedRequest.get()?.path)
         }
     }
 

@@ -134,6 +134,7 @@ import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.DefaultDesktopPet
 import com.gamer.community.petshell.FeedDirection
 import com.gamer.community.petshell.FeedPost
+import com.gamer.community.petshell.HatchSla
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.PetShellController
 import com.gamer.community.petshell.PetShellState
@@ -603,6 +604,7 @@ fun PetShellApp(
             walletBalance = result.walletBalance,
             checkInClaimed = result.checkInClaimed,
             pendingSubmissionCount = result.pendingSubmissionCount,
+            hatchSla = result.hatchSla,
             usedFallback = result.usedFallback,
             message = result.message
         )
@@ -738,6 +740,7 @@ fun PetShellApp(
                         GenerationPanel(
                             strings = strings,
                             walletBalance = state.walletBalance,
+                            hatchSla = state.hatchSla,
                             description = generationDescription,
                             onDescriptionChange = { generationDescription = it },
                             appJobId = generationAppJobId,
@@ -4661,6 +4664,7 @@ private fun DrawScope.drawProfileTabIcon(color: Color) {
 private fun HatcheryOverviewPanel(
     strings: PetShellStrings,
     walletBalance: Int,
+    hatchSla: HatchSla,
     job: PetGenerationJobResponseDto?,
     candidateCount: Int,
     selectedCandidateDownloadId: String,
@@ -4747,6 +4751,7 @@ private fun HatcheryOverviewPanel(
                     modifier = Modifier.weight(1f)
                 )
             }
+            HatcherySlaRow(strings = strings, hatchSla = hatchSla)
             HatcheryFinePathNotice(strings = strings)
             HatcheryProgressRail(
                 strings = strings,
@@ -4926,6 +4931,92 @@ private fun HatcheryModeToken(
                 Spacer(modifier = Modifier.height(34.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun HatcherySlaRow(
+    strings: PetShellStrings,
+    hatchSla: HatchSla
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White.copy(alpha = 0.72f),
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.HatchLine)
+    ) {
+        Column(
+            modifier = Modifier.padding(GamerUiTokens.Space.Md),
+            verticalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Sm)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = strings.hatcherySlaTitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = GamerUiTokens.ColorRole.Ink
+                )
+                Text(
+                    text = strings.hatcheryPollingSla(
+                        hatchSla.suggestedPollIntervalMs,
+                        hatchSla.consecutivePollFailuresBeforeSlowNotice
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GamerUiTokens.ColorRole.Muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(GamerUiTokens.Space.Sm)
+            ) {
+                HatcherySlaChip(
+                    text = strings.hatcheryReserveSla(hatchSla.reserveEggMaxMs),
+                    accent = GamerUiTokens.ColorRole.Identity,
+                    modifier = Modifier.weight(1f)
+                )
+                HatcherySlaChip(
+                    text = strings.hatcheryMysterySla(hatchSla.mysteryEggMaxMs),
+                    accent = GamerUiTokens.ColorRole.Mystery,
+                    modifier = Modifier.weight(1f)
+                )
+                HatcherySlaChip(
+                    text = strings.hatcheryCustomSla(hatchSla.customHatchMaxMs),
+                    accent = GamerUiTokens.ColorRole.Reward,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HatcherySlaChip(
+    text: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(30.dp)
+            .clip(GamerUiTokens.Shape.Control)
+            .background(accent.copy(alpha = 0.12f))
+            .border(1.dp, accent.copy(alpha = 0.24f), GamerUiTokens.Shape.Control),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = GamerUiTokens.ColorRole.Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -5127,6 +5218,7 @@ private fun hatcheryRandomSeed(): Int =
 private fun GenerationPanel(
     strings: PetShellStrings,
     walletBalance: Int,
+    hatchSla: HatchSla,
     description: String,
     onDescriptionChange: (String) -> Unit,
     appJobId: String,
@@ -5172,6 +5264,7 @@ private fun GenerationPanel(
         HatcheryOverviewPanel(
             strings = strings,
             walletBalance = walletBalance,
+            hatchSla = hatchSla,
             job = job,
             candidateCount = candidates.size,
             selectedCandidateDownloadId = selectedCandidateDownloadId,

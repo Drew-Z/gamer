@@ -16,6 +16,7 @@ object PetShellController {
             walletBalance = 90,
             checkInClaimed = false,
             pendingSubmissionCount = 0,
+            hatchSla = HatchSla(),
             approvedPets = emptyList(),
             approvedPetIndex = 0,
             defaultDesktopPets = defaultPets,
@@ -118,6 +119,7 @@ object PetShellController {
         walletBalance: Int,
         checkInClaimed: Boolean = false,
         pendingSubmissionCount: Int = 0,
+        hatchSla: HatchSla = HatchSla(),
         usedFallback: Boolean,
         message: String
     ): PetShellState {
@@ -128,6 +130,7 @@ object PetShellController {
             walletBalance = walletBalance,
             checkInClaimed = checkInClaimed,
             pendingSubmissionCount = pendingSubmissionCount,
+            hatchSla = hatchSla,
             remoteCommunitySynced = !usedFallback,
             approvedPets = approvedPets,
             approvedPetIndex = 0,

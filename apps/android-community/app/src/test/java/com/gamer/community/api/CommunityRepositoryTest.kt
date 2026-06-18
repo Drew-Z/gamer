@@ -11,6 +11,15 @@ class CommunityRepositoryTest {
     @Test
     fun loadInitialCommunityPrefersCommunityHomeSummary() = runTest {
         val fakeClient = FakeCommunityApiClient(
+            communitySlaResponse = ApiCallResult.Success(
+                CommunitySlaDto(
+                    hatch = CommunitySlaHatchDto(customHatchMaxMs = 777_000),
+                    polling = CommunitySlaPollingDto(suggestedIntervalMs = 5_000),
+                    failureThresholds = CommunitySlaFailureThresholdsDto(
+                        consecutivePollFailuresBeforeSlowNotice = 2
+                    )
+                )
+            ),
             communityHomeResponse = ApiCallResult.Success(
                 CommunityHomeResponseDto(
                     schema = "gamer.community-home.v1",
@@ -74,6 +83,9 @@ class CommunityRepositoryTest {
         assertEquals(144, result.walletBalance)
         assertEquals(true, result.checkInClaimed)
         assertEquals(2, result.pendingSubmissionCount)
+        assertEquals(777_000L, result.hatchSla.customHatchMaxMs)
+        assertEquals(5_000L, result.hatchSla.suggestedPollIntervalMs)
+        assertEquals(2, result.hatchSla.consecutivePollFailuresBeforeSlowNotice)
         assertEquals("Home Pet", result.approvedPets[0].displayName)
         assertFalse(fakeClient.feedRequested)
         assertFalse(fakeClient.walletRequested)
@@ -412,6 +424,8 @@ class CommunityRepositoryTest {
 private class FakeCommunityApiClient(
     private val communityHomeResponse: ApiCallResult<CommunityHomeResponseDto> =
         ApiCallResult.Failure("not_configured"),
+    private val communitySlaResponse: ApiCallResult<CommunitySlaDto> =
+        ApiCallResult.Failure("not_configured"),
     private val feedResponse: ApiCallResult<FeedResponseDto> = ApiCallResult.Failure("not_configured"),
     private val walletResponse: ApiCallResult<WalletDto> = ApiCallResult.Failure("not_configured"),
     private val approvedPetsResponse: ApiCallResult<ApprovedPetsResponseDto> = ApiCallResult.Failure("not_configured"),
@@ -434,6 +448,9 @@ private class FakeCommunityApiClient(
 
     override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
         communityHomeResponse
+
+    override suspend fun getCommunitySla(): ApiCallResult<CommunitySlaDto> =
+        communitySlaResponse
 
     override suspend fun getFeed(): ApiCallResult<FeedResponseDto> =
         feedResponse.also {

@@ -39,6 +39,34 @@ data class CommunityHomeSubmissionsSummaryDto(
 )
 
 @Serializable
+data class CommunitySlaDto(
+    val schema: String = "gamer.sla.v1",
+    val hatch: CommunitySlaHatchDto = CommunitySlaHatchDto(),
+    val polling: CommunitySlaPollingDto = CommunitySlaPollingDto(),
+    val failureThresholds: CommunitySlaFailureThresholdsDto =
+        CommunitySlaFailureThresholdsDto()
+)
+
+@Serializable
+data class CommunitySlaHatchDto(
+    val reserveEggMaxMs: Long = 120_000,
+    val mysteryEggMaxMs: Long = 600_000,
+    val customHatchMaxMs: Long = 900_000
+)
+
+@Serializable
+data class CommunitySlaPollingDto(
+    val suggestedIntervalMs: Long = 3_000,
+    val maxAttempts: Int = 3,
+    val baseBackoffMs: Long = 1_000
+)
+
+@Serializable
+data class CommunitySlaFailureThresholdsDto(
+    val consecutivePollFailuresBeforeSlowNotice: Int = 3
+)
+
+@Serializable
 data class FeedPostDto(
     val id: String,
     val authorId: String,
