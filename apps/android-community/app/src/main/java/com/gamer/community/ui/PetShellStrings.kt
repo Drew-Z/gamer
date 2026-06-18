@@ -823,6 +823,30 @@ class PetShellStrings internal constructor(
         return "人审已通过 / 远端预览${if (previewReady) "可用" else "待同步"}"
     }
 
+    fun latestApprovedShelfLine(
+        latestSubmission: SubmissionSummary?,
+        approvedPets: List<ApprovedPet>
+    ): String {
+        if (latestSubmission?.status?.trim()?.lowercase() != "approved") {
+            return ""
+        }
+        val pet = approvedPets.firstOrNull { it.petId == latestSubmission.petId } ?: return ""
+        val displayName = pet.displayName
+            .trim()
+            .replace(Regex("\\s+"), " ")
+            .takeIf { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+            ?.take(36)
+            ?: latestSubmission.petId
+        val previewReady = pet.previewUrl.trim().isNotBlank() ||
+            pet.targetDownloadId.trim().isNotBlank() ||
+            pet.previewPath.trim().isNotBlank()
+        return if (language == PetShellLanguage.English) {
+            "Shelved $displayName / remote preview ${if (previewReady) "ready" else "pending"}"
+        } else {
+            "已入架 $displayName / 远端预览${if (previewReady) "可用" else "待同步"}"
+        }
+    }
+
     fun defaultDesktopPetSourceLine(pet: DefaultDesktopPet): String {
         if (language == PetShellLanguage.English) {
             return "Local starter / ${pet.motionLabel}"

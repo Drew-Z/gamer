@@ -536,6 +536,50 @@ class PetShellUiModelTest {
             "Source fantasy-pet-rule / job issue-1-fresh-timeout3600-20260610-1 / preview artifact-34",
             en.approvedPetSourceLine(tracedPet)
         )
+        assertEquals(
+            "已入架 Moon Fox / 远端预览可用",
+            zh.latestApprovedShelfLine(
+                latestSubmission = SubmissionSummary(
+                    id = "submission-local-001",
+                    petId = "pet-moonfox-001",
+                    status = "approved"
+                ),
+                approvedPets = listOf(pet)
+            )
+        )
+        assertEquals(
+            "Shelved Moon Fox / remote preview ready",
+            en.latestApprovedShelfLine(
+                latestSubmission = SubmissionSummary(
+                    id = "submission-local-001",
+                    petId = "pet-moonfox-001",
+                    status = "approved"
+                ),
+                approvedPets = listOf(pet)
+            )
+        )
+        assertEquals(
+            "",
+            zh.latestApprovedShelfLine(
+                latestSubmission = SubmissionSummary(
+                    id = "submission-local-001",
+                    petId = "pet-moonfox-001",
+                    status = "pending"
+                ),
+                approvedPets = listOf(pet)
+            )
+        )
+        assertEquals(
+            "",
+            zh.latestApprovedShelfLine(
+                latestSubmission = SubmissionSummary(
+                    id = "submission-local-001",
+                    petId = "pet-missing-001",
+                    status = "approved"
+                ),
+                approvedPets = listOf(pet)
+            )
+        )
     }
 
     @Test

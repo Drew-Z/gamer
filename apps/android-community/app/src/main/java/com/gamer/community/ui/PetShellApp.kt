@@ -2966,6 +2966,12 @@ private fun ProfilePetShelf(
                     pet = selectedPet,
                     strings = strings
                 )
+                LatestApprovedShelfNotice(
+                    text = strings.latestApprovedShelfLine(
+                        latestSubmission = state.latestSubmission,
+                        approvedPets = state.approvedPets
+                    )
+                )
             }
             if (!hasApprovedPets) {
                 ShowcaseEmptyPath(strings = strings)
@@ -3852,6 +3858,30 @@ private fun ApprovedPetSignalStrip(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun LatestApprovedShelfNotice(text: String) {
+    if (text.isBlank()) {
+        return
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = GamerUiTokens.ColorRole.IdentitySoft,
+        shape = GamerUiTokens.Shape.Control,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Identity)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = GamerUiTokens.ColorRole.IdentityDark,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
