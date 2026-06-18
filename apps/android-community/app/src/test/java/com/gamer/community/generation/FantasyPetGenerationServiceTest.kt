@@ -1071,7 +1071,7 @@ class FantasyPetGenerationServiceTest {
         assertTrue(readyResult is ApiCallResult.Success)
         assertEquals("job-123", fakeClient.packageDownloadJobId)
 
-        val nextActionReadyResult = service.downloadPackage(
+        val nextActionOnlyResult = service.downloadPackage(
             PetGenerationJobResponseDto(
                 appJobId = "job-456",
                 downloadReady = false,
@@ -1079,8 +1079,21 @@ class FantasyPetGenerationServiceTest {
             )
         )
 
-        assertTrue(nextActionReadyResult is ApiCallResult.Success)
-        assertEquals("job-456", fakeClient.packageDownloadJobId)
+        assertEquals(ApiCallResult.Failure("package_not_ready"), nextActionOnlyResult)
+
+        val summaryReadyResult = service.downloadPackage(
+            PetGenerationJobResponseDto(
+                appJobId = "job-789",
+                downloadReady = false,
+                nextAction = "download-package",
+                generationProgress = PetGenerationProgressDto(
+                    summary = PetGenerationProgressSummaryDto(downloadReady = true)
+                )
+            )
+        )
+
+        assertTrue(summaryReadyResult is ApiCallResult.Success)
+        assertEquals("job-789", fakeClient.packageDownloadJobId)
     }
 
     @Test

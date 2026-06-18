@@ -5266,7 +5266,7 @@ private fun hatcheryActiveStep(
     selectedCandidateDownloadId: String
 ): Int {
     job ?: return 0
-    if (job.downloadReady || job.nextAction == "download-package") {
+    if (canShowPackageDownload(job)) {
         return 4
     }
     if (selectedCandidateDownloadId.isNotBlank()) {
@@ -6528,7 +6528,7 @@ private fun GenerationFlowStepPill(
 
 private fun generationFlowActiveStep(job: PetGenerationJobResponseDto?): Int {
     job ?: return 0
-    if (job.downloadReady || job.nextAction == "download-package") {
+    if (canShowPackageDownload(job)) {
         return 3
     }
     return when (effectiveProgressStatus(job)) {

@@ -942,7 +942,8 @@ fun generationContractDemoNotice(job: PetGenerationJobResponseDto): String =
     }
 
 fun canShowPackageDownload(job: PetGenerationJobResponseDto): Boolean =
-    !isContractDemoGenerationJob(job) && (job.downloadReady || job.nextAction == "download-package")
+    !isContractDemoGenerationJob(job) &&
+        (job.downloadReady || job.generationProgress.summary.downloadReady)
 
 fun packageDownloadStartedMessage(): String =
     "Downloading pet.zip..."
@@ -1177,6 +1178,16 @@ fun generationReviewLoopUiState(
     }
 
     if (latestDecision == "accept" || latestDecision == "accepted") {
+        return GenerationReviewLoopUiState(
+            phase = GenerationReviewLoopPhase.AcceptedPackaging,
+            title = "Motion accepted",
+            detail = "Human review passed; wait for the server to finish packaging.",
+            primaryAction = "Wait for package",
+            selectedActionId = selectedActionId
+        )
+    }
+
+    if (progressStatus == "packaging" || job.nextAction == "processing-package") {
         return GenerationReviewLoopUiState(
             phase = GenerationReviewLoopPhase.AcceptedPackaging,
             title = "Motion accepted",

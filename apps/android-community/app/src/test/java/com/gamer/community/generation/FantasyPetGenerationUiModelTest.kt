@@ -232,6 +232,17 @@ class FantasyPetGenerationUiModelTest {
                 PetGenerationJobResponseDto(
                     appJobId = "job-123",
                     downloadReady = false,
+                    generationProgress = PetGenerationProgressDto(
+                        summary = PetGenerationProgressSummaryDto(downloadReady = true)
+                    )
+                )
+            )
+        )
+        assertFalse(
+            canShowPackageDownload(
+                PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    downloadReady = false,
                     nextAction = "download-package"
                 )
             )
@@ -324,6 +335,18 @@ class FantasyPetGenerationUiModelTest {
                     generationProgress = PetGenerationProgressDto(
                         summary = PetGenerationProgressSummaryDto(latestHumanDecision = "accept")
                     )
+                ),
+                candidates = listOf(idleCandidate),
+                selectedCandidateDownloadId = "artifact-1"
+            ).phase
+        )
+        assertEquals(
+            GenerationReviewLoopPhase.AcceptedPackaging,
+            generationReviewLoopUiState(
+                job = PetGenerationJobResponseDto(
+                    appJobId = "job-123",
+                    progressStatus = "packaging",
+                    nextAction = "processing-package"
                 ),
                 candidates = listOf(idleCandidate),
                 selectedCandidateDownloadId = "artifact-1"
