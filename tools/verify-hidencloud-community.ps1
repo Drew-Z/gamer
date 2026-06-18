@@ -1,6 +1,7 @@
 param(
   [string]$BaseUrl = "http://olivia.hidencloud.com:24674",
-  [string]$PetId = "issue-1-fresh-timeout3600-20260610-1",
+  [string]$PetId = "pet-stardust-001",
+  [string]$ExpectedAppJobId = "issue-1-fresh-timeout3600-20260610-1",
   [string]$ExpectedCommit = "",
   [int]$TimeoutSec = 60
 )
@@ -95,6 +96,9 @@ try {
       -Message "release.commit '$releaseCommit' does not start with '$ExpectedCommit'"
   }
 
+  $sla = Get-Json -Client $client -Path "/v1/sla"
+  Assert-Condition -Condition ($null -ne $sla) -Message "community SLA route returned no body"
+
   $approvedPets = Get-Json -Client $client -Path "/v1/pets/approved"
   $pet = $approvedPets.items | Where-Object { $_.petId -eq $PetId } | Select-Object -First 1
   Assert-Condition -Condition ($null -ne $pet) -Message "approved pet '$PetId' was not found"
@@ -108,6 +112,11 @@ try {
     -Message "approved pet previewUrl is not a public artifact route: '$previewUrl'"
   Assert-Condition -Condition ($targetDownloadId.Trim() -ne "") -Message "targetDownloadId is missing"
   Assert-Condition -Condition ($appJobId.Trim() -ne "") -Message "source.appJobId is missing"
+  if ($ExpectedAppJobId.Trim() -ne "") {
+    Assert-Condition `
+      -Condition ($appJobId -eq $ExpectedAppJobId.Trim()) `
+      -Message "source.appJobId '$appJobId' does not match '$ExpectedAppJobId'"
+  }
 
   $directPreview = Get-ArtifactSummary -Client $client -Path $previewUrl
   Assert-Condition -Condition ($directPreview.byteCount -gt 0) -Message "direct preview returned no bytes"
@@ -120,6 +129,7 @@ try {
     baseUrl = $BaseUrl
     healthService = $health.service
     releaseCommit = $releaseCommit
+    sla = $sla
     petId = $pet.petId
     appJobId = $appJobId
     targetDownloadId = $targetDownloadId
