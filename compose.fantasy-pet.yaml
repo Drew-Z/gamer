@@ -22,12 +22,55 @@ services:
       - tools/app_server.py
       - --run-root
       - /data/runs
+      - --adapter-config
+      - /workspace/fantasy-pet-rule/config/adapter-config.server.json
       - --host
       - 0.0.0.0
       - --port
       - "8765"
     ports:
       - "8765:8765"
+    volumes:
+      - ../fantasy-pet-rule:/workspace/fantasy-pet-rule
+      - fantasy-pet-runs:/data/runs
+      - fantasy-pet-uv-cache:/data/uv-cache
+
+  fantasy-pet-worker-daemon:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    profiles:
+      - fantasy-pet
+    working_dir: /workspace/fantasy-pet-rule
+    environment:
+      PYTHONUNBUFFERED: "1"
+      UV_CACHE_DIR: /data/uv-cache
+    command:
+      - uv
+      - run
+      - --with-requirements
+      - requirements-server.txt
+      - python
+      - tools/run_server_worker_daemon.py
+      - --run-root
+      - /data/runs
+      - --worker-id
+      - fantasy-pet-compose-daemon
+      - --max-polls
+      - "0"
+      - --cycles-per-poll
+      - "1"
+      - --sleep-seconds
+      - "5"
+      - --ttl-seconds
+      - "900"
+      - --action-id
+      - idle
+      - --adapter-config-name
+      - adapter-config.json
+      - --adapter-config-source
+      - /workspace/fantasy-pet-rule/config/adapter-config.server.json
+      - --run-real-invocations
+    depends_on:
+      - fantasy-pet-api
     volumes:
       - ../fantasy-pet-rule:/workspace/fantasy-pet-rule
       - fantasy-pet-runs:/data/runs

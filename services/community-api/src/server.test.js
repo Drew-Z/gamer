@@ -265,12 +265,12 @@ test("HTTP server proxies fantasy pet package bytes without JSON wrapping", asyn
   }
 });
 
-test("HTTP server proxies fantasy pet admin review page only", async () => {
+test("HTTP server does not proxy fantasy pet admin review page", async () => {
   const upstream = await createFantasyPetUpstream((request, response) => {
-    response.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8"
+    response.writeHead(500, {
+      "Content-Type": "application/json"
     });
-    response.end("<!doctype html><title>Fantasy Pet Review</title>");
+    response.end(JSON.stringify({ error: "admin_route_should_not_be_proxied" }));
   });
   const server = http.createServer(
     createCommunityHttpHandler({
@@ -288,12 +288,9 @@ test("HTTP server proxies fantasy pet admin review page only", async () => {
       "/admin/pet-generation-jobs/job-123/review"
     );
 
-    assert.equal(response.status, 200);
-    assert.equal(response.headers["content-type"], "text/html; charset=utf-8");
-    assert.equal(response.body.toString("utf8"), "<!doctype html><title>Fantasy Pet Review</title>");
-    assert.equal(upstream.requests.length, 1);
-    assert.equal(upstream.requests[0].method, "GET");
-    assert.equal(upstream.requests[0].url, "/admin/pet-generation-jobs/job-123/review");
+    assert.equal(response.status, 404);
+    assert.equal(JSON.parse(response.body.toString("utf8")).error, "not_found");
+    assert.equal(upstream.requests.length, 0);
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await new Promise((resolve) => upstream.server.close(resolve));

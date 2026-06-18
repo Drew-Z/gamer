@@ -13,6 +13,8 @@ services/pet-generator/data/
 __pycache__/
 *.log
 *.tmp
+*.tgz
+*.zip
 local.properties
 tmp-anr-*.txt
 tmp-gamer-*.png

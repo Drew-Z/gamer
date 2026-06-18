@@ -6293,7 +6293,8 @@ private fun RemoteCandidateImage(
         strings = strings,
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(150.dp),
+        animateHorizontalSpritesheet = true
     )
 }
 
@@ -6524,21 +6525,27 @@ private fun RemotePreviewImage(
     strings: PetShellStrings,
     modifier: Modifier = Modifier,
     cropFirstSpritesheetFrame: Boolean = false,
+    animateHorizontalSpritesheet: Boolean = false,
+    frameDurationMillis: Long = 120L,
     loading: @Composable (() -> Unit)? = null,
     unavailable: @Composable (() -> Unit)? = null
 ) {
     var image by remember(previewUrl) { mutableStateOf<ImageBitmap?>(null) }
+    var frames by remember(previewUrl) { mutableStateOf<List<ImageBitmap>>(emptyList()) }
+    var frameIndex by remember(previewUrl) { mutableStateOf(0) }
     var failed by remember(previewUrl) { mutableStateOf(false) }
     val previewDownloader = remember { FantasyPetPreviewDownloader() }
 
     LaunchedEffect(previewUrl) {
         image = null
+        frames = emptyList()
+        frameIndex = 0
         failed = false
         if (previewUrl.isBlank()) {
             failed = true
             return@LaunchedEffect
         }
-        image = when (val result = previewDownloader.download(previewUrl)) {
+        val decodedFrames = when (val result = previewDownloader.download(previewUrl)) {
             is PetPreviewDownloadResult.Success -> {
                 withContext(Dispatchers.Default) {
                     val decoded = BitmapFactory.decodeByteArray(
@@ -6546,17 +6553,36 @@ private fun RemotePreviewImage(
                         0,
                         result.bytes.size
                     )
-                    val displayBitmap = if (cropFirstSpritesheetFrame) {
-                        decoded?.firstSpritesheetFrame()
-                    } else {
-                        decoded
+                    when {
+                        decoded == null -> emptyList()
+                        cropFirstSpritesheetFrame -> listOf(decoded.firstSpritesheetFrame().asImageBitmap())
+                        animateHorizontalSpritesheet -> {
+                            val frameCount = decoded.inferredHorizontalFrameCount()
+                            decoded.horizontalSpritesheetFrames(frameCount)
+                                .map(Bitmap::asImageBitmap)
+                                .ifEmpty { listOf(decoded.asImageBitmap()) }
+                        }
+                        else -> listOf(decoded.asImageBitmap())
                     }
-                    displayBitmap?.asImageBitmap()
                 }
             }
-            is PetPreviewDownloadResult.Failure -> null
+            is PetPreviewDownloadResult.Failure -> emptyList()
         }
-        failed = image == null
+        frames = decodedFrames
+        image = decodedFrames.firstOrNull()
+        failed = decodedFrames.isEmpty()
+    }
+
+    LaunchedEffect(previewUrl, frames.size, frameDurationMillis) {
+        frameIndex = 0
+        if (frames.size <= 1) {
+            return@LaunchedEffect
+        }
+
+        while (true) {
+            delay(frameDurationMillis)
+            frameIndex = (frameIndex + 1) % frames.size
+        }
     }
 
     Box(
@@ -6565,7 +6591,10 @@ private fun RemotePreviewImage(
             .background(Color(0xFFEFF3F7)),
         contentAlignment = Alignment.Center
     ) {
-        val bitmap = image
+        val bitmap = frames
+            .takeIf { it.isNotEmpty() }
+            ?.get(frameIndex.coerceIn(0, frames.lastIndex))
+            ?: image
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
@@ -6585,6 +6614,15 @@ private fun RemotePreviewImage(
             )
         }
     }
+}
+
+private fun Bitmap.inferredHorizontalFrameCount(): Int {
+    if (width < height * 2 || height <= 0) {
+        return 1
+    }
+
+    val exactSquareFrames = width / height
+    return exactSquareFrames.coerceIn(1, 24)
 }
 
 @Composable
