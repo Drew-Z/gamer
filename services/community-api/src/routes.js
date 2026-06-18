@@ -8,6 +8,7 @@ import {
   StateSourceError
 } from "../../pet-generator/src/state-source.js";
 import { releaseCommit } from "./release.js";
+import { createSlaConfig } from "./sla.js";
 import { createCommunityStore } from "./store.js";
 
 const json = (status, body) => ({ status, body });
@@ -32,6 +33,10 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
         commit: releaseCommit(env)
       }
     });
+  }
+
+  if (method === "GET" && url.pathname === "/v1/sla") {
+    return json(200, createSlaConfig(env));
   }
 
   if (method === "GET" && url.pathname === "/v1/feed") {

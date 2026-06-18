@@ -883,3 +883,24 @@ test("HTTP server emits structured request log on finish", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP server exposes configurable SLA via /v1/sla", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store: createCommunityStore(),
+      env: { SLA_HATCH_CUSTOM_MS: "777000" }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "GET", "/v1/sla");
+    assert.equal(response.status, 200);
+    assert.equal(response.body.schema, "gamer.sla.v1");
+    assert.equal(response.body.hatch.customHatchMaxMs, 777000);
+    assert.equal(response.body.polling.suggestedIntervalMs, 3000);
+    assert.equal(response.body.failureThresholds.consecutivePollFailuresBeforeSlowNotice, 3);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
