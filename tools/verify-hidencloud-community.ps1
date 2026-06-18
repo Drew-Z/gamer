@@ -79,7 +79,91 @@ function Assert-Condition {
   }
 }
 
+function Resolve-ExpectedCommit {
+  param(
+    [string]$ExplicitCommit
+  )
+
+  if ($ExplicitCommit.Trim() -ne "") {
+    return $ExplicitCommit.Trim()
+  }
+
+  $repoRoot = Split-Path -Parent $PSScriptRoot
+  $headFromFiles = Resolve-GitHeadCommit -RepoRoot $repoRoot
+  if ($headFromFiles.Trim() -ne "") {
+    return $headFromFiles.Trim()
+  }
+
+  try {
+    $head = git -C $repoRoot rev-parse --short HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $head.Trim() -ne "") {
+      return $head.Trim()
+    }
+  } catch {
+    return ""
+  }
+
+  return ""
+}
+
+function Resolve-GitHeadCommit {
+  param(
+    [string]$RepoRoot
+  )
+
+  $gitPath = Join-Path $RepoRoot ".git"
+  if (-not (Test-Path -LiteralPath $gitPath)) {
+    return ""
+  }
+
+  $gitDir = $gitPath
+  if (-not (Get-Item -LiteralPath $gitPath -Force).PSIsContainer) {
+    $gitFile = (Get-Content -LiteralPath $gitPath -Raw).Trim()
+    if ($gitFile.StartsWith("gitdir:")) {
+      $gitDir = [System.IO.Path]::GetFullPath(
+        (Join-Path $RepoRoot $gitFile.Substring("gitdir:".Length).Trim())
+      )
+    }
+  }
+
+  $headPath = Join-Path $gitDir "HEAD"
+  if (-not (Test-Path -LiteralPath $headPath)) {
+    return ""
+  }
+
+  $head = (Get-Content -LiteralPath $headPath -Raw).Trim()
+  if ($head -match "^[a-fA-F0-9]{7,40}$") {
+    return $head.Substring(0, [Math]::Min(7, $head.Length))
+  }
+
+  if (-not $head.StartsWith("ref:")) {
+    return ""
+  }
+
+  $refName = $head.Substring("ref:".Length).Trim()
+  $refPath = Join-Path $gitDir $refName
+  if (Test-Path -LiteralPath $refPath) {
+    $refCommit = (Get-Content -LiteralPath $refPath -Raw).Trim()
+    if ($refCommit -match "^[a-fA-F0-9]{7,40}$") {
+      return $refCommit.Substring(0, [Math]::Min(7, $refCommit.Length))
+    }
+  }
+
+  $packedRefsPath = Join-Path $gitDir "packed-refs"
+  if (Test-Path -LiteralPath $packedRefsPath) {
+    foreach ($line in Get-Content -LiteralPath $packedRefsPath) {
+      $parts = $line.Trim() -split "\s+"
+      if ($parts.Count -ge 2 -and $parts[1] -eq $refName -and $parts[0] -match "^[a-fA-F0-9]{7,40}$") {
+        return $parts[0].Substring(0, [Math]::Min(7, $parts[0].Length))
+      }
+    }
+  }
+
+  return ""
+}
+
 $client = New-HttpClient
+$expectedReleaseCommit = Resolve-ExpectedCommit -ExplicitCommit $ExpectedCommit
 
 try {
   $health = Get-Json -Client $client -Path "/health"
@@ -90,10 +174,10 @@ try {
     $releaseCommit = [string]$health.release.commit
   }
 
-  if ($ExpectedCommit.Trim() -ne "") {
+  if ($expectedReleaseCommit.Trim() -ne "") {
     Assert-Condition `
-      -Condition ($releaseCommit.StartsWith($ExpectedCommit.Trim())) `
-      -Message "release.commit '$releaseCommit' does not start with '$ExpectedCommit'"
+      -Condition ($releaseCommit.StartsWith($expectedReleaseCommit.Trim())) `
+      -Message "release.commit '$releaseCommit' does not start with '$expectedReleaseCommit'"
   }
 
   $sla = Get-Json -Client $client -Path "/v1/sla"
@@ -129,6 +213,7 @@ try {
     baseUrl = $BaseUrl
     healthService = $health.service
     releaseCommit = $releaseCommit
+    expectedReleaseCommit = $expectedReleaseCommit
     sla = $sla
     petId = $pet.petId
     appJobId = $appJobId
