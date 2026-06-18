@@ -43,6 +43,7 @@ class PetShellStrings internal constructor(
     val headerUtilityDockContentDescription: String get() = "header-utility-dock"
     val communityChannelRailContentDescription: String get() = "community-channel-rail"
     val communityStatusSummaryContentDescription: String get() = "community-status-summary"
+    val latestSubmissionActionContentDescription: String get() = "latest-submission-action"
     val communityQuickActionsContentDescription: String get() = "community-quick-actions"
     val communityPetCompanionStripContentDescription: String get() = "community-pet-companion-strip"
     val communityShowcasePanelContentDescription: String get() = "community-showcase-panel"
@@ -248,6 +249,22 @@ class PetShellStrings internal constructor(
             else -> text("最新提交", "latest submission")
         }
         return "$status ${submission.petId}"
+    }
+
+    fun latestSubmissionAction(submission: SubmissionSummary?): String {
+        if (submission == null || submission.petId.isBlank()) {
+            return ""
+        }
+
+        val petId = submission.petId
+        return when (submission.status.trim().lowercase()) {
+            "pending" -> text("正在人审，稍后刷新 $petId", "Pending review. Refresh later for $petId.")
+            "approved" -> text("已通过，去我的宠物架查看 $petId", "Approved. Open My Pets for $petId.")
+            "held" -> text("审核暂缓，补充说明后重新提交 $petId", "Held. Add notes and resubmit $petId.")
+            "rejected" -> text("未通过，回到孵化室修订 $petId", "Rejected. Revise in Hatchery for $petId.")
+            "revoked" -> text("已撤销，等待新的通过记录 $petId", "Revoked. Wait for a new approval for $petId.")
+            else -> text("最新提交可刷新 $petId", "Latest submission can be refreshed for $petId.")
+        }
     }
     val generationWorkspaceTitle: String get() = text("桌宠孵化室", "Pet Hatchery")
     val profileWorkspaceTitle: String get() = text("\u6211\u7684\u684C\u5BA0", "My Pets")

@@ -44,6 +44,7 @@ class PetShellUiModelTest {
         assertEquals("gamer-pet-avatar", zh.petAvatarContentDescription)
         assertEquals("community-channel-rail", zh.communityChannelRailContentDescription)
         assertEquals("community-quick-actions", zh.communityQuickActionsContentDescription)
+        assertEquals("latest-submission-action", zh.latestSubmissionActionContentDescription)
         assertEquals(
             "community-pet-companion-strip",
             zh.communityPetCompanionStripContentDescription
@@ -289,6 +290,8 @@ class PetShellUiModelTest {
             status = "pending"
         )
         val latestApproved = latestPending.copy(status = "approved")
+        val latestHeld = latestPending.copy(status = "held")
+        val latestRejected = latestPending.copy(status = "rejected")
 
         assertEquals("\u684C\u5BA0\u5BFC\u822A\u53F0", zh.communityPetCommandTitle)
         assertEquals(
@@ -342,6 +345,13 @@ class PetShellUiModelTest {
         )
         assertEquals("最新待审 public-lifecycle-smoke", zh.latestSubmissionStatus(latestPending))
         assertEquals("latest approved public-lifecycle-smoke", en.latestSubmissionStatus(latestApproved))
+        assertEquals("已通过，去我的宠物架查看 public-lifecycle-smoke", zh.latestSubmissionAction(latestApproved))
+        assertEquals("Approved. Open My Pets for public-lifecycle-smoke.", en.latestSubmissionAction(latestApproved))
+        assertEquals("审核暂缓，补充说明后重新提交 public-lifecycle-smoke", zh.latestSubmissionAction(latestHeld))
+        assertEquals("Held. Add notes and resubmit public-lifecycle-smoke.", en.latestSubmissionAction(latestHeld))
+        assertEquals("未通过，回到孵化室修订 public-lifecycle-smoke", zh.latestSubmissionAction(latestRejected))
+        assertEquals("Rejected. Revise in Hatchery for public-lifecycle-smoke.", en.latestSubmissionAction(latestRejected))
+        assertEquals("", zh.latestSubmissionAction(null))
         assertEquals("\u684C\u5BA0\u89C6\u89D2", zh.communityFeedSignalTitle)
         assertEquals("\u4E92\u52A8", zh.feedReactionLabel)
         assertEquals("孵化", zh.showcasePathGenerate)

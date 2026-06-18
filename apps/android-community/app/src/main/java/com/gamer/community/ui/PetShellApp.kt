@@ -2158,7 +2158,41 @@ private fun CommunityStatusSummary(
                     modifier = Modifier.weight(1f)
                 )
             }
+            LatestSubmissionActionNotice(
+                text = strings.latestSubmissionAction(state.latestSubmission),
+                strings = strings
+            )
         }
+    }
+}
+
+@Composable
+private fun LatestSubmissionActionNotice(
+    text: String,
+    strings: PetShellStrings
+) {
+    if (text.isBlank()) {
+        return
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = strings.latestSubmissionActionContentDescription
+            },
+        color = GamerUiTokens.ColorRole.ReviewSoft.copy(alpha = 0.7f),
+        shape = GamerUiTokens.Shape.Card,
+        border = BorderStroke(1.dp, GamerUiTokens.ColorRole.Review.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = GamerUiTokens.ColorRole.ReviewDark,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -2805,6 +2839,10 @@ private fun ProfileWalletSummary(
                     modifier = Modifier.weight(1f)
                 )
             }
+            LatestSubmissionActionNotice(
+                text = strings.latestSubmissionAction(state.latestSubmission),
+                strings = strings
+            )
         }
     }
 }
