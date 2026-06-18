@@ -915,6 +915,63 @@ test("HTTP server rate-limits writes but not reads when policy is injected", asy
   }
 });
 
+test("HTTP server leaves rate limiting disabled unless env enables it", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_RATE_LIMIT_WRITE_MAX: "1"
+      },
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const first = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-18"
+    });
+    const second = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-19"
+    });
+
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server uses env-gated rate limiting when enabled", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_RATE_LIMIT_ENABLED: "1",
+        COMMUNITY_RATE_LIMIT_WINDOW_MS: "60000",
+        COMMUNITY_RATE_LIMIT_WRITE_MAX: "1",
+        COMMUNITY_RATE_LIMIT_READ_MAX: "60"
+      },
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const first = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-18"
+    });
+    const second = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-19"
+    });
+
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 429);
+    assert.equal(second.body.error, "rate_limit_exceeded");
+    assert.ok(second.body.retryAfterMs > 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP server exposes configurable SLA via /v1/sla", async () => {
   const server = http.createServer(
     createCommunityHttpHandler({

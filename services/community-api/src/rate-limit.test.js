@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRateLimiterPolicy, resolveClientIp } from "./rate-limit.js";
+import {
+  createRateLimiterPolicy,
+  createRateLimiterPolicyFromEnv,
+  resolveClientIp
+} from "./rate-limit.js";
 
 test("write limiter allows up to writeMax then rejects", () => {
   const policy = createRateLimiterPolicy({ windowMs: 60_000, writeMax: 4, readMax: 60 });
@@ -67,4 +71,46 @@ test("resolveClientIp prefers X-Forwarded-For then falls back to socket", () => 
     "127.0.0.1"
   );
   assert.equal(resolveClientIp({ headers: {}, socket: {} }), "unknown");
+});
+
+test("env rate limiter is disabled by default", () => {
+  assert.equal(createRateLimiterPolicyFromEnv({}), null);
+  assert.equal(
+    createRateLimiterPolicyFromEnv({
+      COMMUNITY_RATE_LIMIT_ENABLED: "0",
+      COMMUNITY_RATE_LIMIT_WRITE_MAX: "1"
+    }),
+    null
+  );
+});
+
+test("env rate limiter uses configured positive limits", () => {
+  const policy = createRateLimiterPolicyFromEnv({
+    COMMUNITY_RATE_LIMIT_ENABLED: " yes ",
+    COMMUNITY_RATE_LIMIT_WINDOW_MS: "1000",
+    COMMUNITY_RATE_LIMIT_WRITE_MAX: "1",
+    COMMUNITY_RATE_LIMIT_READ_MAX: "2"
+  });
+
+  assert.ok(policy);
+  assert.equal(policy.check("POST", "ip", 0).limited, false);
+  assert.equal(policy.check("POST", "ip", 0).limited, true);
+  assert.equal(policy.check("GET", "ip", 0).limited, false);
+  assert.equal(policy.check("GET", "ip", 0).limited, false);
+  assert.equal(policy.check("GET", "ip", 0).limited, true);
+});
+
+test("env rate limiter falls back for invalid numeric values", () => {
+  const policy = createRateLimiterPolicyFromEnv({
+    COMMUNITY_RATE_LIMIT_ENABLED: "TRUE",
+    COMMUNITY_RATE_LIMIT_WINDOW_MS: "-1",
+    COMMUNITY_RATE_LIMIT_WRITE_MAX: "1bad",
+    COMMUNITY_RATE_LIMIT_READ_MAX: "0"
+  });
+
+  assert.ok(policy);
+  for (let i = 0; i < 4; i += 1) {
+    assert.equal(policy.check("POST", "ip", 0).limited, false);
+  }
+  assert.equal(policy.check("POST", "ip", 0).limited, true);
 });

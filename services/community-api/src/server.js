@@ -7,7 +7,7 @@ import {
 } from "./fantasy-pet-proxy.js";
 import { createConfiguredCommunityStore } from "./configured-store.js";
 import { formatRequestLog } from "./logging.js";
-import { resolveClientIp } from "./rate-limit.js";
+import { createRateLimiterPolicyFromEnv, resolveClientIp } from "./rate-limit.js";
 import { handleCommunityRequest } from "./routes.js";
 
 export function resolveCommunityApiPort(env = process.env) {
@@ -38,6 +38,7 @@ const writeRaw = (response, result) => {
 
 export function createCommunityHttpHandler(options = {}) {
   const env = options.env ?? process.env;
+  const rateLimit = options.rateLimit ?? createRateLimiterPolicyFromEnv(env);
   const log =
     options.log ??
     (process.env.NODE_ENV === "test"
@@ -48,7 +49,6 @@ export function createCommunityHttpHandler(options = {}) {
     const started = Date.now();
     const method = request.method ?? "GET";
     const requestUrl = request.url ?? "/";
-    const rateLimit = options.rateLimit ?? null;
 
     response.on("finish", () => {
       try {
@@ -142,6 +142,7 @@ export function startCommunityApiServer(options = {}) {
     createCommunityHttpHandler({
       env,
       fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
+      rateLimit: options.rateLimit,
       store
     })
   );

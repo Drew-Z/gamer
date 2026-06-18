@@ -66,6 +66,12 @@ volume.
 `GET /health` includes `release.commit` when the deployment sets `GIT_COMMIT`,
 `COMMIT_SHA`, `SOURCE_VERSION`, or `RENDER_GIT_COMMIT`.
 
+Optional in-memory request limiting can be enabled for the public community API
+with `COMMUNITY_RATE_LIMIT_ENABLED=1`. Tune the window and budgets with
+`COMMUNITY_RATE_LIMIT_WINDOW_MS`, `COMMUNITY_RATE_LIMIT_WRITE_MAX`, and
+`COMMUNITY_RATE_LIMIT_READ_MAX`. It is disabled by default so local and existing
+deployments keep their current behavior until the server opts in.
+
 ## Verification
 
 Run the standard verification set before committing a phase:
