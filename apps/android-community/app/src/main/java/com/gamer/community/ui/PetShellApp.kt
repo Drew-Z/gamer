@@ -6169,12 +6169,12 @@ private fun CandidateInspectionCard(
                     color = GamerUiTokens.ColorRole.Ink
                 )
                 ReviewStatePill(
-                    text = if (selected) {
-                        strings.candidateSelectedStatus
-                    } else {
-                        strings.candidateAvailableStatus
+                    text = when {
+                        candidate.reviewed -> strings.candidateReviewedStatus
+                        selected -> strings.candidateSelectedStatus
+                        else -> strings.candidateAvailableStatus
                     },
-                    selected = selected
+                    selected = selected && !candidate.reviewed
                 )
             }
             Text(
@@ -6197,13 +6197,13 @@ private fun CandidateInspectionCard(
                         contentDescription =
                             strings.candidateSelectContentDescription(candidate.targetDownloadId)
                     },
-                enabled = !selected
+                enabled = !selected && !candidate.reviewed
             ) {
                 Text(
-                    if (selected) {
-                        strings.selectedForReview
-                    } else {
-                        strings.selectCandidate
+                    when {
+                        candidate.reviewed -> strings.reviewedCandidateLocked
+                        selected -> strings.selectedForReview
+                        else -> strings.selectCandidate
                     }
                 )
             }

@@ -210,6 +210,8 @@ class PetShellUiModelTest {
         assertEquals("交付动作", zh.deliveryActionsTitle)
         assertEquals("已选中", zh.candidateSelectedStatus)
         assertEquals("待选择", zh.candidateAvailableStatus)
+        assertEquals("已审核", zh.candidateReviewedStatus)
+        assertEquals("动作已审核", zh.reviewedCandidateLocked)
         assertEquals("动作候选", zh.candidateGalleryTitle)
         assertEquals("动作候选 2", zh.candidateTitle("Candidate 2", 1))
         assertEquals(
@@ -284,6 +286,8 @@ class PetShellUiModelTest {
         assertEquals("Delivery actions", en.deliveryActionsTitle)
         assertEquals("Selected", en.candidateSelectedStatus)
         assertEquals("Available", en.candidateAvailableStatus)
+        assertEquals("Reviewed", en.candidateReviewedStatus)
+        assertEquals("Motion reviewed", en.reviewedCandidateLocked)
         assertEquals("Motion candidates", en.candidateGalleryTitle)
         assertEquals("Motion candidate 2", en.candidateTitle("Candidate 2", 1))
         assertEquals(

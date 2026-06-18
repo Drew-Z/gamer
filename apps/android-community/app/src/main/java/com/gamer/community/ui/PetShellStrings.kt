@@ -462,6 +462,7 @@ class PetShellStrings internal constructor(
     val candidateWaitingForInspection: String get() = text("等待服务端发布动作 candidate 后进入人审。", "Waiting for the server to publish a motion candidate.")
     val candidateSelectedStatus: String get() = text("已选中", "Selected")
     val candidateAvailableStatus: String get() = text("待选择", "Available")
+    val candidateReviewedStatus: String get() = text("已审核", "Reviewed")
     val deliveryActionsHint: String get() = text("先完成人审，只有资源包就绪后才能接收 pet.zip。", "Review first; pet.zip is available only after the package is ready.")
     val deliveryReviewTargetStatus: String get() = text("审核对象", "Review target")
     val deliveryPackageStatus: String get() = text("资源包", "Package")
@@ -474,6 +475,7 @@ class PetShellStrings internal constructor(
     val deliveryStatusCommunityWaiting: String get() = text("待草稿", "Draft pending")
     val selectedForReview: String get() = text("已选为动作审核对象", "Selected for motion review")
     val selectCandidate: String get() = text("选择动作候选", "Select motion candidate")
+    val reviewedCandidateLocked: String get() = text("动作已审核", "Motion reviewed")
     val reviewNotesLabel: String get() = text("审核备注", "Review notes")
     val reviewNotesPlaceholder: String
         get() = text(
