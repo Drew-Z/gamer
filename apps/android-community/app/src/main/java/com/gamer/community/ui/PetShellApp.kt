@@ -121,6 +121,7 @@ import com.gamer.community.generation.packageImportDraftFailureCandidate
 import com.gamer.community.generation.packageImportDraftSuccessCandidate
 import com.gamer.community.generation.packageImportCandidateMessage
 import com.gamer.community.generation.packageImportInProgressCandidate
+import com.gamer.community.generation.packageReadyShelfStatus
 import com.gamer.community.generation.packageImportSubmissionIdForResume
 import com.gamer.community.generation.packageImportSubmissionFailureMessage
 import com.gamer.community.generation.packageImportSubmissionCommunityRefreshMessage
@@ -710,6 +711,10 @@ fun PetShellApp(
                     desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
                     desktopPetNotificationPermissionGranted = desktopPetNotificationPermissionGranted,
                     desktopPetOverlayRunning = desktopPetOverlayRunning,
+                    packageImportCandidate = packageImportCandidate,
+                    readyPackageImportDraft = readyPackageImportDraft,
+                    packageImportSubmissionId = packageImportSubmissionId,
+                    packageImportSubmissionMessage = packageImportSubmissionMessage,
                     onTabSelected = { selectedTab = it },
                     onLanguageChange = ::changeLanguage,
                     onDirectPetLaunchChange = ::changeDirectPetLaunch,
@@ -1802,6 +1807,10 @@ private fun CommunityScreen(
     desktopPetOverlayPermissionGranted: Boolean,
     desktopPetNotificationPermissionGranted: Boolean,
     desktopPetOverlayRunning: Boolean,
+    packageImportCandidate: PetGenerationPackageImportCandidate?,
+    readyPackageImportDraft: ImportDraftDto?,
+    packageImportSubmissionId: String,
+    packageImportSubmissionMessage: String,
     onTabSelected: (PetShellTab) -> Unit,
     onLanguageChange: (PetShellLanguage) -> Unit,
     onDirectPetLaunchChange: (Boolean) -> Unit,
@@ -1865,6 +1874,10 @@ private fun CommunityScreen(
                     desktopPetOverlayPermissionGranted = desktopPetOverlayPermissionGranted,
                     desktopPetNotificationPermissionGranted = desktopPetNotificationPermissionGranted,
                     desktopPetOverlayRunning = desktopPetOverlayRunning,
+                    packageImportCandidate = packageImportCandidate,
+                    readyPackageImportDraft = readyPackageImportDraft,
+                    packageImportSubmissionId = packageImportSubmissionId,
+                    packageImportSubmissionMessage = packageImportSubmissionMessage,
                     onDirectPetLaunchChange = onDirectPetLaunchChange,
                     onDesktopPetOverlayAutoShowChange = onDesktopPetOverlayAutoShowChange,
                     onRequestDesktopPetOverlayPermission = onRequestDesktopPetOverlayPermission,
@@ -2664,6 +2677,10 @@ private fun ProfileWorkspace(
     desktopPetOverlayPermissionGranted: Boolean,
     desktopPetNotificationPermissionGranted: Boolean,
     desktopPetOverlayRunning: Boolean,
+    packageImportCandidate: PetGenerationPackageImportCandidate?,
+    readyPackageImportDraft: ImportDraftDto?,
+    packageImportSubmissionId: String,
+    packageImportSubmissionMessage: String,
     onDirectPetLaunchChange: (Boolean) -> Unit,
     onDesktopPetOverlayAutoShowChange: (Boolean) -> Unit,
     onRequestDesktopPetOverlayPermission: () -> Unit,
@@ -2713,6 +2730,10 @@ private fun ProfileWorkspace(
         ProfilePetShelf(
             state = state,
             strings = strings,
+            packageImportCandidate = packageImportCandidate,
+            readyPackageImportDraft = readyPackageImportDraft,
+            packageImportSubmissionId = packageImportSubmissionId,
+            packageImportSubmissionMessage = packageImportSubmissionMessage,
             onCreatePet = onCreatePet
         )
         ProfileActionDock(
@@ -2899,10 +2920,21 @@ private fun ProfileMetricToken(
 private fun ProfilePetShelf(
     state: PetShellState,
     strings: PetShellStrings,
+    packageImportCandidate: PetGenerationPackageImportCandidate?,
+    readyPackageImportDraft: ImportDraftDto?,
+    packageImportSubmissionId: String,
+    packageImportSubmissionMessage: String,
     onCreatePet: () -> Unit
 ) {
     val hasApprovedPets = state.approvedPets.isNotEmpty()
     val selectedPet = state.approvedPets.selectedApprovedPet(state.approvedPetIndex)
+    val shelfStatus = packageReadyShelfStatus(
+        packageImportCandidate = packageImportCandidate,
+        readyPackageImportDraft = readyPackageImportDraft,
+        packageImportSubmissionId = packageImportSubmissionId,
+        packageImportSubmissionMessage = packageImportSubmissionMessage,
+        approvedPets = state.approvedPets
+    )
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -2978,6 +3010,13 @@ private fun ProfilePetShelf(
                     )
                 )
             }
+            if (shelfStatus.visible) {
+                ProfilePackageReadyShelfStatusStrip(
+                    label = strings.profilePackageReadyShelfLabel(shelfStatus.label),
+                    detail = strings.profilePackageReadyShelfDetail(shelfStatus.detail),
+                    tone = shelfStatus.tone
+                )
+            }
             if (!hasApprovedPets) {
                 ShowcaseEmptyPath(strings = strings)
                 Button(
@@ -2987,6 +3026,57 @@ private fun ProfilePetShelf(
                     Text(strings.profileCreatePetAction)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfilePackageReadyShelfStatusStrip(
+    label: String,
+    detail: String,
+    tone: String
+) {
+    val accent = when (tone) {
+        "approved" -> GamerUiTokens.ColorRole.Success
+        "pending" -> GamerUiTokens.ColorRole.Review
+        "ready" -> GamerUiTokens.ColorRole.Identity
+        "package" -> GamerUiTokens.ColorRole.Reward
+        else -> GamerUiTokens.ColorRole.Muted
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GamerUiTokens.Shape.Card)
+            .background(accent.copy(alpha = 0.10f))
+            .padding(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 5.dp, height = 40.dp)
+                .clip(GamerUiTokens.Shape.Control)
+                .background(accent)
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = GamerUiTokens.ColorRole.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Subtle,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

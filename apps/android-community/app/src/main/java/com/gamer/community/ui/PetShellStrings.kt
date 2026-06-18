@@ -402,6 +402,45 @@ class PetShellStrings internal constructor(
     val profilePetShelfTitle: String get() = text("\u684C\u5BA0\u5C55\u67B6", "Pet shelf")
     val profileActionDockTitle: String get() = text("\u5E38\u7528\u52A8\u4F5C", "Quick actions")
     val profileCreatePetAction: String get() = text("孵化新桌宠", "Hatch new pet")
+    fun profilePackageReadyShelfLabel(label: String): String =
+        if (language == PetShellLanguage.English) {
+            label
+        } else {
+            when (label) {
+                "Approved in shelf" -> "已通过并入架"
+                "Community review pending" -> "等待社区审核"
+                "Community draft ready" -> "社区草稿已就绪"
+                "Package import prepared" -> "资源包待导入"
+                else -> label
+            }
+        }
+
+    fun profilePackageReadyShelfDetail(detail: String): String {
+        if (language == PetShellLanguage.English) return detail
+
+        val approvedMatch = Regex("^(.+) is visible in the community showcase\\.$").matchEntire(detail)
+        if (approvedMatch != null) {
+            return "${approvedMatch.groupValues[1]} 已进入社区展示。"
+        }
+
+        val pendingMatch = Regex("^Submission ([A-Za-z0-9._-]+) is waiting for public review\\.$")
+            .matchEntire(detail)
+        if (pendingMatch != null) {
+            return "提交 ${pendingMatch.groupValues[1]} 正在等待公开审核。"
+        }
+
+        val draftMatch = Regex("^Draft ([A-Za-z0-9._-]+) can be submitted for community review\\.$")
+            .matchEntire(detail)
+        if (draftMatch != null) {
+            return "草稿 ${draftMatch.groupValues[1]} 可提交到社区审核。"
+        }
+
+        return when (detail) {
+            "Package downloaded; preparing community import draft." -> "资源包已接收，正在准备社区导入草稿。"
+            else -> detail
+        }
+    }
+
     val showcasePathGenerate: String get() = text("孵化", "Hatch")
     val showcasePathReview: String get() = text("\u4EBA\u5BA1", "Review")
     val showcasePathPublish: String get() = text("\u5C55\u793A", "Showcase")

@@ -758,6 +758,137 @@ class FantasyPetGenerationUiModelTest {
     }
 
     @Test
+    fun packageReadyShelfStatusShowsApprovedPetBeforePendingImportStates() {
+        val readyDraft = ImportDraftDto(
+            id = "import-draft-local-001",
+            userId = "user-demo-001",
+            status = "ready",
+            petId = "public-lifecycle-smoke",
+            scoreReportId = "score-import-draft-local-001"
+        )
+        val status = packageReadyShelfStatus(
+            packageImportCandidate = PetGenerationPackageImportCandidate(
+                appJobId = "public-lifecycle-smoke",
+                targetDownloadId = "artifact-1",
+                packageFileName = "pet-public-lifecycle-smoke.zip",
+                packageByteCount = 664L,
+                status = "waiting-for-community-import",
+                summary = "Package downloaded; preparing community import draft."
+            ),
+            readyPackageImportDraft = readyDraft,
+            packageImportSubmissionId = "submission-local-001",
+            packageImportSubmissionMessage =
+                "Community submission submission-local-001 approved for public-lifecycle-smoke.",
+            approvedPets = listOf(
+                ApprovedPet(
+                    petId = "public-lifecycle-smoke",
+                    displayName = "Public Lifecycle Smoke",
+                    sourceKind = "fantasy-pet-rule",
+                    previewPath = "previews/public-lifecycle-smoke.png",
+                    exportArtifactPath = "exports/public-lifecycle-smoke.zip",
+                    motionSheetCount = 2,
+                    totalScore = 86
+                )
+            )
+        )
+
+        assertTrue(status.visible)
+        assertEquals("Approved in shelf", status.label)
+        assertEquals("Public Lifecycle Smoke is visible in the community showcase.", status.detail)
+        assertEquals("approved", status.tone)
+    }
+
+    @Test
+    fun packageReadyShelfStatusShowsSubmissionDraftAndCandidateProgress() {
+        val readyDraft = ImportDraftDto(
+            id = "import-draft-local-001",
+            userId = "user-demo-001",
+            status = "ready",
+            petId = "public-lifecycle-smoke",
+            scoreReportId = "score-import-draft-local-001"
+        )
+
+        assertEquals(
+            PackageReadyShelfStatus(
+                visible = true,
+                label = "Community review pending",
+                detail = "Submission submission-local-001 is waiting for public review.",
+                tone = "pending"
+            ),
+            packageReadyShelfStatus(
+                packageImportCandidate = null,
+                readyPackageImportDraft = readyDraft.copy(status = "submitted"),
+                packageImportSubmissionId = "submission-local-001",
+                packageImportSubmissionMessage = "Community submission submission-local-001 pending.",
+                approvedPets = emptyList()
+            )
+        )
+        assertEquals(
+            PackageReadyShelfStatus(
+                visible = true,
+                label = "Community draft ready",
+                detail = "Draft import-draft-local-001 can be submitted for community review.",
+                tone = "ready"
+            ),
+            packageReadyShelfStatus(
+                packageImportCandidate = null,
+                readyPackageImportDraft = readyDraft,
+                packageImportSubmissionId = "",
+                packageImportSubmissionMessage = "",
+                approvedPets = emptyList()
+            )
+        )
+        assertEquals(
+            PackageReadyShelfStatus(
+                visible = true,
+                label = "Package import prepared",
+                detail = "Package downloaded; preparing community import draft.",
+                tone = "package"
+            ),
+            packageReadyShelfStatus(
+                packageImportCandidate = PetGenerationPackageImportCandidate(
+                    appJobId = "public-lifecycle-smoke",
+                    targetDownloadId = "artifact-1",
+                    packageFileName = "pet-public-lifecycle-smoke.zip",
+                    packageByteCount = 664L,
+                    status = "waiting-for-community-import",
+                    summary = "Package downloaded; preparing community import draft."
+                ),
+                readyPackageImportDraft = null,
+                packageImportSubmissionId = "",
+                packageImportSubmissionMessage = "",
+                approvedPets = emptyList()
+            )
+        )
+    }
+
+    @Test
+    fun packageReadyShelfStatusHidesUnsafeOrUnavailableDetails() {
+        assertEquals(
+            PackageReadyShelfStatus(
+                visible = false,
+                label = "",
+                detail = "",
+                tone = "hidden"
+            ),
+            packageReadyShelfStatus(
+                packageImportCandidate = PetGenerationPackageImportCandidate(
+                    appJobId = "public-lifecycle-smoke",
+                    targetDownloadId = "artifact-1",
+                    packageFileName = "pet-public-lifecycle-smoke.zip",
+                    packageByteCount = 664L,
+                    status = "waiting-for-community-import",
+                    summary = "D:/workspace4Codex/fantasy-pet-rule/runs/job/server_run.json"
+                ),
+                readyPackageImportDraft = null,
+                packageImportSubmissionId = "D:/secret/runs/submission.json",
+                packageImportSubmissionMessage = "D:/secret/runs/submission.json",
+                approvedPets = emptyList()
+            )
+        )
+    }
+
+    @Test
     fun pollDelayBacksOffForLongWaitingStates() {
         assertEquals(
             3_000L,

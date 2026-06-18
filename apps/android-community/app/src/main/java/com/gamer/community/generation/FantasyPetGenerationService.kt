@@ -5,6 +5,7 @@ import com.gamer.community.api.ImportDraftDto
 import com.gamer.community.api.ImportDraftSubmissionResponseDto
 import com.gamer.community.api.InitialCommunityResult
 import com.gamer.community.api.SubmissionDto
+import com.gamer.community.petshell.ApprovedPet
 import java.io.File
 import java.net.URI
 import java.net.URLEncoder
@@ -87,6 +88,13 @@ data class PetGenerationPackageImportCandidate(
     val packageByteCount: Long,
     val status: String,
     val summary: String
+)
+
+data class PackageReadyShelfStatus(
+    val visible: Boolean,
+    val label: String,
+    val detail: String,
+    val tone: String
 )
 
 val GENERATION_BODY_SHAPE_OPTIONS = listOf("balanced", "wide", "wide-tail", "tall")
@@ -1049,6 +1057,78 @@ fun packageImportDraftFailureCandidate(
 fun canSubmitPackageImportDraft(draft: ImportDraftDto?): Boolean =
     draft?.status == "ready" &&
         draft.id.trim().isSafePackageDownloadDisplayText()
+
+fun packageReadyShelfStatus(
+    packageImportCandidate: PetGenerationPackageImportCandidate?,
+    readyPackageImportDraft: ImportDraftDto?,
+    packageImportSubmissionId: String,
+    packageImportSubmissionMessage: String,
+    approvedPets: List<ApprovedPet>
+): PackageReadyShelfStatus {
+    val safeSubmissionId = packageImportSubmissionIdForResume(packageImportSubmissionId)
+    val approvedPet = approvedPets.firstOrNull { pet ->
+        val safePetId = pet.petId.trim().takeIf { it.isSafePackageDownloadDisplayText() }
+        safePetId != null && (
+            safePetId == readyPackageImportDraft?.petId?.trim() ||
+                packageImportSubmissionMessage.contains(safePetId)
+            )
+    }
+    if (approvedPet != null) {
+        val safeDisplayName = approvedPet.displayName.trim()
+            .replace(Regex("\\s+"), " ")
+            .takeIf { it.isSafePackageDownloadDisplayText() }
+            ?.take(36)
+            ?: approvedPet.petId.trim()
+        return PackageReadyShelfStatus(
+            visible = true,
+            label = "Approved in shelf",
+            detail = "$safeDisplayName is visible in the community showcase.",
+            tone = "approved"
+        )
+    }
+
+    if (safeSubmissionId != null) {
+        return PackageReadyShelfStatus(
+            visible = true,
+            label = "Community review pending",
+            detail = "Submission $safeSubmissionId is waiting for public review.",
+            tone = "pending"
+        )
+    }
+
+    if (canSubmitPackageImportDraft(readyPackageImportDraft)) {
+        val safeDraftId = readyPackageImportDraft?.id?.trim()
+            ?.takeIf { it.isSafePackageDownloadDisplayText() }
+            ?: "import-draft"
+        return PackageReadyShelfStatus(
+            visible = true,
+            label = "Community draft ready",
+            detail = "Draft $safeDraftId can be submitted for community review.",
+            tone = "ready"
+        )
+    }
+
+    val safeCandidateSummary = packageImportCandidate
+        ?.takeIf { it.status in setOf("waiting-for-community-import", "community-import-ready") }
+        ?.summary
+        ?.trim()
+        ?.takeIf { it.isSafePackageDownloadDisplayText() }
+    if (safeCandidateSummary != null) {
+        return PackageReadyShelfStatus(
+            visible = true,
+            label = "Package import prepared",
+            detail = safeCandidateSummary,
+            tone = "package"
+        )
+    }
+
+    return PackageReadyShelfStatus(
+        visible = false,
+        label = "",
+        detail = "",
+        tone = "hidden"
+    )
+}
 
 fun packageImportSubmissionStartedMessage(): String =
     "Submitting community import draft..."
