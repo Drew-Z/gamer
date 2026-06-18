@@ -395,7 +395,12 @@ class PetShellUiModelTest {
         assertEquals("宽体长尾", zh.bodyShapeLabel("wide-tail"))
         assertEquals("wide-tail", en.bodyShapeLabel("wide-tail"))
         assertEquals("idle 动作上下跳动明显", zh.reviewNoteSuggestion("idle action jumps vertically"))
-        assertEquals("idle action jumps vertically", en.reviewNoteSuggestion("idle action jumps vertically"))
+        assertEquals("点击反馈不明显", zh.reviewNoteSuggestion("tap reaction lacks feedback"))
+        assertEquals("拖拽动作僵硬", zh.reviewNoteSuggestion("drag motion feels stiff"))
+        assertEquals("喂食动作没咬合", zh.reviewNoteSuggestion("feed action misses the bite"))
+        assertEquals("透明边缘有脏点", zh.reviewNoteSuggestion("alpha edge has dirty pixels"))
+        assertEquals("触发语义错误", zh.reviewNoteSuggestion("wrong trigger semantics"))
+        assertEquals("tap reaction lacks feedback", en.reviewNoteSuggestion("tap reaction lacks feedback"))
     }
 
     @Test

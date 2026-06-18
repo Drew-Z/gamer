@@ -663,12 +663,16 @@ class PetShellStrings internal constructor(
         } else {
             when (rawSuggestion) {
                 "idle action jumps vertically" -> "idle 动作上下跳动明显"
-                "running-right is nearly static" -> "running-right 几乎不动"
+                "tap reaction lacks feedback" -> "点击反馈不明显"
+                "drag motion feels stiff" -> "拖拽动作僵硬"
+                "feed action misses the bite" -> "喂食动作没咬合"
+                "run cycle is nearly static" -> "跑步循环几乎不动"
                 "first and last frame mismatch" -> "首尾帧不一致"
                 "main identity drifts" -> "主体身份漂移"
-                "detached effect particles" -> "有漂浮特效粒子"
-                "wrong facing direction" -> "朝向错误"
+                "alpha edge has dirty pixels" -> "透明边缘有脏点"
+                "wrong trigger semantics" -> "触发语义错误"
                 "loop boundary is abrupt" -> "循环边界突兀"
+                "transparent shadow is too heavy" -> "透明阴影过重"
                 else -> rawSuggestion
             }
         }

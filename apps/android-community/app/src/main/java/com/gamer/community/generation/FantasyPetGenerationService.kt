@@ -1304,12 +1304,16 @@ fun recentGenerationJobResumeId(appJobId: String): String? =
 
 val REVIEW_NOTE_SUGGESTIONS = listOf(
     "idle action jumps vertically",
-    "running-right is nearly static",
+    "tap reaction lacks feedback",
+    "drag motion feels stiff",
+    "feed action misses the bite",
+    "run cycle is nearly static",
     "first and last frame mismatch",
     "main identity drifts",
-    "detached effect particles",
-    "wrong facing direction",
-    "loop boundary is abrupt"
+    "alpha edge has dirty pixels",
+    "wrong trigger semantics",
+    "loop boundary is abrupt",
+    "transparent shadow is too heavy"
 )
 
 fun appendReviewNoteSuggestion(existingNotes: String, suggestion: String): String {

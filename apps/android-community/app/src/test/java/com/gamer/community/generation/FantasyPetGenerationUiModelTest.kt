@@ -1064,16 +1064,25 @@ class FantasyPetGenerationUiModelTest {
             appendReviewNoteSuggestion("", "idle action jumps vertically")
         )
         assertEquals(
-            "idle action jumps vertically\nrunning-right is nearly static",
+            "idle action jumps vertically\ntap reaction lacks feedback",
             appendReviewNoteSuggestion(
                 "idle action jumps vertically",
-                "running-right is nearly static"
+                "tap reaction lacks feedback"
             )
         )
         assertEquals(
             "identity drift between first and last frame",
             appendReviewNoteSuggestion("identity drift between first and last frame", "")
         )
+    }
+
+    @Test
+    fun reviewNoteSuggestionsCoverDesktopPetMotionProblems() {
+        assertTrue(REVIEW_NOTE_SUGGESTIONS.contains("tap reaction lacks feedback"))
+        assertTrue(REVIEW_NOTE_SUGGESTIONS.contains("drag motion feels stiff"))
+        assertTrue(REVIEW_NOTE_SUGGESTIONS.contains("feed action misses the bite"))
+        assertTrue(REVIEW_NOTE_SUGGESTIONS.contains("alpha edge has dirty pixels"))
+        assertTrue(REVIEW_NOTE_SUGGESTIONS.contains("wrong trigger semantics"))
     }
 }
 
