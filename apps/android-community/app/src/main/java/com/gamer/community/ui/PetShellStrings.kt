@@ -992,20 +992,14 @@ class PetShellStrings internal constructor(
     ): String {
         if (language == PetShellLanguage.English) {
             val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Remote preview pending"
-            return if (pet.previewUrl.isNotBlank() ||
-                pet.targetDownloadId.isNotBlank() ||
-                pet.previewPath.isNotBlank()
-            ) {
+            return if (pet.hasSafeApprovedPreviewReferenceForStrings()) {
                 "Remote preview ready"
             } else {
                 "Remote preview pending"
             }
         }
         val pet = selectedApprovedPet(pets, selectedIndex) ?: return "远端预览待同步"
-        return if (pet.previewUrl.isNotBlank() ||
-            pet.targetDownloadId.isNotBlank() ||
-            pet.previewPath.isNotBlank()
-        ) {
+        return if (pet.hasSafeApprovedPreviewReferenceForStrings()) {
             "远端预览可用"
         } else {
             "远端预览待同步"
@@ -1018,24 +1012,22 @@ class PetShellStrings internal constructor(
     ): String {
         if (language == PetShellLanguage.English) {
             val pet = selectedApprovedPet(pets, selectedIndex) ?: return "Package pending"
-            return if (pet.exportArtifactPath.isBlank()) {
-                "Package pending"
-            } else {
+            return if (pet.exportArtifactPath.trim().let { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }) {
                 "Package ready"
+            } else {
+                "Package pending"
             }
         }
         val pet = selectedApprovedPet(pets, selectedIndex) ?: return "资源包待同步"
-        return if (pet.exportArtifactPath.isBlank()) {
-            "资源包待同步"
-        } else {
+        return if (pet.exportArtifactPath.trim().let { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }) {
             "资源包可用"
+        } else {
+            "资源包待同步"
         }
     }
 
     fun approvedPetSourceLine(pet: ApprovedPet): String {
-        val previewReady = pet.previewUrl.trim().isNotBlank() ||
-            pet.targetDownloadId.trim().isNotBlank() ||
-            pet.previewPath.trim().isNotBlank()
+        val previewReady = pet.hasSafeApprovedPreviewReferenceForStrings()
         if (language == PetShellLanguage.English) {
             return "Human reviewed / remote preview ${if (previewReady) "ready" else "pending"}"
         }
@@ -1334,11 +1326,36 @@ private fun String.isSafeAssetDisplayTextForStrings(): Boolean {
         INTERNAL_ASSET_MARKERS_FOR_STRINGS.none { marker -> lower.contains(marker) }
 }
 
+private fun ApprovedPet.hasSafeApprovedPreviewReferenceForStrings(): Boolean =
+    previewUrl.trim().let { it.isNotBlank() && it.isSafeApprovedPreviewUrlTextForStrings() } ||
+        targetDownloadId.trim().let {
+            it.isNotBlank() &&
+                PUBLIC_ARTIFACT_ID_FOR_STRINGS.matches(it) &&
+                it.isSafeAssetDisplayTextForStrings()
+        } ||
+        previewPath.trim().let { it.isNotBlank() && it.isSafeAssetDisplayTextForStrings() }
+
+private fun String.isSafeApprovedPreviewUrlTextForStrings(): Boolean {
+    val trimmed = trim()
+    if (trimmed.isBlank()) return false
+    val lower = trimmed.lowercase()
+    val routeStart = trimmed.indexOf("/pet-generation-jobs/")
+    return routeStart >= 0 &&
+        trimmed.substring(routeStart).contains("/artifacts/") &&
+        !Regex("(^|\\s)[A-Za-z]:[\\\\/]").containsMatchIn(trimmed) &&
+        !lower.startsWith("file:") &&
+        !trimmed.contains("\\") &&
+        !trimmed.contains("..") &&
+        INTERNAL_ASSET_MARKERS_FOR_STRINGS.none { marker -> lower.contains(marker) }
+}
+
 private fun String.safeGenerationMessageDetail(defaultValue: String): String =
     trim().takeIf { it.isNotBlank() && it.isSafeGenerationMessageText() } ?: defaultValue
 
 private fun String.isSafeGenerationMessageText(): Boolean =
     isSafeAssetDisplayTextForStrings()
+
+private val PUBLIC_ARTIFACT_ID_FOR_STRINGS = Regex("[A-Za-z0-9._-]{1,128}")
 
 private val INTERNAL_ASSET_MARKERS_FOR_STRINGS = listOf(
     "server_run.json",

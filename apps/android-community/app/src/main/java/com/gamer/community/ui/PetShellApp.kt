@@ -7436,11 +7436,7 @@ internal fun approvedPetShowcaseAsset(
     selectedIndex: Int
 ): String {
     val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Remote preview pending"
-    return if (
-        pet.previewUrl.isNotBlank() ||
-        pet.targetDownloadId.isNotBlank() ||
-        pet.previewPath.isNotBlank()
-    ) {
+    return if (pet.hasSafeApprovedPreviewReference()) {
         "Remote preview ready"
     } else {
         "Remote preview pending"
@@ -7452,12 +7448,17 @@ internal fun approvedPetShowcasePackage(
     selectedIndex: Int
 ): String {
     val pet = pets.selectedApprovedPet(selectedIndex) ?: return "Package pending"
-    return if (pet.exportArtifactPath.isBlank()) {
-        "Package pending"
-    } else {
+    return if (pet.exportArtifactPath.trim().let { it.isNotBlank() && it.isSafeAssetDisplayText() }) {
         "Package ready"
+    } else {
+        "Package pending"
     }
 }
+
+private fun ApprovedPet.hasSafeApprovedPreviewReference(): Boolean =
+    previewUrl.trim().let { it.isNotBlank() && approvedPetExplicitPreviewUrl(it, com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL).isNotBlank() } ||
+        targetDownloadId.trim().let { it.isNotBlank() && PUBLIC_ARTIFACT_ID.matches(it) && it.isSafeAssetDisplayText() } ||
+        previewPath.trim().let { it.isNotBlank() && it.isSafeAssetDisplayText() }
 
 internal fun approvedPetPreviewUrl(
     pet: ApprovedPet?,
@@ -7607,6 +7608,8 @@ private val INTERNAL_ASSET_MARKERS = listOf(
     "genericagent-orchestrator-task.json",
     "codex-worker-task.json",
     "codex-worker-task.output.json",
+    "server-proof-summary.json",
+    "server-proof-summary",
     "strategy-plan.json",
     "codex-generation-directives.json",
     "server-generation-learning-drill.json",

@@ -130,15 +130,15 @@ class PetShellUiModelTest {
         val profile = petShellHeaderBackgroundSpec(PetShellTab.Profile)
 
         assertEquals(Color.White, community.titleColor)
-        assertEquals(Color(0xFFD7F3EE), community.subtitleColor)
+        assertEquals(Color(0xFFEFFFFB), community.subtitleColor)
         assertEquals(Color.White, generate.titleColor)
         assertEquals(Color.White, profile.titleColor)
         assertFalse(community.startColor == generate.startColor)
         assertFalse(generate.startColor == profile.startColor)
         assertFalse(profile.startColor == community.startColor)
-        assertEquals(Color(0xFFF97316), community.accentColor)
-        assertEquals(Color(0xFF60A5FA), generate.accentColor)
-        assertEquals(Color(0xFFFFB86B), profile.accentColor)
+        assertEquals(Color(0xFFFF9B2F), community.accentColor)
+        assertEquals(Color(0xFFD8FFF7), generate.accentColor)
+        assertEquals(Color(0xFFFFEED2), profile.accentColor)
     }
 
     @Test
@@ -156,8 +156,8 @@ class PetShellUiModelTest {
             "Hatch an egg from prompt to human review and shelf delivery.",
             en.generationStudioHeroSubtitle
         )
-        assertFalse(zh.generationStudioHeroTitle == zh.generationWorkspaceTitle)
-        assertFalse(en.generationStudioHeroTitle == en.generationWorkspaceTitle)
+        assertEquals(zh.generationWorkspaceTitle, zh.generationStudioHeroTitle)
+        assertEquals(en.generationWorkspaceTitle, en.generationStudioHeroTitle)
     }
 
     @Test
@@ -538,7 +538,7 @@ class PetShellUiModelTest {
             "审核失败: 这是公共 API 契约演示任务，不能作为真实孵化任务提交人审。",
             zh.generationMessage("Review failed: contract_demo_job_review_disabled")
         )
-        assertEquals("生成轮询失败: offline", zh.generationMessage("Generation poll failed: offline"))
+        assertEquals("孵化状态刷新失败: offline", zh.generationMessage("Generation poll failed: offline"))
         assertEquals(
             "2 个动作候选等待人工审核。",
             zh.generationMessage("2 candidates ready for human review.")
@@ -633,14 +633,14 @@ class PetShellUiModelTest {
 
         assertEquals("暂时还没有已通过的桌宠", zh.approvedPetRegistrySummary(emptyList()))
         assertEquals("1 个已通过桌宠", zh.approvedPetRegistrySummary(listOf(pet)))
-        assertEquals("Moon Fox", zh.approvedPetShowcaseTitle(listOf(pet), selectedIndex = 0))
+        assertEquals("已通过桌宠", zh.approvedPetShowcaseTitle(listOf(pet), selectedIndex = 0))
         assertEquals(
-            "fantasy-pet-rule / 评分 91 / 3 张动作表",
+            "已通过 / 评分 91 / 3 张动作表",
             zh.approvedPetShowcaseDetail(listOf(pet), selectedIndex = 0)
         )
         assertEquals("桌宠 1 / 1", zh.approvedPetShowcasePosition(listOf(pet), selectedIndex = 0))
-        assertEquals("预览 previews/moonfox.png", zh.approvedPetShowcaseAsset(listOf(pet), selectedIndex = 0))
-        assertEquals("资源包 exports/moonfox.zip", zh.approvedPetShowcasePackage(listOf(pet), selectedIndex = 0))
+        assertEquals("远端预览可用", zh.approvedPetShowcaseAsset(listOf(pet), selectedIndex = 0))
+        assertEquals("资源包可用", zh.approvedPetShowcasePackage(listOf(pet), selectedIndex = 0))
         assertEquals("评分", zh.approvedPetScoreMetric)
         assertEquals("动作表", zh.approvedPetMotionMetric)
         assertEquals("远端可看", zh.approvedPetPreviewReady)
@@ -656,11 +656,11 @@ class PetShellUiModelTest {
             targetDownloadId = "artifact-34"
         )
         assertEquals(
-            "来源 fantasy-pet-rule / 任务 issue-1-fresh-timeout3600-20260610-1 / 预览 artifact-34",
+            "人审已通过 / 远端预览可用",
             zh.approvedPetSourceLine(tracedPet)
         )
         assertEquals(
-            "Source fantasy-pet-rule / job issue-1-fresh-timeout3600-20260610-1 / preview artifact-34",
+            "Human reviewed / remote preview ready",
             en.approvedPetSourceLine(tracedPet)
         )
         assertEquals(
@@ -894,7 +894,7 @@ class PetShellUiModelTest {
         )
 
         assertEquals(
-            "fantasy-pet-rule / score 91 / 3 motion sheets",
+            "Reviewed / score 91 / 3 motion sheets",
             approvedPetShowcaseDetail(pets, selectedIndex = 1)
         )
         assertEquals(
@@ -927,8 +927,8 @@ class PetShellUiModelTest {
             )
         )
 
-        assertEquals("Preview previews/moonfox.png", approvedPetShowcaseAsset(pets, selectedIndex = 1))
-        assertEquals("Preview asset pending", approvedPetShowcaseAsset(emptyList(), selectedIndex = 1))
+        assertEquals("Remote preview ready", approvedPetShowcaseAsset(pets, selectedIndex = 1))
+        assertEquals("Remote preview pending", approvedPetShowcaseAsset(emptyList(), selectedIndex = 1))
     }
 
     @Test
@@ -941,7 +941,7 @@ class PetShellUiModelTest {
             )
         )
 
-        assertEquals("Preview asset pending", approvedPetShowcaseAsset(pets, selectedIndex = 0))
+        assertEquals("Remote preview pending", approvedPetShowcaseAsset(pets, selectedIndex = 0))
     }
 
     @Test
@@ -955,8 +955,8 @@ class PetShellUiModelTest {
             )
         )
 
-        assertEquals("Package exports/moonfox.zip", approvedPetShowcasePackage(pets, selectedIndex = 1))
-        assertEquals("Package artifact pending", approvedPetShowcasePackage(emptyList(), selectedIndex = 1))
+        assertEquals("Package ready", approvedPetShowcasePackage(pets, selectedIndex = 1))
+        assertEquals("Package pending", approvedPetShowcasePackage(emptyList(), selectedIndex = 1))
     }
 
     @Test
@@ -969,7 +969,7 @@ class PetShellUiModelTest {
             )
         )
 
-        assertEquals("Package artifact pending", approvedPetShowcasePackage(pets, selectedIndex = 0))
+        assertEquals("Package pending", approvedPetShowcasePackage(pets, selectedIndex = 0))
     }
 
     @Test
