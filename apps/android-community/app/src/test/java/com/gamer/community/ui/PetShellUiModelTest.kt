@@ -1005,10 +1005,26 @@ class PetShellUiModelTest {
     }
 
     @Test
+    fun approvedPetPreviewUrlUsesSafeExplicitPreviewUrlWhenSourceKindIsMissing() {
+        val pet = approvedPet(
+            petId = "pet-stardust-001",
+            displayName = "Generated pet",
+            sourceKind = "",
+            previewUrl = "/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34"
+        )
+
+        assertEquals(
+            "http://olivia.hidencloud.com:24674/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34",
+            approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674")
+        )
+    }
+
+    @Test
     fun approvedPetPreviewUrlRejectsUnsafeExplicitPreviewUrl() {
         val pet = approvedPet(
             petId = "issue-1-fresh-timeout3600-20260610-1",
             displayName = "Generated pet",
+            sourceKind = "",
             previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png",
             previewUrl = "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
         )
@@ -1065,6 +1081,7 @@ class PetShellUiModelTest {
         displayName: String,
         totalScore: Int = 86,
         motionSheetCount: Int = 2,
+        sourceKind: String = "fantasy-pet-rule",
         sourceAppJobId: String = "",
         previewPath: String = "previews/overall-showcase.png",
         targetDownloadId: String = "",
@@ -1074,7 +1091,7 @@ class PetShellUiModelTest {
         ApprovedPet(
             petId = petId,
             displayName = displayName,
-            sourceKind = "fantasy-pet-rule",
+            sourceKind = sourceKind,
             sourceAppJobId = sourceAppJobId,
             previewPath = previewPath,
             targetDownloadId = targetDownloadId,

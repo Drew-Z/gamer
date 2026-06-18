@@ -7463,7 +7463,7 @@ internal fun approvedPetPreviewUrl(
     pet: ApprovedPet?,
     baseUrl: String = com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL
 ): String {
-    if (pet == null || pet.sourceKind != "fantasy-pet-rule") {
+    if (pet == null) {
         return ""
     }
 
@@ -7471,6 +7471,10 @@ internal fun approvedPetPreviewUrl(
     val resolvedPreviewUrl = approvedPetExplicitPreviewUrl(explicitPreviewUrl, baseUrl)
     if (resolvedPreviewUrl.isNotBlank()) {
         return resolvedPreviewUrl
+    }
+
+    if (pet.sourceKind != "fantasy-pet-rule") {
+        return ""
     }
 
     val appJobId = pet.sourceAppJobId.trim().ifBlank { pet.petId.trim() }
