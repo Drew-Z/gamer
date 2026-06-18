@@ -4,6 +4,7 @@ import com.gamer.community.generation.DEFAULT_GENERATION_MESSAGE
 import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.DefaultDesktopPet
 import com.gamer.community.petshell.PetAction
+import com.gamer.community.petshell.SubmissionSummary
 
 enum class PetShellLanguage(val preferenceValue: String) {
     Chinese("zh"),
@@ -210,15 +211,43 @@ class PetShellStrings internal constructor(
     fun communityCommandStatus(
         approvedPetCount: Int,
         pendingSubmissionCount: Int,
+        latestSubmission: SubmissionSummary? = null,
         checkInClaimed: Boolean
     ): String {
+        val latest = latestSubmissionStatus(latestSubmission)
         if (language == PetShellLanguage.English) {
             val checkIn = if (checkInClaimed) "checked in" else "check-in ready"
-            return "$approvedPetCount approved / $pendingSubmissionCount pending / $checkIn"
+            return listOf(
+                "$approvedPetCount approved",
+                "$pendingSubmissionCount pending",
+                latest,
+                checkIn
+            ).filter { it.isNotBlank() }.joinToString(" / ")
         }
 
         val checkIn = if (checkInClaimed) "已签到" else "可签到"
-        return "$approvedPetCount 个已通过 / $pendingSubmissionCount 个待审 / $checkIn"
+        return listOf(
+            "$approvedPetCount 个已通过",
+            "$pendingSubmissionCount 个待审",
+            latest,
+            checkIn
+        ).filter { it.isNotBlank() }.joinToString(" / ")
+    }
+
+    fun latestSubmissionStatus(submission: SubmissionSummary?): String {
+        if (submission == null || submission.petId.isBlank()) {
+            return ""
+        }
+
+        val status = when (submission.status.trim().lowercase()) {
+            "pending" -> text("最新待审", "latest pending")
+            "approved" -> text("最新已通过", "latest approved")
+            "held" -> text("最新需补充", "latest held")
+            "rejected" -> text("最新未通过", "latest rejected")
+            "revoked" -> text("最新已撤销", "latest revoked")
+            else -> text("最新提交", "latest submission")
+        }
+        return "$status ${submission.petId}"
     }
     val generationWorkspaceTitle: String get() = text("桌宠孵化室", "Pet Hatchery")
     val profileWorkspaceTitle: String get() = text("\u6211\u7684\u684C\u5BA0", "My Pets")

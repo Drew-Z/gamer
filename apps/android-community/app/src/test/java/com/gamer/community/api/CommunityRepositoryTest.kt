@@ -83,6 +83,9 @@ class CommunityRepositoryTest {
         assertEquals(144, result.walletBalance)
         assertEquals(true, result.checkInClaimed)
         assertEquals(2, result.pendingSubmissionCount)
+        assertEquals("submission-home-001", result.latestSubmission?.id)
+        assertEquals("pending", result.latestSubmission?.status)
+        assertEquals("pet-home-001", result.latestSubmission?.petId)
         assertEquals(777_000L, result.hatchSla.customHatchMaxMs)
         assertEquals(5_000L, result.hatchSla.suggestedPollIntervalMs)
         assertEquals(2, result.hatchSla.consecutivePollFailuresBeforeSlowNotice)
@@ -90,6 +93,39 @@ class CommunityRepositoryTest {
         assertFalse(fakeClient.feedRequested)
         assertFalse(fakeClient.walletRequested)
         assertFalse(fakeClient.approvedPetsRequested)
+    }
+
+    @Test
+    fun loadInitialCommunityHidesUnsafeLatestSubmissionSummary() = runTest {
+        val repository = CommunityRepository(
+            client = FakeCommunityApiClient(
+                communityHomeResponse = ApiCallResult.Success(
+                    CommunityHomeResponseDto(
+                        schema = "gamer.community-home.v1",
+                        userId = "user-demo-001",
+                        wallet = WalletDto(
+                            userId = "user-demo-001",
+                            balance = 144,
+                            currencyCode = "petcoin"
+                        ),
+                        submissionsSummary = CommunityHomeSubmissionsSummaryDto(
+                            pendingCount = 1,
+                            latest = SubmissionDto(
+                                id = "D:/workspace4Codex/fantasy-pet-rule/runs/job/submission.json",
+                                petId = "pet-home-001",
+                                userId = "user-demo-001",
+                                status = "pending"
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val result = repository.loadInitialCommunity()
+
+        assertEquals(1, result.pendingSubmissionCount)
+        assertNull(result.latestSubmission)
     }
 
     @Test

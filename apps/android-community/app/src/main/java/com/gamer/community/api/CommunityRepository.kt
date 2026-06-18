@@ -3,6 +3,7 @@ package com.gamer.community.api
 import com.gamer.community.petshell.ApprovedPet
 import com.gamer.community.petshell.HatchSla
 import com.gamer.community.petshell.FeedPost
+import com.gamer.community.petshell.SubmissionSummary
 
 data class InitialCommunityResult(
     val posts: List<FeedPost>,
@@ -12,6 +13,7 @@ data class InitialCommunityResult(
     val usedFallback: Boolean,
     val checkInClaimed: Boolean = false,
     val pendingSubmissionCount: Int = 0,
+    val latestSubmission: SubmissionSummary? = null,
     val hatchSla: HatchSla = HatchSla()
 )
 
@@ -146,7 +148,19 @@ private fun CommunityHomeResponseDto.toInitialCommunityResult(hatchSla: HatchSla
         usedFallback = false,
         checkInClaimed = dailyCheckIn.claimed,
         pendingSubmissionCount = submissionsSummary.pendingCount,
+        latestSubmission = submissionsSummary.latest?.toSubmissionSummary(),
         hatchSla = hatchSla
+    )
+}
+
+private fun SubmissionDto.toSubmissionSummary(): SubmissionSummary? {
+    val safeId = id.trim().takeIf { it.isSafePublicToken() } ?: return null
+    val safePetId = petId.trim().takeIf { it.isSafePublicToken() } ?: return null
+    val safeStatus = status.trim().takeIf { it.isSafePublicToken() } ?: return null
+    return SubmissionSummary(
+        id = safeId,
+        petId = safePetId,
+        status = safeStatus
     )
 }
 

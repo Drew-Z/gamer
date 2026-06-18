@@ -119,6 +119,7 @@ object PetShellController {
         walletBalance: Int,
         checkInClaimed: Boolean = false,
         pendingSubmissionCount: Int = 0,
+        latestSubmission: SubmissionSummary? = null,
         hatchSla: HatchSla = HatchSla(),
         usedFallback: Boolean,
         message: String
@@ -130,6 +131,7 @@ object PetShellController {
             walletBalance = walletBalance,
             checkInClaimed = checkInClaimed,
             pendingSubmissionCount = pendingSubmissionCount,
+            latestSubmission = latestSubmission,
             hatchSla = hatchSla,
             remoteCommunitySynced = !usedFallback,
             approvedPets = approvedPets,

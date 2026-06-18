@@ -61,6 +61,12 @@ data class HatchSla(
     val consecutivePollFailuresBeforeSlowNotice: Int = 3
 )
 
+data class SubmissionSummary(
+    val id: String,
+    val petId: String,
+    val status: String
+)
+
 data class DefaultDesktopPetMotionSheet(
     val assetPath: String,
     val frameCount: Int,
@@ -87,6 +93,7 @@ data class PetShellState(
     val walletBalance: Int,
     val checkInClaimed: Boolean,
     val pendingSubmissionCount: Int = 0,
+    val latestSubmission: SubmissionSummary? = null,
     val remoteCommunitySynced: Boolean = false,
     val hatchSla: HatchSla = HatchSla(),
     val approvedPets: List<ApprovedPet>,

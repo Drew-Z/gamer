@@ -4,6 +4,7 @@ import com.gamer.community.generation.DEFAULT_GENERATION_MESSAGE
 import com.gamer.community.petshell.PetAction
 import com.gamer.community.petshell.FeedPost
 import com.gamer.community.petshell.ApprovedPet
+import com.gamer.community.petshell.SubmissionSummary
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -282,6 +283,12 @@ class PetShellUiModelTest {
     fun petShellStringsExposeCommunityFeedPerspectiveCopy() {
         val zh = petShellStrings(PetShellLanguage.Chinese)
         val en = petShellStrings(PetShellLanguage.English)
+        val latestPending = SubmissionSummary(
+            id = "submission-local-001",
+            petId = "public-lifecycle-smoke",
+            status = "pending"
+        )
+        val latestApproved = latestPending.copy(status = "approved")
 
         assertEquals("\u684C\u5BA0\u5BFC\u822A\u53F0", zh.communityPetCommandTitle)
         assertEquals(
@@ -295,6 +302,16 @@ class PetShellUiModelTest {
             zh.communityCommandStatus(
                 approvedPetCount = 1,
                 pendingSubmissionCount = 2,
+                latestSubmission = null,
+                checkInClaimed = false
+            )
+        )
+        assertEquals(
+            "1 个已通过 / 2 个待审 / 最新待审 public-lifecycle-smoke / 可签到",
+            zh.communityCommandStatus(
+                approvedPetCount = 1,
+                pendingSubmissionCount = 2,
+                latestSubmission = latestPending,
                 checkInClaimed = false
             )
         )
@@ -310,9 +327,21 @@ class PetShellUiModelTest {
             en.communityCommandStatus(
                 approvedPetCount = 1,
                 pendingSubmissionCount = 2,
+                latestSubmission = null,
                 checkInClaimed = true
             )
         )
+        assertEquals(
+            "1 approved / 0 pending / latest approved public-lifecycle-smoke / checked in",
+            en.communityCommandStatus(
+                approvedPetCount = 1,
+                pendingSubmissionCount = 0,
+                latestSubmission = latestApproved,
+                checkInClaimed = true
+            )
+        )
+        assertEquals("最新待审 public-lifecycle-smoke", zh.latestSubmissionStatus(latestPending))
+        assertEquals("latest approved public-lifecycle-smoke", en.latestSubmissionStatus(latestApproved))
         assertEquals("\u684C\u5BA0\u89C6\u89D2", zh.communityFeedSignalTitle)
         assertEquals("\u4E92\u52A8", zh.feedReactionLabel)
         assertEquals("孵化", zh.showcasePathGenerate)

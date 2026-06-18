@@ -604,6 +604,7 @@ fun PetShellApp(
             walletBalance = result.walletBalance,
             checkInClaimed = result.checkInClaimed,
             pendingSubmissionCount = result.pendingSubmissionCount,
+            latestSubmission = result.latestSubmission,
             hatchSla = result.hatchSla,
             usedFallback = result.usedFallback,
             message = result.message
@@ -1000,6 +1001,8 @@ fun PetShellApp(
                                                     checkInClaimed = refreshedCommunity.checkInClaimed,
                                                     pendingSubmissionCount =
                                                         refreshedCommunity.pendingSubmissionCount,
+                                                    latestSubmission =
+                                                        refreshedCommunity.latestSubmission,
                                                     usedFallback = refreshedCommunity.usedFallback,
                                                     message = refreshedCommunity.message
                                                 )
@@ -1045,6 +1048,8 @@ fun PetShellApp(
                                                     checkInClaimed = refreshedCommunity.checkInClaimed,
                                                     pendingSubmissionCount =
                                                         refreshedCommunity.pendingSubmissionCount,
+                                                    latestSubmission =
+                                                        refreshedCommunity.latestSubmission,
                                                     usedFallback = refreshedCommunity.usedFallback,
                                                     message = refreshedCommunity.message
                                                 )
@@ -1482,7 +1487,7 @@ private fun DesktopPetHomeSummary(
                 )
                 DesktopPetHomeMetric(
                     label = strings.desktopPetPendingReviewMetric,
-                    value = state.pendingSubmissionCount.toString(),
+                    value = strings.quickActionReviewStatus(state.pendingSubmissionCount),
                     accent = Color(0xFF7C3AED),
                     modifier = Modifier.weight(1f)
                 )
@@ -3591,6 +3596,7 @@ private fun PetCompanionStrip(
                 text = strings.communityCommandStatus(
                     approvedPetCount = state.approvedPets.size,
                     pendingSubmissionCount = state.pendingSubmissionCount,
+                    latestSubmission = state.latestSubmission,
                     checkInClaimed = state.checkInClaimed
                 )
             )

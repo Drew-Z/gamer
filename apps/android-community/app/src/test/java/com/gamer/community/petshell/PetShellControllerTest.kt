@@ -207,6 +207,11 @@ class PetShellControllerTest {
             walletBalance = 144,
             checkInClaimed = true,
             pendingSubmissionCount = 2,
+            latestSubmission = SubmissionSummary(
+                id = "submission-home-001",
+                petId = "pet-home-001",
+                status = "pending"
+            ),
             usedFallback = false,
             message = "Community home ready."
         )
@@ -214,6 +219,8 @@ class PetShellControllerTest {
         assertEquals(144, loaded.walletBalance)
         assertTrue(loaded.checkInClaimed)
         assertEquals(2, loaded.pendingSubmissionCount)
+        assertEquals("submission-home-001", loaded.latestSubmission?.id)
+        assertEquals("pending", loaded.latestSubmission?.status)
         assertEquals("Community home ready.", loaded.speechBubble)
     }
 
