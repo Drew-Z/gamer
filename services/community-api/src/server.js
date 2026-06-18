@@ -6,6 +6,7 @@ import {
   proxyFantasyPetPublicRequest
 } from "./fantasy-pet-proxy.js";
 import { createConfiguredCommunityStore } from "./configured-store.js";
+import { formatRequestLog } from "./logging.js";
 import { handleCommunityRequest } from "./routes.js";
 
 export function resolveCommunityApiPort(env = process.env) {
@@ -35,11 +36,33 @@ const writeRaw = (response, result) => {
 };
 
 export function createCommunityHttpHandler(options = {}) {
+  const env = options.env ?? process.env;
+  const log =
+    options.log ??
+    (process.env.NODE_ENV === "test"
+      ? null
+      : (entry) => console.log(formatRequestLog(entry)));
+
   return async (request, response) => {
+    const started = Date.now();
+    const method = request.method ?? "GET";
+    const requestUrl = request.url ?? "/";
+
+    response.on("finish", () => {
+      try {
+        log?.({
+          method,
+          path: requestUrl,
+          status: response.statusCode,
+          durationMs: Date.now() - started
+        });
+      } catch {
+        // Logging must never affect a response that has already been sent.
+      }
+    });
+
     try {
       const rawBody = await readBody(request);
-      const method = request.method ?? "GET";
-      const requestUrl = request.url ?? "/";
 
       if (isFantasyPetPublicProxyRequest(method, requestUrl)) {
         const result = await proxyFantasyPetPublicRequest(method, requestUrl, {
@@ -86,15 +109,16 @@ export function createCommunityHttpHandler(options = {}) {
 }
 
 export function startCommunityApiServer(options = {}) {
-  const port = resolveCommunityApiPort(options.env);
+  const env = options.env ?? process.env;
+  const port = resolveCommunityApiPort(env);
   const store =
     options.store ??
     createConfiguredCommunityStore({
-      env: options.env
+      env
     });
   const server = http.createServer(
     createCommunityHttpHandler({
-      env: options.env,
+      env,
       fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
       store
     })

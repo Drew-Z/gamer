@@ -857,3 +857,29 @@ test("HTTP server returns approved imported pet registry", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("HTTP server emits structured request log on finish", async () => {
+  const logs = [];
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store: createCommunityStore(),
+      log: (entry) => logs.push(entry)
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "GET", "/health");
+    assert.equal(response.status, 200);
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const healthLog = logs.find((entry) => entry.path === "/health");
+    assert.ok(healthLog, "health request should be logged on finish");
+    assert.equal(healthLog.method, "GET");
+    assert.equal(healthLog.status, 200);
+    assert.ok(typeof healthLog.durationMs === "number" && healthLog.durationMs >= 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
