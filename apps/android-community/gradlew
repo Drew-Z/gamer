@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# Gradle start up script for POSIX environments (standard Gradle wrapper).
+# Bootstraps the Gradle version declared in gradle/wrapper/gradle-wrapper.properties
+# via the gradle-wrapper.jar. Equivalent in behavior to the official Gradle wrapper,
+# trimmed to the Linux/macOS path.
+
+# Resolve the script location, following symlinks.
+PRG="$0"
+while [ -h "$PRG" ] ; do
+    ls=$(ls -ld "$PRG")
+    link=$(expr "$ls" : '.*-> \(.*\)$')
+    if expr "$link" : '/.*' > /dev/null; then
+        PRG="$link"
+    else
+        PRG=$(dirname "$PRG")"/$link"
+    fi
+done
+SAVED="$(pwd)"
+cd "$(dirname "$PRG")/" >/dev/null
+APP_HOME="$(pwd -P)"
+cd "$SAVED" >/dev/null
+
+die() { echo "$*" >&2; exit 1; }
+
+# Locate java.
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        JAVACMD="$JAVA_HOME/jre/sh/java"
+    else
+        JAVACMD="$JAVA_HOME/bin/java"
+    fi
+    [ -x "$JAVACMD" ] || die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME"
+else
+    JAVACMD="java"
+    command -v "$JAVACMD" >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and 'java' could not be found in your PATH."
+fi
+
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+
+# Increase the maximum file descriptors if possible.
+MAX_FD="maximum"
+[ -n "$MAX_FD" ] && MAX_FD=$(ulimit -H -n) 2>/dev/null || MAX_FD=""
+[ -n "$MAX_FD" ] && ulimit -n "$MAX_FD" 2>/dev/null || true
+
+exec "$JAVACMD" \
+    $JAVA_OPTS \
+    $GRADLE_OPTS \
+    "-Dorg.gradle.appname=$(basename "$PRG")" \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain \
+    "$@"

@@ -177,8 +177,8 @@ http://localhost:4200
 
 ## Android Community Prototype
 
-The Android prototype lives in `apps/android-community`. It uses the local verified
-baseline from `D:\workspace4Codex\pet\floating-pet-android`:
+The Android prototype lives in `apps/android-community`. The project now keeps
+its own Gradle wrapper in-repo so Android work stays inside `gamer/`:
 
 - Android Gradle Plugin `9.2.0`
 - Kotlin `2.2.10`
@@ -191,25 +191,25 @@ Versions are centralized in:
 apps/android-community/gradle/libs.versions.toml
 ```
 
-This workspace currently reuses the known-good local Gradle wrapper from
-`D:\workspace4Codex\pet\floating-pet-android`.
-
 List Android projects:
 
 ```powershell
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community projects
+cd apps/android-community
+.\gradlew.bat projects
 ```
 
 Run Android unit tests:
 
 ```powershell
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest
+cd apps/android-community
+.\gradlew.bat testDebugUnitTest
 ```
 
 Build the debug APK:
 
 ```powershell
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
+cd apps/android-community
+.\gradlew.bat assembleDebug
 ```
 
 ### Fantasy Pet Generation API
