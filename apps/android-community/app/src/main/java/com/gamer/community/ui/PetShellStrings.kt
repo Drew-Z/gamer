@@ -469,6 +469,10 @@ class PetShellStrings internal constructor(
     val deliveryCommunityStatus: String get() = text("社区提交", "Community")
     val deliveryStatusSelected: String get() = text("已选择", "Selected")
     val deliveryStatusWaiting: String get() = text("等待", "Waiting")
+    fun deliveryReviewTargetValue(candidateLabel: String): String {
+        val safeLabel = candidateLabel.safeGenerationMessageDetail(deliveryStatusSelected).trim()
+        return safeLabel.ifBlank { deliveryStatusSelected }.take(18)
+    }
     val deliveryStatusPackageReady: String get() = text("可下载", "Ready")
     val deliveryStatusPackageLocked: String get() = text("未就绪", "Locked")
     val deliveryStatusCommunityReady: String get() = text("可提交", "Ready")
@@ -517,6 +521,14 @@ class PetShellStrings internal constructor(
         "generation-candidate-select-${targetDownloadId.safeGenerationMessageDetail("candidate")}"
     val previewUnavailable: String get() = text("预览不可用", "Preview unavailable")
     val loadingPreview: String get() = text("正在加载预览...", "Loading preview...")
+    fun candidateActionSummary(actionId: String): String {
+        val safeAction = actionId.safeGenerationMessageDetail("action").trim()
+        return if (safeAction.isBlank() || safeAction == "action") {
+            deliveryStatusSelected
+        } else {
+            text("动作 $safeAction", "Action $safeAction")
+        }
+    }
     fun candidateActionFocus(actionId: String): String {
         val safeAction = actionId.safeGenerationMessageDetail("action").trim()
         return if (safeAction.isBlank() || safeAction == "action") {

@@ -5767,6 +5767,11 @@ private fun GenerationPanel(
                     GenerationDeliveryStatusStrip(
                         strings = strings,
                         selectedCandidateDownloadId = selectedCandidateDownloadId,
+                        selectedCandidateLabel = selectedCandidateDeliveryLabel(
+                            candidates = candidates,
+                            selectedCandidateDownloadId = selectedCandidateDownloadId,
+                            strings = strings
+                        ),
                         packageReady = job?.let { canShowPackageDownload(it) } == true,
                         communityDraftReady = canSubmitPackageImportDraft
                     )
@@ -5924,6 +5929,7 @@ private fun GenerationPanel(
 private fun GenerationDeliveryStatusStrip(
     strings: PetShellStrings,
     selectedCandidateDownloadId: String,
+    selectedCandidateLabel: String,
     packageReady: Boolean,
     communityDraftReady: Boolean
 ) {
@@ -5936,7 +5942,7 @@ private fun GenerationDeliveryStatusStrip(
             value = if (selectedCandidateDownloadId.isBlank()) {
                 strings.deliveryStatusWaiting
             } else {
-                strings.deliveryStatusSelected
+                strings.deliveryReviewTargetValue(selectedCandidateLabel)
             },
             accent = GamerUiTokens.ColorRole.Review,
             active = selectedCandidateDownloadId.isNotBlank(),
@@ -5965,6 +5971,24 @@ private fun GenerationDeliveryStatusStrip(
             modifier = Modifier.weight(1f)
         )
     }
+}
+
+private fun selectedCandidateDeliveryLabel(
+    candidates: List<CandidateGalleryItem>,
+    selectedCandidateDownloadId: String,
+    strings: PetShellStrings
+): String {
+    val selectedIndex = candidates.indexOfFirst { candidate ->
+        candidate.targetDownloadId == selectedCandidateDownloadId
+    }
+    if (selectedIndex < 0) {
+        return ""
+    }
+    val selected = candidates[selectedIndex]
+    return selected.actionId.trim()
+        .takeIf { it.isNotBlank() }
+        ?.let { actionId -> strings.candidateActionSummary(actionId) }
+        ?: strings.candidateTitle(selected.title, selectedIndex)
 }
 
 @Composable

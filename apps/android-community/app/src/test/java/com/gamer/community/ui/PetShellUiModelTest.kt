@@ -214,6 +214,10 @@ class PetShellUiModelTest {
         assertEquals("动作已审核", zh.reviewedCandidateLocked)
         assertEquals("动作候选", zh.candidateGalleryTitle)
         assertEquals("动作候选 2", zh.candidateTitle("Candidate 2", 1))
+        assertEquals("动作 idle-breathe", zh.candidateActionSummary("idle-breathe"))
+        assertEquals("已选择", zh.candidateActionSummary("C:/secret/runs/job/idle.png"))
+        assertEquals("动作 idle-breathe-lo", zh.deliveryReviewTargetValue("动作 idle-breathe-long-loop"))
+        assertEquals("已选择", zh.deliveryReviewTargetValue("C:/secret/runs/job/idle.png"))
         assertEquals(
             "动作 idle-breathe / 检查身份、流畅度和触发语义",
             zh.candidateActionFocus("idle-breathe")
@@ -290,6 +294,10 @@ class PetShellUiModelTest {
         assertEquals("Motion reviewed", en.reviewedCandidateLocked)
         assertEquals("Motion candidates", en.candidateGalleryTitle)
         assertEquals("Motion candidate 2", en.candidateTitle("Candidate 2", 1))
+        assertEquals("Action idle-breathe", en.candidateActionSummary("idle-breathe"))
+        assertEquals("Selected", en.candidateActionSummary("C:/secret/runs/job/idle.png"))
+        assertEquals("Action idle-breath", en.deliveryReviewTargetValue("Action idle-breathe-long-loop"))
+        assertEquals("Selected", en.deliveryReviewTargetValue("C:/secret/runs/job/idle.png"))
         assertEquals(
             "Action idle-breathe / check identity, flow, and trigger semantics",
             en.candidateActionFocus("idle-breathe")
