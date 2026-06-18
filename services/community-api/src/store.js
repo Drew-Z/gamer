@@ -1,4 +1,5 @@
 import {
+  approvedPets,
   checkInState,
   feedPosts,
   ledgerEntries,
@@ -19,7 +20,7 @@ const defaultSeed = {
   reviewQueue,
   importDrafts: [],
   scoreReports: [],
-  approvedPets: []
+  approvedPets
 };
 
 const stateKeys = Object.keys(defaultSeed);

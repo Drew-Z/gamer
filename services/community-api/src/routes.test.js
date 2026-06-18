@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { handleCommunityRequest } from "./routes.js";
-import { createCommunityStore } from "./store.js";
+import { createCommunityStore, createDefaultCommunityState } from "./store.js";
+
+const createStoreWithEmptyApprovedRegistry = () =>
+  createCommunityStore({
+    ...createDefaultCommunityState(),
+    approvedPets: []
+  });
 
 const validFantasyPetPackageManifest = {
   schema: "fantasy-pet.package-manifest.v1",
@@ -62,7 +68,12 @@ test("community home route returns public home summary", () => {
   assert.equal(response.body.wallet.balance, 100);
   assert.equal(response.body.dailyCheckIn.claimed, true);
   assert.equal(response.body.submissionsSummary.pendingCount, 1);
-  assert.equal(response.body.approvedPets.items.length, 0);
+  assert.equal(response.body.approvedPets.items.length, 1);
+  assert.equal(response.body.approvedPets.items[0].petId, "pet-stardust-001");
+  assert.equal(
+    response.body.approvedPets.items[0].assets.previewUrl,
+    "/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34"
+  );
   assert.equal(response.body.submissionsSummary.latest.petId, "pet-home-pending-001");
 });
 
@@ -615,7 +626,7 @@ test("approved import draft appears in feed through route flow", () => {
 });
 
 test("approved pets route returns registered imported pet assets", () => {
-  const store = createCommunityStore();
+  const store = createStoreWithEmptyApprovedRegistry();
   const draft = handleCommunityRequest(
     "POST",
     "/v1/import-drafts/from-pet-package-bundle",
@@ -650,7 +661,7 @@ test("approved pets route returns registered imported pet assets", () => {
 });
 
 test("approved pet package route returns export artifact descriptor", () => {
-  const store = createCommunityStore();
+  const store = createStoreWithEmptyApprovedRegistry();
   const draft = handleCommunityRequest(
     "POST",
     "/v1/import-drafts/from-pet-package-bundle",

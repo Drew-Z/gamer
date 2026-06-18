@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
-import { createCommunityStore } from "./store.js";
+import { createCommunityStore, createDefaultCommunityState } from "./store.js";
+
+const createStoreWithEmptyApprovedRegistry = () =>
+  createCommunityStore({
+    ...createDefaultCommunityState(),
+    approvedPets: []
+  });
 
 const validFantasyPetPackageManifest = {
   schema: "fantasy-pet.package-manifest.v1",
@@ -50,7 +56,12 @@ test("community home summary combines feed wallet check-in and submission counts
     rewardAmount: 10,
     ledgerEntryId: "ledger-checkin-2026-06-09"
   });
-  assert.equal(home.approvedPets.items.length, 0);
+  assert.equal(home.approvedPets.items.length, 1);
+  assert.equal(home.approvedPets.items[0].petId, "pet-stardust-001");
+  assert.equal(
+    home.approvedPets.items[0].assets.previewUrl,
+    "/pet-generation-jobs/issue-1-fresh-timeout3600-20260610-1/artifacts/artifact-34"
+  );
   assert.equal(home.submissionsSummary.pendingCount, 1);
   assert.ok(home.submissionsSummary.approvedCount >= 1);
   assert.equal(home.submissionsSummary.latest.id, submission.id);
@@ -775,7 +786,7 @@ test("approved import feed post includes import metadata", () => {
 });
 
 test("approved imported submission registers approved pet asset", () => {
-  const store = createCommunityStore();
+  const store = createStoreWithEmptyApprovedRegistry();
   const draft = store.createImportDraftFromPetPackageBundle({
     userId: "user-demo-001",
     bundle: validPetPackageBundle
@@ -804,7 +815,7 @@ test("approved imported submission registers approved pet asset", () => {
 });
 
 test("approved imported submission registers export artifact asset", () => {
-  const store = createCommunityStore();
+  const store = createStoreWithEmptyApprovedRegistry();
   const draft = store.createImportDraft({
     userId: "user-demo-001",
     readiness: {

@@ -64,6 +64,71 @@ export const checkInState = {
   ledgerEntryId: "ledger-checkin-001"
 };
 
+export const importDrafts = [
+  {
+    id: "draft-demo-001",
+    userId: "user-demo-001",
+    status: "submitted",
+    readiness: {
+      status: "community-ready",
+      reason: "Approved HidenCloud package seed."
+    },
+    importSummary: {
+      source: {
+        petId: "pet-stardust-001",
+        displayName: "Stardust Dragon",
+        schema: "fantasy-pet.package-manifest.v1",
+        kind: "fantasy-pet-rule",
+        runId: "issue-1-fresh-timeout3600-20260610-1",
+        appJobId: "issue-1-fresh-timeout3600-20260610-1",
+        statePath: "",
+        baseIdentityStatus: "accepted"
+      },
+      review: {
+        blockers: [],
+        previewDecision: "keep",
+        exportStatus: "ready",
+        acceptedBy: "human-review",
+        targetDownloadId: "artifact-34"
+      },
+      assets: {
+        previewPath: "artifact-34",
+        exportArtifactPath: "issue-1-fresh-timeout3600-20260610-1-package.zip",
+        packageByteCount: 138651,
+        motionSheets: ["artifact-34"]
+      }
+    },
+    petId: "pet-stardust-001",
+    ownershipClaimId: "claim-pet-stardust-001",
+    scoreReportId: "score-pet-stardust-001",
+    submissionId: "submission-demo-001",
+    createdAt: "2026-06-04T04:12:00.000Z",
+    submittedAt: "2026-06-04T04:15:00.000Z"
+  }
+];
+
+export const scoreReports = [
+  {
+    reportId: "score-pet-stardust-001",
+    petId: "pet-stardust-001",
+    totalScore: 86,
+    breakdown: {
+      packageCompleteness: 18,
+      visualQuality: 18,
+      actionCoverage: 15,
+      identityConsistency: 17,
+      previewEvidence: 10,
+      licenseReadiness: 8
+    },
+    rewardRecommendation: {
+      grant: true,
+      amount: 80,
+      reason: "Accepted package with complete preview evidence."
+    },
+    risks: []
+  }
+];
+
 export const submissions = [
   {
     id: "submission-demo-001",
@@ -72,6 +137,7 @@ export const submissions = [
     status: "approved",
     scoreReportId: "score-pet-stardust-001",
     ownershipClaimId: "claim-pet-stardust-001",
+    importDraftId: "draft-demo-001",
     submittedAt: "2026-06-04T04:15:00.000Z"
   }
 ];
@@ -83,5 +149,29 @@ export const reviewQueue = [
     reviewer: "system-fixture",
     rewardEntryId: "ledger-submission-001",
     reviewedAt: "2026-06-04T04:20:00.000Z"
+  }
+];
+
+export const approvedPets = [
+  {
+    petId: "pet-stardust-001",
+    displayName: "Stardust Dragon",
+    ownerUserId: "user-demo-001",
+    source: {
+      kind: "fantasy-pet-rule",
+      runId: "issue-1-fresh-timeout3600-20260610-1",
+      appJobId: "issue-1-fresh-timeout3600-20260610-1",
+      statePath: ""
+    },
+    assets: {
+      previewPath: "artifact-34",
+      exportArtifactPath: "issue-1-fresh-timeout3600-20260610-1-package.zip",
+      motionSheetCount: 1
+    },
+    submissionId: "submission-demo-001",
+    importDraftId: "draft-demo-001",
+    scoreReportId: "score-pet-stardust-001",
+    totalScore: 86,
+    approvedAt: "2026-06-04T04:20:00.000Z"
   }
 ];
