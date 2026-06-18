@@ -3,6 +3,7 @@ import http from "node:http";
 import test from "node:test";
 import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
 import { createCommunityHttpHandler, resolveCommunityApiPort } from "./server.js";
+import { createRateLimiterPolicy } from "./rate-limit.js";
 import { createCommunityStore } from "./store.js";
 
 const requestJson = (server, method, path, body) =>
@@ -879,6 +880,36 @@ test("HTTP server emits structured request log on finish", async () => {
     assert.equal(healthLog.method, "GET");
     assert.equal(healthLog.status, 200);
     assert.ok(typeof healthLog.durationMs === "number" && healthLog.durationMs >= 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server rate-limits writes but not reads when policy is injected", async () => {
+  const policy = createRateLimiterPolicy({ windowMs: 60_000, writeMax: 1, readMax: 60 });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      store: createCommunityStore(),
+      rateLimit: policy
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const first = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-18"
+    });
+    assert.equal(first.status, 200);
+
+    const second = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-19"
+    });
+    assert.equal(second.status, 429);
+    assert.equal(second.body.error, "rate_limit_exceeded");
+    assert.ok(second.body.retryAfterMs > 0);
+
+    const read = await requestJson(server, "GET", "/v1/wallet/me");
+    assert.equal(read.status, 200);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
