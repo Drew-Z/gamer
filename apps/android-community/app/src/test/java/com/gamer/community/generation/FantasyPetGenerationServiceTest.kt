@@ -108,6 +108,7 @@ class FantasyPetGenerationServiceTest {
                     kind = "candidate",
                     downloadId = "artifact-1",
                     downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-1",
+                    actionId = "idle-breathe",
                     label = "C:/secret/runs/job-123/output.png"
                 ),
                 PetGenerationArtifactDto(
@@ -127,7 +128,30 @@ class FantasyPetGenerationServiceTest {
             items[0].previewUrl
         )
         assertEquals("Candidate 1", items[0].title)
+        assertEquals("idle-breathe", items[0].actionId)
         assertFalse(items[0].title.contains("C:/secret"))
+    }
+
+    @Test
+    fun candidateGalleryItemsHideUnsafeActionIds() {
+        val service = FantasyPetGenerationService(FakeFantasyPetGenerationClient())
+        val job = PetGenerationJobResponseDto(
+            appJobId = "job-123",
+            progressStatus = "waiting-for-review",
+            nextAction = "human-review",
+            artifacts = listOf(
+                PetGenerationArtifactDto(
+                    kind = "candidate",
+                    downloadId = "artifact-1",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-1",
+                    actionId = "C:/secret/runs/job-123/idle.png"
+                )
+            )
+        )
+
+        val items = service.candidateGalleryItems(job)
+
+        assertEquals(emptyList<CandidateGalleryItem>(), items)
     }
 
     @Test

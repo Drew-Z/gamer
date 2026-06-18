@@ -6177,6 +6177,13 @@ private fun CandidateInspectionCard(
                     selected = selected
                 )
             }
+            Text(
+                text = strings.candidateActionFocus(candidate.actionId),
+                style = MaterialTheme.typography.labelSmall,
+                color = GamerUiTokens.ColorRole.Subtle,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
             RemoteCandidateImage(
                 previewUrl = candidate.previewUrl,
                 strings = strings

@@ -377,8 +377,8 @@ class PetShellStrings internal constructor(
     val generationRunStageHint: String get() = text("App 只创建和轮询孵化任务，不启动生成 worker。", "The app only creates and polls hatch jobs; it never starts generation workers.")
     val generationReviewWaitingForCandidate: String
         get() = text(
-            "候选图会在孵化完成后出现在这里，选择 candidate 后才能提交人审。",
-            "Candidates appear here when hatching reaches review; select a candidate before review."
+            "动作候选会在孵化完成后出现在这里，选择 candidate 后才能提交人审。",
+            "Motion candidates appear here when hatching reaches review; select a candidate before review."
         )
     val generationWorkspaceSubtitle: String
         get() = text(
@@ -428,7 +428,7 @@ class PetShellStrings internal constructor(
     val quickActionGenerate: String get() = text("孵化", "Hatch")
     val quickActionGenerateDetail: String get() = text("新桌宠", "New pet")
     val quickActionReview: String get() = text("审核", "Review")
-    val quickActionReviewDetail: String get() = text("候选图", "Candidates")
+    val quickActionReviewDetail: String get() = text("动作审", "Motion review")
     fun quickActionReviewStatus(pendingSubmissionCount: Int): String =
         if (pendingSubmissionCount > 0) {
             text("待审 $pendingSubmissionCount", "$pendingSubmissionCount pending")
@@ -454,12 +454,12 @@ class PetShellStrings internal constructor(
     val resume: String get() = text("继续", "Resume")
     val remove: String get() = text("移除", "Remove")
     val clearSavedJob: String get() = text("清除已保存任务", "Clear saved job")
-    val candidateGalleryTitle: String get() = text("候选图画廊", "Candidate gallery")
-    val candidateInspectionTitle: String get() = text("候选检查", "Candidate inspection")
-    val reviewNotesStageTitle: String get() = text("人审备注", "Human review notes")
+    val candidateGalleryTitle: String get() = text("动作候选", "Motion candidates")
+    val candidateInspectionTitle: String get() = text("动作检查", "Motion inspection")
+    val reviewNotesStageTitle: String get() = text("动作人审备注", "Motion review notes")
     val deliveryActionsTitle: String get() = text("交付动作", "Delivery actions")
-    val candidateReadyForInspection: String get() = text("候选图已就绪，请选择一个作为人审对象。", "Candidates are ready; select one for human review.")
-    val candidateWaitingForInspection: String get() = text("等待服务端发布 candidate 后进入人审。", "Waiting for the server to publish a candidate.")
+    val candidateReadyForInspection: String get() = text("动作候选已就绪，请选择一个完整动作作为人审对象。", "Motion candidates are ready; select one full action for human review.")
+    val candidateWaitingForInspection: String get() = text("等待服务端发布动作 candidate 后进入人审。", "Waiting for the server to publish a motion candidate.")
     val candidateSelectedStatus: String get() = text("已选中", "Selected")
     val candidateAvailableStatus: String get() = text("待选择", "Available")
     val deliveryActionsHint: String get() = text("先完成人审，只有资源包就绪后才能接收 pet.zip。", "Review first; pet.zip is available only after the package is ready.")
@@ -472,13 +472,13 @@ class PetShellStrings internal constructor(
     val deliveryStatusPackageLocked: String get() = text("未就绪", "Locked")
     val deliveryStatusCommunityReady: String get() = text("可提交", "Ready")
     val deliveryStatusCommunityWaiting: String get() = text("待草稿", "Draft pending")
-    val selectedForReview: String get() = text("已选为审核对象", "Selected for review")
-    val selectCandidate: String get() = text("选择候选图", "Select candidate")
+    val selectedForReview: String get() = text("已选为动作审核对象", "Selected for motion review")
+    val selectCandidate: String get() = text("选择动作候选", "Select motion candidate")
     val reviewNotesLabel: String get() = text("审核备注", "Review notes")
     val reviewNotesPlaceholder: String
         get() = text(
-            "例如：idle 动作上下跳动明显、主体身份漂移、朝向错误",
-            "idle jumps, motion static, identity drift, wrong facing"
+            "例如：idle 动作上下跳动明显、主体身份漂移、帧间不流畅、触发语义错误",
+            "idle jumps, identity drift, choppy frames, wrong trigger semantics"
         )
     val reviewAccept: String get() = text("接受", "Accept")
     val reviewRevise: String get() = text("要求修订", "Revise")
@@ -493,7 +493,7 @@ class PetShellStrings internal constructor(
     val skip: String get() = text("下下页", "Skip")
     val checkedIn: String get() = text("已签到", "Checked in")
     val dailyCheckIn: String get() = text("每日签到", "Daily check-in")
-    val candidatePreviewContentDescription: String get() = text("候选图预览", "Candidate preview")
+    val candidatePreviewContentDescription: String get() = text("动作候选预览", "Motion candidate preview")
     val generationDescriptionContentDescription: String get() = "generation-description-input"
     val appJobIdContentDescription: String get() = "generation-app-job-id-input"
     val referenceUrlsContentDescription: String get() = "generation-reference-url-input"
@@ -515,6 +515,14 @@ class PetShellStrings internal constructor(
         "generation-candidate-select-${targetDownloadId.safeGenerationMessageDetail("candidate")}"
     val previewUnavailable: String get() = text("预览不可用", "Preview unavailable")
     val loadingPreview: String get() = text("正在加载预览...", "Loading preview...")
+    fun candidateActionFocus(actionId: String): String {
+        val safeAction = actionId.safeGenerationMessageDetail("action").trim()
+        return if (safeAction.isBlank() || safeAction == "action") {
+            text("审核完整动作：身份一致、帧间流畅、透明边缘干净", "Review full motion: identity, frame flow, clean alpha edges")
+        } else {
+            text("动作 $safeAction / 检查身份、流畅度和触发语义", "Action $safeAction / check identity, flow, and trigger semantics")
+        }
+    }
 
     fun bodyShapeLabel(bodyShape: String): String =
         if (language == PetShellLanguage.English) {
@@ -577,13 +585,13 @@ class PetShellStrings internal constructor(
             "Submitting human review..." -> "正在提交人工审核..."
             "Polling generation job..." -> "正在刷新孵化任务..."
             "Contract demo task: this candidate is pre-seeded for public API validation; it is not a live pet generation run." ->
-                "这是公共 API 契约演示任务：候选图是服务端预置的验证资源，不代表真实桌宠生成链路已运行。"
+                "这是公共 API 契约演示任务：动作候选资源是服务端预置的验证资源，不代表真实桌宠生成链路已运行。"
             "Contract demo fixture loaded; no live generation worker has run." ->
                 "契约演示资源已载入；真实生成 worker 尚未运行。"
             "Waiting for a trusted server worker; this app only created and polls the job." ->
                 "正在等待可信服务端 worker；app 只负责创建和轮询任务。"
             "Feedback recorded; a trusted server worker must publish the next candidate." ->
-                "反馈已记录；需要可信服务端 worker 发布新的候选图。"
+                "反馈已记录；需要可信服务端 worker 发布新的动作候选。"
             "Create a generation job before review." -> "请先开始孵化，再提交审核。"
             "Create a generation job before download." -> "请先开始孵化，再接收资源包。"
             "Downloading pet.zip..." -> "正在下载 pet.zip..."
@@ -603,8 +611,8 @@ class PetShellStrings internal constructor(
             "Generating candidate assets." -> "正在生成候选资源。"
             "Waiting for worker output." -> "正在等待生成结果。"
             "Packaging pet.zip." -> "正在打包 pet.zip。"
-            "Revision requested; waiting for a revised candidate." -> "已请求修订，正在等待新候选图。"
-            "Candidate rejected; waiting for a new candidate." -> "候选图已拒绝，正在等待新候选图。"
+            "Revision requested; waiting for a revised candidate." -> "已请求修订，正在等待新的动作候选。"
+            "Candidate rejected; waiting for a new candidate." -> "动作候选已拒绝，正在等待新的动作候选。"
             "Generation failed." -> "孵化失败。"
             "Queued" -> "已排队"
             "Generating" -> "生成中"
@@ -612,7 +620,7 @@ class PetShellStrings internal constructor(
             "Packaging pet.zip" -> "正在打包 pet.zip"
             "Ready for download" -> "可以下载"
             "Revision requested" -> "已请求修订"
-            "Candidate rejected" -> "候选图已拒绝"
+            "Candidate rejected" -> "动作候选已拒绝"
             "Failed" -> "失败"
             "Waiting" -> "等待中"
             "Generation service ready." -> "孵化服务已就绪。"
@@ -633,7 +641,7 @@ class PetShellStrings internal constructor(
             rawLabel
         } else {
             when (rawLabel) {
-                "Candidate generation" -> "候选图生成"
+                "Candidate generation" -> "动作候选生成"
                 "Generation orchestration" -> "孵化调度"
                 "Planning" -> "规划"
                 else -> rawLabel
@@ -647,7 +655,7 @@ class PetShellStrings internal constructor(
         text("最近任务", "Saved task")
 
     fun candidateTitle(rawTitle: String, index: Int): String =
-        if (language == PetShellLanguage.English) rawTitle else "候选图 ${index + 1}"
+        if (language == PetShellLanguage.English) rawTitle.replace("Candidate", "Motion candidate") else "动作候选 ${index + 1}"
 
     fun reviewNoteSuggestion(rawSuggestion: String): String =
         if (language == PetShellLanguage.English) {
@@ -988,11 +996,11 @@ class PetShellStrings internal constructor(
             rawMessage == "Review failed: contract_demo_job_review_disabled" ->
                 "审核失败: 这是公共 API 契约演示任务，不能作为真实孵化任务提交人审。"
             rawMessage == "Review failed: review_target_already_decided" ->
-                "人审提交失败: 这个候选图已经审核过，请等待新的候选图。"
+                "人审提交失败: 这个动作候选已经审核过，请等待新的动作候选。"
             rawMessage == "Review failed: review_target_must_be_candidate" ->
-                "人审提交失败: 请选择未审核的候选图。"
+                "人审提交失败: 请选择未审核的动作候选。"
             rawMessage == "Review failed: target_download_id_required" ->
-                "人审提交失败: 请先选择候选图。"
+                "人审提交失败: 请先选择动作候选。"
             rawMessage == "Review failed: invalid_review_decision" ->
                 "人审提交失败: 请选择接受、修订或拒绝。"
             rawMessage == "Review failed: review_notes_required" ->
@@ -1052,13 +1060,13 @@ class PetShellStrings internal constructor(
                 val count = rawMessage
                     .removeSuffix(oneCandidateSuffix)
                     .safeGenerationMessageDetail("1")
-                "$count 个候选图等待人工审核。"
+                "$count 个动作候选等待人工审核。"
             }
             rawMessage.endsWith(manyCandidatesSuffix) -> {
                 val count = rawMessage
                     .removeSuffix(manyCandidatesSuffix)
                     .safeGenerationMessageDetail("多个")
-                "$count 个候选图等待人工审核。"
+                "$count 个动作候选等待人工审核。"
             }
             else -> rawMessage.takeIf { it.isSafeGenerationMessageText() } ?: "消息不可显示。"
         }
@@ -1077,11 +1085,11 @@ class PetShellStrings internal constructor(
     private fun englishReviewFailureMessage(rawMessage: String): String? =
         when (rawMessage) {
             "Review failed: review_target_already_decided" ->
-                "Review failed: this candidate has already been reviewed; wait for a new candidate."
+                "Review failed: this motion candidate has already been reviewed; wait for a new one."
             "Review failed: review_target_must_be_candidate" ->
-                "Review failed: select an unreviewed candidate image."
+                "Review failed: select an unreviewed motion candidate."
             "Review failed: target_download_id_required" ->
-                "Review failed: select a candidate image first."
+                "Review failed: select a motion candidate first."
             "Review failed: invalid_review_decision" ->
                 "Review failed: choose accept, revise, or reject."
             "Review failed: review_notes_required" ->

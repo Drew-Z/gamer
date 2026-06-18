@@ -14,7 +14,8 @@ data class CandidateGalleryItem(
     val previewUrl: String,
     val title: String,
     val status: String,
-    val reviewed: Boolean = false
+    val reviewed: Boolean = false,
+    val actionId: String = ""
 )
 
 data class GenerationProgressStepItem(
@@ -267,7 +268,8 @@ class FantasyPetGenerationService(
                     previewUrl = publicPreviewUrl(job.appJobId, artifact),
                     title = "Candidate ${index + 1}",
                     status = safeDisplayText(artifact.status.ifBlank { "waiting-for-review" }),
-                    reviewed = artifact.reviewDecision.isNotBlank()
+                    reviewed = artifact.reviewDecision.isNotBlank(),
+                    actionId = artifact.actionId.publicCandidateActionId()
                 )
             }
 
@@ -411,6 +413,14 @@ class FantasyPetGenerationService(
             !trimmed.contains("/") &&
             !trimmed.contains("\\") &&
             !trimmed.contains(":")
+    }
+
+    private fun String.publicCandidateActionId(): String {
+        val safeText = safeDisplayText(trim()).trim()
+        return safeText
+            .takeIf { it.isOpaqueDownloadId() }
+            ?.take(48)
+            .orEmpty()
     }
 
     private fun String.pathSegment(): String =

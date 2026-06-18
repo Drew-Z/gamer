@@ -202,15 +202,24 @@ class PetShellUiModelTest {
         assertEquals("开始孵化", zh.generationRunStageTitle)
         assertEquals("人审与入架", zh.generationReviewDeskTitle)
         assertEquals(
-            "候选图会在孵化完成后出现在这里，选择 candidate 后才能提交人审。",
+            "动作候选会在孵化完成后出现在这里，选择 candidate 后才能提交人审。",
             zh.generationReviewWaitingForCandidate
         )
-        assertEquals("候选检查", zh.candidateInspectionTitle)
-        assertEquals("人审备注", zh.reviewNotesStageTitle)
+        assertEquals("动作检查", zh.candidateInspectionTitle)
+        assertEquals("动作人审备注", zh.reviewNotesStageTitle)
         assertEquals("交付动作", zh.deliveryActionsTitle)
         assertEquals("已选中", zh.candidateSelectedStatus)
         assertEquals("待选择", zh.candidateAvailableStatus)
-        assertEquals("候选图画廊", zh.candidateGalleryTitle)
+        assertEquals("动作候选", zh.candidateGalleryTitle)
+        assertEquals("动作候选 2", zh.candidateTitle("Candidate 2", 1))
+        assertEquals(
+            "动作 idle-breathe / 检查身份、流畅度和触发语义",
+            zh.candidateActionFocus("idle-breathe")
+        )
+        assertEquals(
+            "审核完整动作：身份一致、帧间流畅、透明边缘干净",
+            zh.candidateActionFocus("C:/secret/runs/job/idle.png")
+        )
         assertEquals("接受", zh.reviewAccept)
         assertEquals("提交到社区审核", zh.submitToCommunityReview)
         assertEquals(
@@ -267,15 +276,24 @@ class PetShellUiModelTest {
         assertEquals("Package", en.deliveryPackageStatus)
         assertEquals("Community", en.deliveryCommunityStatus)
         assertEquals(
-            "Candidates appear here when hatching reaches review; select a candidate before review.",
+            "Motion candidates appear here when hatching reaches review; select a candidate before review.",
             en.generationReviewWaitingForCandidate
         )
-        assertEquals("Candidate inspection", en.candidateInspectionTitle)
-        assertEquals("Human review notes", en.reviewNotesStageTitle)
+        assertEquals("Motion inspection", en.candidateInspectionTitle)
+        assertEquals("Motion review notes", en.reviewNotesStageTitle)
         assertEquals("Delivery actions", en.deliveryActionsTitle)
         assertEquals("Selected", en.candidateSelectedStatus)
         assertEquals("Available", en.candidateAvailableStatus)
-        assertEquals("Candidate gallery", en.candidateGalleryTitle)
+        assertEquals("Motion candidates", en.candidateGalleryTitle)
+        assertEquals("Motion candidate 2", en.candidateTitle("Candidate 2", 1))
+        assertEquals(
+            "Action idle-breathe / check identity, flow, and trigger semantics",
+            en.candidateActionFocus("idle-breathe")
+        )
+        assertEquals(
+            "Review full motion: identity, frame flow, clean alpha edges",
+            en.candidateActionFocus("C:/secret/runs/job/idle.png")
+        )
         assertEquals("Accept", en.reviewAccept)
         assertEquals("Submit to community review", en.submitToCommunityReview)
     }
@@ -390,7 +408,7 @@ class PetShellUiModelTest {
         assertEquals("描述一个桌宠，开始孵化。", zh.generationMessage(DEFAULT_GENERATION_MESSAGE))
         assertEquals("正在创建孵化任务...", zh.generationMessage("Creating generation job..."))
         assertEquals(
-            "这是公共 API 契约演示任务：候选图是服务端预置的验证资源，不代表真实桌宠生成链路已运行。",
+            "这是公共 API 契约演示任务：动作候选资源是服务端预置的验证资源，不代表真实桌宠生成链路已运行。",
             zh.generationMessage(
                 "Contract demo task: this candidate is pre-seeded for public API validation; it is not a live pet generation run."
             )
@@ -406,16 +424,20 @@ class PetShellUiModelTest {
             )
         )
         assertEquals(
-            "反馈已记录；需要可信服务端 worker 发布新的候选图。",
+            "反馈已记录；需要可信服务端 worker 发布新的动作候选。",
             zh.generationMessage(
                 "Feedback recorded; a trusted server worker must publish the next candidate."
             )
         )
         assertEquals(
-            "审核失败: 这是公共 API 契约演示任务，不能作为真实生成任务提交人审。",
+            "审核失败: 这是公共 API 契约演示任务，不能作为真实孵化任务提交人审。",
             zh.generationMessage("Review failed: contract_demo_job_review_disabled")
         )
         assertEquals("生成轮询失败: offline", zh.generationMessage("Generation poll failed: offline"))
+        assertEquals(
+            "2 个动作候选等待人工审核。",
+            zh.generationMessage("2 candidates ready for human review.")
+        )
         assertEquals("安全的自定义消息", zh.generationMessage("安全的自定义消息"))
 
         assertEquals("Loading community...", en.speechBubble("Loading community..."))
@@ -439,28 +461,28 @@ class PetShellUiModelTest {
         val en = petShellStrings(PetShellLanguage.English)
 
         assertEquals(
-            "人审提交失败: 这个候选图已经审核过，请等待新的候选图。",
+            "人审提交失败: 这个动作候选已经审核过，请等待新的动作候选。",
             zh.generationMessage("Review failed: review_target_already_decided")
         )
         assertEquals(
-            "人审提交失败: 请选择未审核的候选图。",
+            "人审提交失败: 请选择未审核的动作候选。",
             zh.generationMessage("Review failed: review_target_must_be_candidate")
         )
         assertEquals(
-            "人审提交失败: 请先选择候选图。",
+            "人审提交失败: 请先选择动作候选。",
             zh.generationMessage("Review failed: target_download_id_required")
         )
 
         assertEquals(
-            "Review failed: this candidate has already been reviewed; wait for a new candidate.",
+            "Review failed: this motion candidate has already been reviewed; wait for a new one.",
             en.generationMessage("Review failed: review_target_already_decided")
         )
         assertEquals(
-            "Review failed: select an unreviewed candidate image.",
+            "Review failed: select an unreviewed motion candidate.",
             en.generationMessage("Review failed: review_target_must_be_candidate")
         )
         assertEquals(
-            "Review failed: select a candidate image first.",
+            "Review failed: select a motion candidate first.",
             en.generationMessage("Review failed: target_download_id_required")
         )
     }
