@@ -28,15 +28,18 @@ const readRequestBody = async (request) =>
     request.on("error", reject);
   });
 
-const directProxyPrefixes = [
+const communityProxyPrefixes = [
   "/health",
-  "/v1/",
+  "/v1/"
+];
+
+const fantasyPetProxyPrefixes = [
   "/pet-generation-jobs",
   "/worker-readiness",
   "/app-api-contract"
 ];
 
-const directProxyEndpoints = [
+const fantasyPetProxyEndpoints = [
   {
     method: "GET",
     pattern: /^\/admin\/pet-generation-jobs$/u
@@ -47,17 +50,21 @@ const directProxyEndpoints = [
   }
 ];
 
-const shouldProxyDirect = (method, pathname) =>
-  directProxyEndpoints.some(
-    (endpoint) => endpoint.method === method.toUpperCase() && endpoint.pattern.test(pathname)
-  ) ||
-  directProxyPrefixes.some((prefix) => {
+const matchesProxyPrefix = (prefixes, pathname) =>
+  prefixes.some((prefix) => {
     if (prefix.endsWith("/")) {
       return pathname.startsWith(prefix);
     }
 
     return pathname === prefix || pathname.startsWith(`${prefix}/`);
   });
+
+const shouldProxyFantasyPet = (method, pathname) =>
+  fantasyPetProxyEndpoints.some(
+    (endpoint) => endpoint.method === method.toUpperCase() && endpoint.pattern.test(pathname)
+  ) || matchesProxyPrefix(fantasyPetProxyPrefixes, pathname);
+
+const shouldProxyCommunity = (pathname) => matchesProxyPrefix(communityProxyPrefixes, pathname);
 
 const proxyTargetPath = (url) => {
   if (url.pathname.startsWith("/api/")) {
@@ -137,6 +144,7 @@ const isInside = (target, parent) => {
 
 export function createAdminReviewHttpHandler(options = {}) {
   const communityApiUrl = options.communityApiUrl ?? "http://127.0.0.1:4000";
+  const fantasyPetApiBaseUrl = options.fantasyPetApiBaseUrl ?? communityApiUrl;
   const gaPetReviewStore = createGaPetReviewStore({
     runRoot: options.gaPetRunRoot
   });
@@ -158,8 +166,13 @@ export function createAdminReviewHttpHandler(options = {}) {
         return;
       }
 
-      if (url.pathname.startsWith("/api/") || shouldProxyDirect(request.method ?? "GET", url.pathname)) {
+      if (url.pathname.startsWith("/api/") || shouldProxyCommunity(url.pathname)) {
         await proxyRequest(request, response, url, communityApiUrl);
+        return;
+      }
+
+      if (shouldProxyFantasyPet(request.method ?? "GET", url.pathname)) {
+        await proxyRequest(request, response, url, fantasyPetApiBaseUrl);
         return;
       }
 
@@ -195,9 +208,11 @@ export function startAdminReviewServer(options = {}) {
   const port = Number.parseInt(options.port ?? env.PORT ?? "4200", 10);
   const communityApiUrl =
     options.communityApiUrl ?? env.COMMUNITY_API_URL ?? "http://127.0.0.1:4000";
+  const fantasyPetApiBaseUrl =
+    options.fantasyPetApiBaseUrl ?? env.FANTASY_PET_API_BASE_URL ?? communityApiUrl;
   const gaPetRunRoot = options.gaPetRunRoot ?? env.GA_PET_RUN_ROOT;
   const server = http.createServer(
-    createAdminReviewHttpHandler({ communityApiUrl, gaPetRunRoot })
+    createAdminReviewHttpHandler({ communityApiUrl, fantasyPetApiBaseUrl, gaPetRunRoot })
   );
 
   server.listen(port, "0.0.0.0", () => {
