@@ -1089,18 +1089,16 @@ async function loadQueue() {
 
 async function loadDashboard() {
   elements.statusLine.textContent = "Loading review queue...";
-  const [health, drafts, queue, approvedPets, gaReview] = await Promise.all([
+  const [health, drafts, queue, approvedPets] = await Promise.all([
     requestJson("/health"),
     requestJson("/v1/import-drafts"),
     requestJson("/v1/admin/review-queue"),
-    requestJson("/v1/pets/approved"),
-    loadGaReviewCandidates({ silent: true })
+    requestJson("/v1/pets/approved")
   ]);
   state.healthStatus = formatHealthStatus(health);
   state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
   state.approvedPetModel = createApprovedPetRegistryModel(approvedPets);
-  state.gaReviewModel = gaReview;
   elements.statusLine.textContent =
     `Loaded ${state.model.summary.total} submissions / ${state.healthStatus}`;
   render();
@@ -1416,6 +1414,10 @@ async function importFantasyPetState(event) {
 }
 
 elements.refreshButton.addEventListener("click", () => {
+  loadGaReviewCandidates({ silent: true }).catch((error) => {
+    elements.gaReviewStatus.textContent =
+      error instanceof Error ? error.message : "Unable to load GA candidates";
+  });
   loadDashboard().catch(showError);
 });
 
@@ -1483,4 +1485,8 @@ function showError(error) {
   elements.list.append(node);
 }
 
+loadGaReviewCandidates({ silent: true }).catch((error) => {
+  elements.gaReviewStatus.textContent =
+    error instanceof Error ? error.message : "Unable to load GA candidates";
+});
 loadDashboard().catch(showError);

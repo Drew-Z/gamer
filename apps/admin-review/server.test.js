@@ -56,6 +56,49 @@ test("admin-review proxies fantasy pet review pages through the community API", 
   }
 });
 
+test("admin-review proxies the fantasy pet review queue overview", async () => {
+  const upstreamRequests = [];
+  const upstream = http.createServer((request, response) => {
+    upstreamRequests.push({ method: request.method, url: request.url });
+
+    if (
+      request.method === "GET" &&
+      request.url === "/admin/pet-generation-jobs?status=all"
+    ) {
+      response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      response.end("<main>Review Queue</main>");
+      return;
+    }
+
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${port}/admin/pet-generation-jobs?status=all`
+    );
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /^text\/html/u);
+    assert.equal(await response.text(), "<main>Review Queue</main>");
+    assert.deepEqual(upstreamRequests, [
+      { method: "GET", url: "/admin/pet-generation-jobs?status=all" }
+    ]);
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review does not proxy fantasy pet admin worker routes", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

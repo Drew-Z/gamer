@@ -39,6 +39,10 @@ const directProxyPrefixes = [
 const directProxyEndpoints = [
   {
     method: "GET",
+    pattern: /^\/admin\/pet-generation-jobs$/u
+  },
+  {
+    method: "GET",
     pattern: /^\/admin\/pet-generation-jobs\/[^/]+\/review$/u
   }
 ];
