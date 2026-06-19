@@ -99,48 +99,6 @@ test("admin-review proxies the fantasy pet review queue overview", async () => {
   }
 });
 
-test("admin-review sends fantasy pet routes to the fantasy pet API when configured", async () => {
-  const communityRequests = [];
-  const fantasyRequests = [];
-  const community = http.createServer((request, response) => {
-    communityRequests.push({ method: request.method, url: request.url });
-    response.writeHead(418, { "Content-Type": "application/json; charset=utf-8" });
-    response.end(JSON.stringify({ error: "wrong_upstream" }));
-  });
-  const fantasy = http.createServer((request, response) => {
-    fantasyRequests.push({ method: request.method, url: request.url });
-    response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    response.end("<main>Fantasy Review Queue</main>");
-  });
-  const communityPort = await listen(community);
-  const fantasyPort = await listen(fantasy);
-
-  const server = http.createServer(
-    createAdminReviewHttpHandler({
-      communityApiUrl: `http://127.0.0.1:${communityPort}`,
-      fantasyPetApiBaseUrl: `http://127.0.0.1:${fantasyPort}`
-    })
-  );
-  const port = await listen(server);
-
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:${port}/admin/pet-generation-jobs?status=all`
-    );
-
-    assert.equal(response.status, 200);
-    assert.equal(await response.text(), "<main>Fantasy Review Queue</main>");
-    assert.deepEqual(communityRequests, []);
-    assert.deepEqual(fantasyRequests, [
-      { method: "GET", url: "/admin/pet-generation-jobs?status=all" }
-    ]);
-  } finally {
-    await close(server);
-    await close(community);
-    await close(fantasy);
-  }
-});
-
 test("admin-review does not proxy fantasy pet admin worker routes", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

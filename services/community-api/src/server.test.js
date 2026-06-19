@@ -266,12 +266,12 @@ test("HTTP server proxies fantasy pet package bytes without JSON wrapping", asyn
   }
 });
 
-test("HTTP server does not proxy fantasy pet admin review page", async () => {
+test("HTTP server proxies fantasy pet admin review page", async () => {
   const upstream = await createFantasyPetUpstream((request, response) => {
-    response.writeHead(500, {
-      "Content-Type": "application/json"
+    response.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8"
     });
-    response.end(JSON.stringify({ error: "admin_route_should_not_be_proxied" }));
+    response.end("<main>Review job-123</main>");
   });
   const server = http.createServer(
     createCommunityHttpHandler({
@@ -289,9 +289,44 @@ test("HTTP server does not proxy fantasy pet admin review page", async () => {
       "/admin/pet-generation-jobs/job-123/review"
     );
 
-    assert.equal(response.status, 404);
-    assert.equal(JSON.parse(response.body.toString("utf8")).error, "not_found");
-    assert.equal(upstream.requests.length, 0);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers["content-type"], "text/html; charset=utf-8");
+    assert.equal(response.body.toString("utf8"), "<main>Review job-123</main>");
+    assert.equal(upstream.requests[0].method, "GET");
+    assert.equal(upstream.requests[0].url, "/admin/pet-generation-jobs/job-123/review");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
+  }
+});
+
+test("HTTP server proxies fantasy pet admin review overview", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8"
+    });
+    response.end("<main>Review Queue</main>");
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestRaw(
+      server,
+      "GET",
+      "/admin/pet-generation-jobs?status=waiting-review"
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.toString("utf8"), "<main>Review Queue</main>");
+    assert.equal(upstream.requests[0].method, "GET");
+    assert.equal(upstream.requests[0].url, "/admin/pet-generation-jobs?status=waiting-review");
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await new Promise((resolve) => upstream.server.close(resolve));
