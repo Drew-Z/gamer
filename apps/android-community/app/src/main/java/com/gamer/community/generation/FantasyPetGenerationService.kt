@@ -16,7 +16,12 @@ data class CandidateGalleryItem(
     val title: String,
     val status: String,
     val reviewed: Boolean = false,
-    val actionId: String = ""
+    val actionId: String = "",
+    val reviewStage: String = "",
+    val previewKind: String = "",
+    val mediaType: String = "",
+    val frameCount: Int = 0,
+    val fps: Int = 0
 )
 
 data class GenerationProgressStepItem(
@@ -199,7 +204,8 @@ class FantasyPetGenerationService(
         appJobId: String,
         targetDownloadId: String,
         decision: String,
-        notesText: String
+        notesText: String,
+        stage: String = "human-review"
     ): ApiCallResult<PetGenerationJobResponseDto> {
         if (isContractDemoGenerationJobId(appJobId)) {
             return ApiCallResult.Failure("contract_demo_job_review_disabled")
@@ -223,6 +229,7 @@ class FantasyPetGenerationService(
             decisionId = "decision-${appJobId.pathToken()}-${normalizedDecision}-${normalizedTarget.pathToken()}",
             decision = normalizedDecision,
             targetDownloadId = normalizedTarget,
+            stage = stage.publicReviewStage(),
             notes = notes.ifEmpty {
                 listOf("User visually accepted this candidate in the app.")
             }
@@ -242,7 +249,7 @@ class FantasyPetGenerationService(
         }
 
         val normalizedTarget = targetDownloadId.trim()
-        val targetArtifact = job.artifacts.firstOrNull { artifact ->
+        val targetArtifact = job.reviewableArtifactsForUi().firstOrNull { artifact ->
             artifact.downloadId == normalizedTarget
         }
         if (targetArtifact?.isReviewableCandidateArtifact() != true) {
@@ -256,7 +263,8 @@ class FantasyPetGenerationService(
             appJobId = job.appJobId,
             targetDownloadId = normalizedTarget,
             decision = decision,
-            notesText = notesText
+            notesText = notesText,
+            stage = targetArtifact.reviewStage.publicReviewStage()
         )
     }
 
@@ -324,16 +332,24 @@ class FantasyPetGenerationService(
     }
 
     fun candidateGalleryItems(job: PetGenerationJobResponseDto): List<CandidateGalleryItem> =
-        job.artifacts
-            .filter { it.isReviewableCandidateArtifact() }
+        job.reviewableArtifactsForUi()
             .mapIndexed { index, artifact ->
                 CandidateGalleryItem(
                     targetDownloadId = artifact.downloadId,
                     previewUrl = publicPreviewUrl(job.appJobId, artifact),
                     title = "Candidate ${index + 1}",
-                    status = safeDisplayText(artifact.status.ifBlank { "waiting-for-review" }),
+                    status = safeDisplayText(
+                        artifact.status.ifBlank {
+                            artifact.reviewStatus.ifBlank { "waiting-for-review" }
+                        }
+                    ),
                     reviewed = artifact.reviewDecision.isNotBlank(),
-                    actionId = artifact.actionId.publicCandidateActionId()
+                    actionId = artifact.actionId.publicCandidateActionId(),
+                    reviewStage = artifact.reviewStage.publicReviewStage(),
+                    previewKind = safeDisplayText(artifact.previewKind).trim(),
+                    mediaType = safeDisplayText(artifact.mediaType).trim(),
+                    frameCount = artifact.frameCount.coerceAtLeast(0),
+                    fps = artifact.fps.coerceAtLeast(0)
                 )
             }
 
@@ -459,10 +475,27 @@ class FantasyPetGenerationService(
         return PROGRESS_INTERNAL_DETAIL_MARKERS.any { marker -> lower.contains(marker) }
     }
 
+    private fun PetGenerationJobResponseDto.reviewableArtifactsForUi(): List<PetGenerationArtifactDto> {
+        val reviewableArtifacts = artifacts.filter { it.isReviewableCandidateArtifact() }
+        val completeActionReviews = reviewableArtifacts.filter { it.isCompleteActionReviewPlaybackArtifact() }
+        return completeActionReviews.takeIf { it.isNotEmpty() } ?: reviewableArtifacts
+    }
+
     private fun PetGenerationArtifactDto.isReviewableCandidateArtifact(): Boolean =
-        kind == "candidate" &&
+        (kind == "candidate" || isCompleteActionReviewPlaybackArtifact()) &&
             downloadId.isOpaqueDownloadId() &&
-            !listOf(label, downloadId, taskId, actionId, downloadUrl).any { text ->
+            actionId.isBlankOrOpaqueUiToken() &&
+            !listOf(
+                label,
+                downloadId,
+                taskId,
+                actionId,
+                reviewStatus,
+                reviewStage,
+                previewKind,
+                mediaType,
+                downloadUrl
+            ).any { text ->
                 INTERNAL_REVIEW_TARGET_MARKERS.any { marker ->
                     text.contains(marker, ignoreCase = true)
                 }
@@ -1510,7 +1543,7 @@ fun canSubmitHumanReview(
                 effectiveProgressStatus(currentJob) == "waiting-for-review" ||
                     currentJob.nextAction == "human-review"
                 ) &&
-                currentJob.artifacts.any { artifact ->
+                currentJob.artifacts.reviewButtonTargetsForUi().any { artifact ->
                     artifact.isSelectedReviewButtonCandidate(selectedCandidateDownloadId)
                 }
         } == true
@@ -1711,15 +1744,52 @@ private fun PetGenerationProgressSecurityDto.hasUnsafeProgressBoundary(): Boolea
 private fun PetGenerationArtifactDto.isSelectedReviewButtonCandidate(
     selectedCandidateDownloadId: String
 ): Boolean =
-    kind == "candidate" &&
+    (kind == "candidate" || isCompleteActionReviewPlaybackArtifact()) &&
         downloadId == selectedCandidateDownloadId &&
         reviewDecision.isBlank() &&
         downloadId.isOpaqueCandidateDownloadIdForUi() &&
-        !listOf(label, downloadId, taskId, actionId, downloadUrl).any { text ->
+        actionId.isBlankOrOpaqueUiToken() &&
+        !listOf(
+            label,
+            downloadId,
+            taskId,
+            actionId,
+            reviewStatus,
+            reviewStage,
+            previewKind,
+            mediaType,
+            downloadUrl
+        ).any { text ->
             REVIEW_BUTTON_BLOCKED_ARTIFACT_MARKERS.any { marker ->
                 text.contains(marker, ignoreCase = true)
             }
         }
+
+private fun List<PetGenerationArtifactDto>.reviewButtonTargetsForUi(): List<PetGenerationArtifactDto> {
+    val publicTargets = filter { artifact ->
+        artifact.kind == "candidate" || artifact.isCompleteActionReviewPlaybackArtifact()
+    }
+    val completeActionReviews = publicTargets.filter { it.isCompleteActionReviewPlaybackArtifact() }
+    return completeActionReviews.takeIf { it.isNotEmpty() } ?: publicTargets
+}
+
+private fun PetGenerationArtifactDto.isCompleteActionReviewPlaybackArtifact(): Boolean =
+    kind.equals("review", ignoreCase = true) &&
+        previewKind.equals("complete-action-playback", ignoreCase = true) &&
+        mediaType.equals("text/html", ignoreCase = true) &&
+        reviewStage.publicReviewStage() == "complete-action-review"
+
+private fun String.publicReviewStage(): String {
+    val normalized = trim().lowercase()
+    return normalized
+        .takeIf { it.matches(PUBLIC_REVIEW_STAGE_PATTERN) }
+        ?.takeIf { stage ->
+            !REVIEW_BUTTON_BLOCKED_ARTIFACT_MARKERS.any { marker ->
+                stage.contains(marker, ignoreCase = true)
+            }
+        }
+        ?: "human-review"
+}
 
 private fun String.isOpaqueCandidateDownloadIdForUi(): Boolean {
     val trimmed = trim()
@@ -1730,6 +1800,11 @@ private fun String.isOpaqueCandidateDownloadIdForUi(): Boolean {
         !trimmed.contains("/") &&
         !trimmed.contains("\\") &&
         !trimmed.contains(":")
+}
+
+private fun String.isBlankOrOpaqueUiToken(): Boolean {
+    val trimmed = trim()
+    return trimmed.isBlank() || trimmed.isOpaqueCandidateDownloadIdForUi()
 }
 
 private fun String.isOptionalPublicAppJobId(): Boolean {
@@ -1876,6 +1951,8 @@ private val REVIEW_BUTTON_BLOCKED_ARTIFACT_MARKERS = listOf(
     "agent-review.json",
     "orchestration-review.json"
 )
+
+private val PUBLIC_REVIEW_STAGE_PATTERN = Regex("[a-z0-9][a-z0-9._-]{0,79}")
 
 private val PACKAGE_DOWNLOAD_BLOCKED_TEXT_MARKERS = listOf(
     "server_run.json",

@@ -385,6 +385,52 @@ class FantasyPetGenerationServiceTest {
     }
 
     @Test
+    fun candidateGalleryItemsPreferCompleteActionReviewPlaybackOverSourceCandidate() {
+        val service = FantasyPetGenerationService(FakeFantasyPetGenerationClient())
+        val job = PetGenerationJobResponseDto(
+            appJobId = "job-123",
+            progressStatus = "waiting-for-review",
+            nextAction = "human-review",
+            artifacts = listOf(
+                PetGenerationArtifactDto(
+                    kind = "candidate",
+                    downloadId = "artifact-1",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-1",
+                    actionId = "idle",
+                    reviewStage = "source-candidate-review",
+                    previewKind = "source-candidate-image",
+                    mediaType = "image/png"
+                ),
+                PetGenerationArtifactDto(
+                    kind = "review",
+                    downloadId = "artifact-11",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11",
+                    actionId = "idle",
+                    reviewStage = "complete-action-review",
+                    previewKind = "complete-action-playback",
+                    mediaType = "text/html",
+                    frameCount = 4,
+                    fps = 8
+                )
+            )
+        )
+
+        val items = service.candidateGalleryItems(job)
+
+        assertEquals(1, items.size)
+        assertEquals("artifact-11", items.single().targetDownloadId)
+        assertEquals("complete-action-review", items.single().reviewStage)
+        assertEquals("complete-action-playback", items.single().previewKind)
+        assertEquals("text/html", items.single().mediaType)
+        assertEquals(4, items.single().frameCount)
+        assertEquals(8, items.single().fps)
+        assertEquals(
+            "http://127.0.0.1:8765/pet-generation-jobs/job-123/artifacts/artifact-11",
+            items.single().previewUrl
+        )
+    }
+
+    @Test
     fun refreshJobArtifactsFetchesPublicArtifactIndexWhenResponseHasNoArtifacts() = runTest {
         val fakeClient = FakeFantasyPetGenerationClient(
             artifactResponse = PetGenerationArtifactIndexResponseDto(
@@ -683,6 +729,7 @@ class FantasyPetGenerationServiceTest {
         assertEquals("human-review", fakeClient.reviewRequest?.reviewer)
         assertEquals("accept", fakeClient.reviewRequest?.decision)
         assertEquals("artifact-1", fakeClient.reviewRequest?.targetDownloadId)
+        assertEquals("human-review", fakeClient.reviewRequest?.stage)
     }
 
     @Test
@@ -756,6 +803,39 @@ class FantasyPetGenerationServiceTest {
 
         assertEquals(ApiCallResult.Failure("review_target_already_decided"), result)
         assertEquals(null, fakeClient.reviewRequest)
+    }
+
+    @Test
+    fun reviewDecisionForJobUsesCompleteActionReviewStage() = runTest {
+        val fakeClient = FakeFantasyPetGenerationClient()
+        val service = FantasyPetGenerationService(fakeClient)
+        val job = PetGenerationJobResponseDto(
+            appJobId = "job-123",
+            progressStatus = "waiting-for-review",
+            nextAction = "human-review",
+            artifacts = listOf(
+                PetGenerationArtifactDto(
+                    kind = "review",
+                    downloadId = "artifact-11",
+                    actionId = "idle",
+                    reviewStage = "complete-action-review",
+                    previewKind = "complete-action-playback",
+                    mediaType = "text/html",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11"
+                )
+            )
+        )
+
+        val result = service.submitReviewDecisionForJob(
+            job = job,
+            targetDownloadId = "artifact-11",
+            decision = "accept",
+            notesText = ""
+        )
+
+        assertTrue(result is ApiCallResult.Success)
+        assertEquals("artifact-11", fakeClient.reviewRequest?.targetDownloadId)
+        assertEquals("complete-action-review", fakeClient.reviewRequest?.stage)
     }
 
     @Test

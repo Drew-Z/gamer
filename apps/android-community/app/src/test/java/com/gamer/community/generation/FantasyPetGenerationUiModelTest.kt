@@ -1193,6 +1193,57 @@ class FantasyPetGenerationUiModelTest {
     }
 
     @Test
+    fun reviewDecisionButtonsAllowCompleteActionPlaybackReviewArtifact() {
+        val job = PetGenerationJobResponseDto(
+            appJobId = "job-123",
+            progressStatus = "waiting-for-review",
+            nextAction = "human-review",
+            artifacts = listOf(
+                PetGenerationArtifactDto(
+                    kind = "candidate",
+                    downloadId = "artifact-1",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-1",
+                    actionId = "idle",
+                    reviewStage = "source-candidate-review",
+                    previewKind = "source-candidate-image",
+                    mediaType = "image/png"
+                ),
+                PetGenerationArtifactDto(
+                    kind = "review",
+                    downloadId = "artifact-11",
+                    downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11",
+                    actionId = "idle",
+                    reviewStage = "complete-action-review",
+                    previewKind = "complete-action-playback",
+                    mediaType = "text/html",
+                    frameCount = 4,
+                    fps = 8
+                )
+            )
+        )
+        val service = FantasyPetGenerationService(NoopFantasyPetGenerationClient())
+        val candidates = service.candidateGalleryItems(job)
+
+        assertEquals(listOf("artifact-11"), candidates.map { it.targetDownloadId })
+        assertTrue(
+            canSubmitReviewDecision(
+                job = job,
+                selectedCandidateDownloadId = "artifact-11",
+                decision = "accept",
+                notesText = ""
+            )
+        )
+        assertFalse(
+            canSubmitReviewDecision(
+                job = job,
+                selectedCandidateDownloadId = "artifact-1",
+                decision = "accept",
+                notesText = ""
+            )
+        )
+    }
+
+    @Test
     fun candidateSelectionIsPreservedAcrossJobRefreshWhenStillAvailable() {
         val candidates = listOf(
             CandidateGalleryItem(

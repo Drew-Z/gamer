@@ -1,9 +1,13 @@
 package com.gamer.community.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -72,6 +76,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import java.net.URLEncoder
 import com.gamer.community.firstSpritesheetFrame
 import com.gamer.community.horizontalSpritesheetFrames
@@ -6537,8 +6542,8 @@ private fun CandidateInspectionCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            RemoteCandidateImage(
-                previewUrl = candidate.previewUrl,
+            RemoteCandidatePreview(
+                candidate = candidate,
                 strings = strings
             )
             Button(
@@ -6808,6 +6813,66 @@ private fun BodyShapeSegmentedControl(
             }
         }
     }
+}
+
+@Composable
+private fun RemoteCandidatePreview(
+    candidate: CandidateGalleryItem,
+    strings: PetShellStrings
+) {
+    if (candidate.mediaType.equals("text/html", ignoreCase = true)) {
+        RemoteCandidateWebPreview(
+            previewUrl = candidate.previewUrl,
+            strings = strings
+        )
+    } else {
+        RemoteCandidateImage(
+            previewUrl = candidate.previewUrl,
+            strings = strings
+        )
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun RemoteCandidateWebPreview(
+    previewUrl: String,
+    strings: PetShellStrings
+) {
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFEFF3F7))
+            .semantics {
+                contentDescription = strings.candidatePreviewContentDescription
+            },
+        factory = { context ->
+            WebView(context).apply {
+                webViewClient = WebViewClient()
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = false
+                settings.cacheMode = WebSettings.LOAD_NO_CACHE
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
+        },
+        update = { webView ->
+            if (previewUrl.isBlank()) {
+                webView.loadData(
+                    "<html><body>${strings.previewUnavailable}</body></html>",
+                    "text/html",
+                    "UTF-8"
+                )
+            } else if (webView.url != previewUrl) {
+                webView.loadUrl(previewUrl)
+            }
+        }
+    )
 }
 
 @Composable

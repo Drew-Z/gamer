@@ -76,6 +76,12 @@ data class PetGenerationArtifactDto(
     val taskId: String = "",
     val actionId: String = "",
     val reviewDecision: String = "",
+    val reviewStatus: String = "",
+    val reviewStage: String = "",
+    val previewKind: String = "",
+    val mediaType: String = "",
+    val frameCount: Int = 0,
+    val fps: Int = 0,
     val packageReady: Boolean = false,
     val downloadUrl: String = "",
     val errors: List<String> = emptyList()
