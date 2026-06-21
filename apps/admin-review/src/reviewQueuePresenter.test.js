@@ -308,6 +308,19 @@ test("createFantasyPetJobModel exposes reviewable candidates and package state",
         kind: "package",
         status: "ready",
         packageReady: true
+      },
+      {
+        downloadId: "artifact-11",
+        kind: "review",
+        actionId: "idle",
+        status: "available",
+        reviewStage: "complete-action-review",
+        reviewStatus: "waiting-complete-action-review",
+        previewKind: "complete-action-playback",
+        mediaType: "text/html",
+        frameCount: 4,
+        fps: 8,
+        downloadUrl: "/pet-generation-jobs/job-123/artifacts/artifact-11"
       }
     ],
     links: {
@@ -318,7 +331,15 @@ test("createFantasyPetJobModel exposes reviewable candidates and package state",
   assert.equal(model.appJobId, "job-123");
   assert.equal(model.downloadReady, true);
   assert.equal(model.candidateCount, 1);
-  assert.equal(model.candidates[0].canReview, false);
+  assert.equal(model.candidates[0].downloadId, "artifact-11");
+  assert.equal(model.candidates[0].canReview, true);
+  assert.equal(model.candidates[0].reviewStage, "complete-action-review");
+  assert.equal(model.candidates[0].previewKind, "complete-action-playback");
+  assert.equal(model.candidates[0].mediaType, "text/html");
+  assert.equal(model.candidates[0].frameCount, 4);
+  assert.equal(model.candidates[0].fps, 8);
+  assert.equal(model.candidates[1].downloadId, "artifact-1");
+  assert.equal(model.candidates[1].canReview, false);
   assert.equal(model.packageArtifacts[0].downloadId, "artifact-2");
   assert.equal(model.packageLink, "/pet-generation-jobs/job-123/package");
   assert.equal(model.hasSafeSecurity, true);
@@ -351,6 +372,18 @@ test("createReviewDecisionPayload caps generated decision ids", () => {
   });
 
   assert.equal(payload.decisionId.length <= 120, true);
+});
+
+test("createReviewDecisionPayload keeps complete action review stage", () => {
+  const payload = createReviewDecisionPayload({
+    decisionId: "decision-complete-action",
+    decision: "accept",
+    targetDownloadId: "artifact-11",
+    stage: "complete-action-review"
+  });
+
+  assert.equal(payload.stage, "complete-action-review");
+  assert.equal(payload.targetDownloadId, "artifact-11");
 });
 
 test("createImportDraftListModel summarizes draft statuses and rows", () => {

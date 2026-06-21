@@ -458,14 +458,15 @@ function renderGenerationJob() {
     const node = document.createElement("article");
     node.className = "generation-candidate";
     node.classList.toggle(
+      "is-action-review",
+      candidate.previewKind === "complete-action-playback"
+    );
+    node.classList.toggle(
       "is-selected",
       candidate.downloadId === state.selectedGenerationCandidateId
     );
 
-    const image = document.createElement("img");
-    image.alt = `${candidate.actionId || "candidate"} ${candidate.downloadId}`;
-    image.src = proxiedUrl(candidate.downloadUrl);
-    image.loading = "lazy";
+    const preview = renderGenerationCandidatePreview(candidate);
 
     const body = document.createElement("div");
     body.className = "generation-candidate-body";
@@ -474,7 +475,18 @@ function renderGenerationJob() {
     title.textContent = `${candidate.actionId || "candidate"} / ${candidate.downloadId}`;
 
     const meta = document.createElement("small");
-    meta.textContent = `${candidate.status} ${candidate.reviewDecision || ""}`.trim();
+    const playbackMeta =
+      candidate.previewKind === "complete-action-playback"
+        ? ` / ${candidate.frameCount || "?"} frames @ ${candidate.fps || "?"} fps`
+        : "";
+    meta.textContent = [
+      candidate.status,
+      candidate.reviewStage || "",
+      candidate.previewKind || "",
+      candidate.reviewDecision || ""
+    ]
+      .filter(Boolean)
+      .join(" / ") + playbackMeta;
 
     const button = document.createElement("button");
     button.className = "secondary-button";
@@ -486,7 +498,7 @@ function renderGenerationJob() {
     });
 
     body.append(title, meta, button);
-    node.append(image, body);
+    node.append(preview, body);
     elements.generationCandidateList.append(node);
   }
 
@@ -502,6 +514,32 @@ function renderGenerationJob() {
   elements.generationImportClaimInput.placeholder = model.appJobId
     ? `claim-${model.appJobId}`
     : "claim-app-job-id";
+}
+
+function renderGenerationCandidatePreview(candidate) {
+  const previewUrl = proxiedUrl(candidate.downloadUrl);
+  const wrap = document.createElement("div");
+  wrap.className = "generation-candidate-preview";
+
+  if (
+    candidate.previewKind === "complete-action-playback" &&
+    candidate.mediaType === "text/html"
+  ) {
+    const frame = document.createElement("iframe");
+    frame.title = `${candidate.actionId || "candidate"} complete action playback`;
+    frame.src = previewUrl;
+    frame.loading = "lazy";
+    frame.sandbox = "allow-scripts";
+    wrap.append(frame);
+    return wrap;
+  }
+
+  const image = document.createElement("img");
+  image.alt = `${candidate.actionId || "candidate"} ${candidate.downloadId}`;
+  image.src = previewUrl;
+  image.loading = "lazy";
+  wrap.append(image);
+  return wrap;
 }
 
 function formatGaFileSize(sizeBytes) {
@@ -1089,16 +1127,18 @@ async function loadQueue() {
 
 async function loadDashboard() {
   elements.statusLine.textContent = "Loading review queue...";
-  const [health, drafts, queue, approvedPets] = await Promise.all([
+  const [health, drafts, queue, approvedPets, gaReview] = await Promise.all([
     requestJson("/health"),
     requestJson("/v1/import-drafts"),
     requestJson("/v1/admin/review-queue"),
-    requestJson("/v1/pets/approved")
+    requestJson("/v1/pets/approved"),
+    loadGaReviewCandidates({ silent: true })
   ]);
   state.healthStatus = formatHealthStatus(health);
   state.draftModel = createImportDraftListModel(drafts);
   state.model = createReviewDashboardModel(queue);
   state.approvedPetModel = createApprovedPetRegistryModel(approvedPets);
+  state.gaReviewModel = gaReview;
   elements.statusLine.textContent =
     `Loaded ${state.model.summary.total} submissions / ${state.healthStatus}`;
   render();
@@ -1185,6 +1225,7 @@ async function reviewGenerationCandidate(decision) {
         createReviewDecisionPayload({
           decision,
           targetDownloadId: candidate.downloadId,
+          stage: candidate.reviewStage || "human-review",
           notes: [`${decision} from gamer admin review console`]
         })
       )
@@ -1414,10 +1455,6 @@ async function importFantasyPetState(event) {
 }
 
 elements.refreshButton.addEventListener("click", () => {
-  loadGaReviewCandidates({ silent: true }).catch((error) => {
-    elements.gaReviewStatus.textContent =
-      error instanceof Error ? error.message : "Unable to load GA candidates";
-  });
   loadDashboard().catch(showError);
 });
 
@@ -1485,8 +1522,4 @@ function showError(error) {
   elements.list.append(node);
 }
 
-loadGaReviewCandidates({ silent: true }).catch((error) => {
-  elements.gaReviewStatus.textContent =
-    error instanceof Error ? error.message : "Unable to load GA candidates";
-});
 loadDashboard().catch(showError);

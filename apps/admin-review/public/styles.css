@@ -566,16 +566,28 @@ h1 {
   padding: 10px;
 }
 
+.generation-candidate.is-action-review {
+  grid-template-columns: minmax(240px, 1.4fr) minmax(180px, 1fr);
+}
+
 .generation-candidate.is-selected {
   border-color: var(--accent);
   outline: 2px solid rgba(23, 126, 137, 0.18);
 }
 
-.generation-candidate img {
+.generation-candidate-preview {
+  min-width: 0;
+}
+
+.generation-candidate-preview img,
+.generation-candidate-preview iframe {
   width: 112px;
   height: 112px;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.generation-candidate-preview img {
   background:
     linear-gradient(45deg, #d8e0e4 25%, transparent 25%),
     linear-gradient(-45deg, #d8e0e4 25%, transparent 25%),
@@ -589,6 +601,12 @@ h1 {
     -8px 0;
   background-size: 16px 16px;
   object-fit: contain;
+}
+
+.generation-candidate.is-action-review .generation-candidate-preview iframe {
+  width: 100%;
+  min-height: 240px;
+  background: #ffffff;
 }
 
 .generation-candidate-body {
@@ -1241,9 +1259,19 @@ h1 {
     grid-template-columns: 96px minmax(0, 1fr);
   }
 
-  .generation-candidate img {
+  .generation-candidate.is-action-review {
+    grid-template-columns: 1fr;
+  }
+
+  .generation-candidate-preview img,
+  .generation-candidate-preview iframe {
     width: 96px;
     height: 96px;
+  }
+
+  .generation-candidate.is-action-review .generation-candidate-preview iframe {
+    width: 100%;
+    min-height: 220px;
   }
 
   .ga-review-card {

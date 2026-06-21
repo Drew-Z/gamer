@@ -74,21 +74,39 @@ export function createFantasyPetJobModel(job = {}) {
   const progressSummary = progress.summary ?? {};
   const security = progress.security ?? {};
   const links = job.links ?? {};
+  const hasCompleteActionReview = artifacts.some((artifact) =>
+    isCompleteActionReviewArtifact(artifact)
+  );
   const candidates = artifacts
-    .filter((artifact) => artifact?.kind === "candidate")
+    .filter((artifact) => isReviewableGenerationArtifact(artifact))
     .map((artifact) => ({
       downloadId: artifact.downloadId ?? "",
       actionId: artifact.actionId ?? "",
+      kind: artifact.kind ?? "",
+      reviewStage: artifact.reviewStage ?? "human-review",
+      reviewStatus: artifact.reviewStatus ?? "",
+      previewKind: artifact.previewKind ?? "",
+      mediaType: artifact.mediaType ?? "",
+      frameCount: Number(artifact.frameCount ?? 0),
+      fps: Number(artifact.fps ?? 0),
       status: artifact.status ?? "available",
       reviewDecision: artifact.reviewDecision ?? "",
       packageReady: artifact.packageReady === true,
       downloadUrl: artifact.downloadUrl ?? "",
       taskId: artifact.taskId ?? "",
       canReview:
+        (!hasCompleteActionReview || isCompleteActionReviewArtifact(artifact)) &&
         !artifact.reviewDecision &&
         artifact.status !== "human-accepted" &&
         Boolean(artifact.downloadId)
-    }));
+    }))
+    .sort((left, right) => {
+      const leftPriority =
+        left.previewKind === "complete-action-playback" ? 0 : 1;
+      const rightPriority =
+        right.previewKind === "complete-action-playback" ? 0 : 1;
+      return leftPriority - rightPriority;
+    });
   const packageArtifacts = artifacts
     .filter((artifact) => artifact?.kind === "package")
     .map((artifact) => ({
@@ -125,9 +143,30 @@ export function createFantasyPetJobModel(job = {}) {
   };
 }
 
+function isReviewableGenerationArtifact(artifact) {
+  if (!artifact || !artifact.downloadId) {
+    return false;
+  }
+
+  if (isCompleteActionReviewArtifact(artifact)) {
+    return true;
+  }
+
+  return artifact.kind === "candidate";
+}
+
+function isCompleteActionReviewArtifact(artifact) {
+  return (
+    artifact?.kind === "review" &&
+    artifact.previewKind === "complete-action-playback" &&
+    artifact.mediaType === "text/html"
+  );
+}
+
 export function createReviewDecisionPayload(input = {}) {
   const decision = String(input.decision ?? "").trim();
   const targetDownloadId = String(input.targetDownloadId ?? "").trim();
+  const stage = String(input.stage ?? "human-review").trim() || "human-review";
   const decisionId =
     String(input.decisionId ?? "").trim() ||
     `admin-${targetDownloadId.slice(0, 64)}-${decision}-${Date.now()}`;
@@ -138,7 +177,7 @@ export function createReviewDecisionPayload(input = {}) {
     reviewer: "human-review",
     decision,
     targetDownloadId,
-    stage: "human-review",
+    stage,
     notes: Array.isArray(input.notes) ? input.notes : []
   };
 }
