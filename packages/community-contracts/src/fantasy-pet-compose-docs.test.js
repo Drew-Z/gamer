@@ -87,6 +87,9 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /PRIVATE_OPS_REQUIRE_POSTGRES/);
   assert.match(script, /community postgres readiness is verified/);
   assert.match(script, /\/ops\/community-db-readiness/);
+  assert.match(script, /PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL/);
+  assert.match(script, /community db backup drill is verified/);
+  assert.match(script, /\/ops\/community-db-backup-drill/);
   assert.match(script, /\/health/);
   assert.match(script, /\/v1\/sla/);
   assert.match(script, /\/worker-readiness/);
@@ -101,6 +104,8 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(readme, /\/ops\/internal-community-auth-check/);
   assert.match(readme, /PRIVATE_OPS_REQUIRE_POSTGRES=1/);
   assert.match(readme, /\/ops\/community-db-readiness/);
+  assert.match(readme, /PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL=1/);
+  assert.match(readme, /\/ops\/community-db-backup-drill/);
   assert.match(preflight, /PRIVATE_OPS_ENV_FILE/);
   assert.match(preflight, /PRIVATE_OPS_DEPLOYMENT_ROLE/);
   assert.match(preflight, /COMMUNITY_POSTGRES_PASSWORD/);

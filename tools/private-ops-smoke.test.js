@@ -379,6 +379,150 @@ test("private ops smoke can require admin-review postgres readiness", async () =
   }
 });
 
+test("private ops smoke can require admin-review database backup drill", async () => {
+  const requests = [];
+  const validBasicAuth = `Basic ${Buffer.from("operator:private-password").toString("base64")}`;
+  const server = http.createServer((request, response) => {
+    requests.push({
+      method: request.method,
+      url: request.url,
+      headers: request.headers
+    });
+
+    const sendJson = (status, body) => {
+      response.writeHead(status, {
+        "Content-Type": "application/json"
+      });
+      response.end(JSON.stringify(body));
+    };
+
+    if (request.method === "GET" && request.url === "/health") {
+      sendJson(200, {
+        ok: true,
+        service: "community-api"
+      });
+      return;
+    }
+
+    if (request.headers.authorization !== validBasicAuth) {
+      sendJson(401, {
+        error: "admin_basic_auth_required"
+      });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/v1/sla") {
+      sendJson(200, {
+        schema: "gamer.sla.v1"
+      });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/worker-readiness") {
+      sendJson(200, {
+        schema: "fantasy-pet.worker-readiness-public.v1"
+      });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/app-api-contract") {
+      sendJson(200, {
+        schema: "fantasy-pet.app-api-contract.v1"
+      });
+      return;
+    }
+
+    if (request.method === "POST" && request.url === "/v1/check-in") {
+      sendJson(200, {
+        checkIn: {
+          date: "2026-06-24"
+        }
+      });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/ops/internal-community-auth-check") {
+      sendJson(200, {
+        schema: "desktop-pet.ops.internal-community-auth-check.v1",
+        ok: true,
+        communityWriteWithoutToken: {
+          status: 401,
+          error: "unauthorized_demo_request"
+        }
+      });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/ops/community-db-backup-drill") {
+      sendJson(200, {
+        schema: "desktop-pet.ops.community-db-backup-drill.v1",
+        ok: true,
+        database: {
+          mode: "postgres",
+          postgresConfigured: true
+        },
+        drill: {
+          strategy: "temporary-table-snapshot",
+          sourceTableCount: 2,
+          restoredTableCount: 2,
+          sampleRowLimit: 25,
+          tables: [
+            {
+              name: "schema_migrations",
+              sourceRows: 5,
+              restoredRows: 5
+            },
+            {
+              name: "users",
+              sourceRows: 40,
+              restoredRows: 25
+            }
+          ]
+        }
+      });
+      return;
+    }
+
+    sendJson(404, {
+      error: "not_found"
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const result = await runSmoke({
+      COMMUNITY_BASE_URL: `http://127.0.0.1:${server.address().port}`,
+      COMMUNITY_DEMO_TOKEN: "community-token-123",
+      FANTASY_PET_UPSTREAM_TOKEN: "upstream-token-123",
+      PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+      PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+      PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL: "1",
+      PRIVATE_OPS_SMOKE_SURFACE: "admin-review"
+    });
+
+    assert.equal(result.exitCode, 0, result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.requiredDbBackupDrill, true);
+    assert(
+      output.checks.some(
+        (entry) =>
+          entry.name === "community db backup drill is verified" &&
+          entry.status === "pass",
+      ),
+    );
+    assert(
+      requests.some(
+        (request) =>
+          request.method === "GET" &&
+          request.url === "/ops/community-db-backup-drill" &&
+          request.headers.authorization === validBasicAuth,
+      ),
+    );
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("private ops smoke rejects basic auth password leaks", async () => {
   const validBasicAuth = `Basic ${Buffer.from("operator:private-password").toString("base64")}`;
   const server = http.createServer((request, response) => {

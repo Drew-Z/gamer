@@ -212,6 +212,32 @@ const databaseReadinessError = (response, status, body) => {
   });
 };
 
+const databaseBackupDrillError = (response, status, body) => {
+  writeJson(response, status, {
+    schema: "desktop-pet.ops.community-db-backup-drill.v1",
+    ok: false,
+    ...body
+  });
+};
+
+const quotePgIdentifier = (value) => `"${String(value).replaceAll('"', '""')}"`;
+
+const numberFromPg = (value) => {
+  const parsed = Number.parseInt(String(value ?? "0"), 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+};
+
+const resolveBackupDrillSampleRowLimit = (env) => {
+  const configured = Number.parseInt(
+    trimString(env.PRIVATE_OPS_DB_BACKUP_DRILL_SAMPLE_ROWS),
+    10
+  );
+  if (!Number.isFinite(configured) || configured <= 0) {
+    return 25;
+  }
+  return Math.min(configured, 100);
+};
+
 const handleCommunityDbReadiness = async (response, env, createOpsPgClient) => {
   const migrations = listCommunityMigrations();
   const migrationCount = migrations.length;
@@ -285,6 +311,117 @@ const handleCommunityDbReadiness = async (response, env, createOpsPgClient) => {
   }
 };
 
+const handleCommunityDbBackupDrill = async (response, env, createOpsPgClient) => {
+  let config;
+
+  try {
+    config = createDatabaseConfig(env);
+  } catch {
+    databaseBackupDrillError(response, 424, {
+      database: {
+        mode: "invalid",
+        postgresConfigured: false
+      },
+      error: "database_url_invalid"
+    });
+    return;
+  }
+
+  if (config.mode !== "postgres") {
+    databaseBackupDrillError(response, 424, {
+      database: {
+        mode: config.mode,
+        postgresConfigured: false
+      },
+      error: "postgres_database_url_required"
+    });
+    return;
+  }
+
+  const sampleRowLimit = resolveBackupDrillSampleRowLimit(env);
+  let client;
+  let inTransaction = false;
+  try {
+    client = await createOpsPgClient(config);
+    await client.connect();
+    await client.query("BEGIN");
+    inTransaction = true;
+
+    const tableResult = await client.query(`
+      select table_name
+      from information_schema.tables
+      where table_schema = 'public'
+        and table_type = 'BASE TABLE'
+      order by table_name
+    `);
+    const tableNames = tableResult.rows
+      .map((row) => String(row.table_name ?? "").trim())
+      .filter((tableName) => tableName !== "");
+    const tables = [];
+
+    for (const [index, tableName] of tableNames.entries()) {
+      const sourceTable = `public.${quotePgIdentifier(tableName)}`;
+      const sourceCount = await client.query(
+        `select count(*)::bigint as row_count from ${sourceTable}`
+      );
+      const tempTable = quotePgIdentifier(`private_ops_backup_drill_${index}`);
+      await client.query(
+        `create temp table ${tempTable} on commit drop as select * from ${sourceTable} limit $1`,
+        [sampleRowLimit]
+      );
+      const restoredCount = await client.query(
+        `select count(*)::bigint as row_count from ${tempTable}`
+      );
+
+      tables.push({
+        name: tableName,
+        sourceRows: numberFromPg(sourceCount.rows[0]?.row_count),
+        restoredRows: numberFromPg(restoredCount.rows[0]?.row_count)
+      });
+    }
+
+    await client.query("COMMIT");
+    inTransaction = false;
+
+    writeJson(response, 200, {
+      schema: "desktop-pet.ops.community-db-backup-drill.v1",
+      ok: true,
+      database: {
+        mode: "postgres",
+        postgresConfigured: true
+      },
+      drill: {
+        strategy: "temporary-table-snapshot",
+        sourceTableCount: tableNames.length,
+        restoredTableCount: tables.length,
+        sampleRowLimit,
+        tables
+      }
+    });
+  } catch {
+    if (inTransaction) {
+      try {
+        await client?.query?.("ROLLBACK");
+      } catch {
+        // Preserve the stable drill failure instead of exposing rollback details.
+      }
+    }
+    databaseBackupDrillError(response, 502, {
+      database: {
+        mode: "postgres",
+        postgresConfigured: true
+      },
+      error: "postgres_backup_restore_drill_failed"
+    });
+  } finally {
+    try {
+      await client?.end?.();
+    } catch {
+      // Closing a failed backup drill must not change the reported cause.
+    }
+  }
+};
+
 const handleOpsRequest = async (request, response, url, options) => {
   if (request.method !== "GET") {
     return false;
@@ -292,6 +429,15 @@ const handleOpsRequest = async (request, response, url, options) => {
 
   if (url.pathname === "/ops/community-db-readiness") {
     await handleCommunityDbReadiness(
+      response,
+      options.env,
+      options.createOpsPgClient ?? createDefaultOpsPgClient
+    );
+    return true;
+  }
+
+  if (url.pathname === "/ops/community-db-backup-drill") {
+    await handleCommunityDbBackupDrill(
       response,
       options.env,
       options.createOpsPgClient ?? createDefaultOpsPgClient

@@ -7,6 +7,7 @@ const basicAuthHeader = privateOpsBasicAuthHeader(process.env);
 const smokeSurface = resolveSmokeSurface(process.env);
 const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").trim();
 const requirePostgres = isEnabled(process.env.PRIVATE_OPS_REQUIRE_POSTGRES);
+const requireDbBackupDrill = isEnabled(process.env.PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL);
 const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
@@ -27,6 +28,10 @@ if (smokeSurface === "admin-review" && !basicAuthHeader) {
 
 if (requirePostgres && smokeSurface !== "admin-review") {
   throw new Error("PRIVATE_OPS_REQUIRE_POSTGRES is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
+}
+
+if (requireDbBackupDrill && smokeSurface !== "admin-review") {
+  throw new Error("PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
 }
 
 await runCheck("community health is public-safe", async () => {
@@ -126,6 +131,40 @@ if (smokeSurface === "admin-review") {
       );
     });
   }
+
+  if (requireDbBackupDrill) {
+    await runCheck("community db backup drill is verified", async () => {
+      const response = await requestJson("/ops/community-db-backup-drill");
+      assertStatus(response, 200);
+      assertEqual(
+        response.body.schema,
+        "desktop-pet.ops.community-db-backup-drill.v1",
+        "community db backup drill schema"
+      );
+      assertEqual(response.body.ok, true, "community db backup drill ok");
+      assertEqual(response.body.database?.mode, "postgres", "community db backup drill mode");
+      assertEqual(
+        response.body.database?.postgresConfigured,
+        true,
+        "community db backup drill postgres configured"
+      );
+      assertEqual(
+        response.body.drill?.strategy,
+        "temporary-table-snapshot",
+        "community db backup drill strategy"
+      );
+      assertAtLeast(
+        response.body.drill?.sourceTableCount,
+        1,
+        "community db backup drill source table count"
+      );
+      assertEqual(
+        response.body.drill?.restoredTableCount,
+        response.body.drill?.sourceTableCount,
+        "community db backup drill restored table count"
+      );
+    });
+  }
 } else {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {
@@ -215,7 +254,8 @@ console.log(
       checks,
       createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB),
       checkedKnownPackageGate: Boolean(knownAppJobId),
-      requiredPostgres: requirePostgres
+      requiredPostgres: requirePostgres,
+      requiredDbBackupDrill: requireDbBackupDrill
     },
     null,
     2
@@ -355,6 +395,12 @@ function assertEqual(actual, expected, label) {
 function assertObject(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error(`${label} must be a JSON object`);
+  }
+}
+
+function assertAtLeast(actual, expected, label) {
+  if (typeof actual !== "number" || actual < expected) {
+    throw new Error(`${label} expected at least ${expected}, got ${JSON.stringify(actual)}`);
   }
 }
 

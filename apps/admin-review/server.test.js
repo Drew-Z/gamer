@@ -352,6 +352,159 @@ test("admin-review ops database readiness runs postgres dry-run without leaking 
   }
 });
 
+test("admin-review ops database backup drill reports missing postgres without secrets", async () => {
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+        DATABASE_URL: ""
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/community-db-backup-drill`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+
+    assert.equal(response.status, 424);
+    assert.deepEqual(await response.json(), {
+      schema: "desktop-pet.ops.community-db-backup-drill.v1",
+      ok: false,
+      database: {
+        mode: "memory",
+        postgresConfigured: false
+      },
+      error: "postgres_database_url_required"
+    });
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
+test("admin-review ops database backup drill restores samples into temp tables without leaking url", async () => {
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+  const queries = [];
+  const fakeClient = {
+    async connect() {},
+    async end() {},
+    async query(sql, params = []) {
+      queries.push({ sql, params });
+      if (/information_schema\.tables/iu.test(sql)) {
+        return {
+          rows: [
+            { table_name: "schema_migrations" },
+            { table_name: "users" }
+          ]
+        };
+      }
+      if (/count\(\*\).*public\."schema_migrations"/isu.test(sql)) {
+        return { rows: [{ row_count: "5" }] };
+      }
+      if (/count\(\*\).*public\."users"/isu.test(sql)) {
+        return { rows: [{ row_count: "40" }] };
+      }
+      if (/count\(\*\).*"private_ops_backup_drill_0"/isu.test(sql)) {
+        return { rows: [{ row_count: "5" }] };
+      }
+      if (/count\(\*\).*"private_ops_backup_drill_1"/isu.test(sql)) {
+        return { rows: [{ row_count: "25" }] };
+      }
+      return { rows: [] };
+    }
+  };
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      createOpsPgClient: () => fakeClient,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+        DATABASE_URL: "postgres://db.example.invalid:5432/community?sslmode=require"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/community-db-backup-drill`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      schema: "desktop-pet.ops.community-db-backup-drill.v1",
+      ok: true,
+      database: {
+        mode: "postgres",
+        postgresConfigured: true
+      },
+      drill: {
+        strategy: "temporary-table-snapshot",
+        sourceTableCount: 2,
+        restoredTableCount: 2,
+        sampleRowLimit: 25,
+        tables: [
+          {
+            name: "schema_migrations",
+            sourceRows: 5,
+            restoredRows: 5
+          },
+          {
+            name: "users",
+            sourceRows: 40,
+            restoredRows: 25
+          }
+        ]
+      }
+    });
+    assert.equal(JSON.stringify(body).includes("db.example.invalid"), false);
+    assert.ok(queries.some((query) => query.sql === "BEGIN"));
+    assert.ok(queries.some((query) => query.sql === "COMMIT"));
+    assert.ok(
+      queries.some((query) =>
+        /create temp table "private_ops_backup_drill_0" on commit drop as select \* from public\."schema_migrations" limit \$1/iu.test(query.sql)
+      )
+    );
+    assert.ok(
+      queries.some((query) =>
+        /create temp table "private_ops_backup_drill_1" on commit drop as select \* from public\."users" limit \$1/iu.test(query.sql)
+      )
+    );
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review proxies community writes with server token and browser origin metadata", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

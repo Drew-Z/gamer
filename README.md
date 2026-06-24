@@ -182,7 +182,10 @@ Community API missing-token behavior from inside the target host. Set
 `PRIVATE_OPS_REQUIRE_POSTGRES=1` during the target database gate; the smoke then
 also calls `/ops/community-db-readiness`, which verifies Postgres is configured
 and a migration dry-run reports zero pending migrations without printing
-`DATABASE_URL`.
+`DATABASE_URL`. Set `PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL=1` for the target
+backup gate; the smoke then calls `/ops/community-db-backup-drill`, which reads
+the current Postgres tables, restores bounded row samples into temporary tables,
+and reports only table/row counts.
 
 Operational helpers:
 
