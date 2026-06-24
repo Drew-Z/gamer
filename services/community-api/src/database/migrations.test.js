@@ -34,3 +34,14 @@ test("migration loader returns ordered migrations with stable ids", () => {
   assert.equal(migrations[0].filename, "001_initial_community_schema.sql");
   assert.ok(migrations[0].sql.includes("create table if not exists users"));
 });
+
+test("service role grants are optional for plain Postgres deployments", () => {
+  const migration = listCommunityMigrations()
+    .find((item) => item.id === "004_ga_pet_service_role_grants");
+
+  assert.ok(migration);
+  assert.match(migration.sql, /pg_roles/i);
+  assert.match(migration.sql, /rolname = 'service_role'/i);
+  assert.match(migration.sql, /grant select, insert, update, delete/i);
+  assert.match(migration.sql, /to service_role/i);
+});

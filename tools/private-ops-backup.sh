@@ -13,12 +13,23 @@ cd "$repo_root"
 : "${COMMUNITY_POSTGRES_DB:=gamer}"
 : "${COMMUNITY_POSTGRES_USER:=gamer}"
 
-docker compose \
-  -f compose.yaml \
-  -f compose.fantasy-pet.yaml \
-  -f compose.private-ops.yaml \
-  --profile private-ops \
-  exec -T community-db \
-  pg_dump -U "$COMMUNITY_POSTGRES_USER" "$COMMUNITY_POSTGRES_DB" > "$output_file"
+set -- --env-file "${PRIVATE_OPS_ENV_FILE:-.env.private-ops}" \
+  -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml \
+  --profile private-ops
+if [ -n "${PRIVATE_OPS_COMPOSE_OVERRIDE_FILE:-}" ]; then
+  set -- "$@" -f "$PRIVATE_OPS_COMPOSE_OVERRIDE_FILE"
+fi
+if [ -n "${PRIVATE_OPS_COMPOSE_PROJECT_NAME:-}" ]; then
+  set -- -p "$PRIVATE_OPS_COMPOSE_PROJECT_NAME" "$@"
+fi
+
+docker compose "$@" exec -T community-db \
+  pg_dump \
+    --clean \
+    --if-exists \
+    --no-owner \
+    --no-privileges \
+    -U "$COMMUNITY_POSTGRES_USER" \
+    "$COMMUNITY_POSTGRES_DB" > "$output_file"
 
 printf '%s\n' "$output_file"
