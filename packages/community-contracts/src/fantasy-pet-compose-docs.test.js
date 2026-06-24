@@ -113,6 +113,7 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(rollback, /FANTASY_PET_IMAGE_TAG/);
   assert.match(rollback, /migrate:community-db:dry-run/);
   assert.match(rollback, /--no-build/);
+  assert.match(rollback, /--force-recreate/);
 });
 
 test("Android build supports configurable local API base URLs", () => {

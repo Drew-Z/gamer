@@ -44,7 +44,7 @@ docker compose "$@" --profile fantasy-pet --profile private-ops \
   run --rm community-migrate npm run migrate:community-db:dry-run
 
 docker compose "$@" --profile fantasy-pet --profile private-ops \
-  up -d --no-build --wait \
+  up -d --no-build --force-recreate --wait \
   community-api admin-review private-ops-proxy \
   fantasy-pet-api fantasy-pet-worker-daemon
 
