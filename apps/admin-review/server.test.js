@@ -505,6 +505,91 @@ test("admin-review ops database backup drill restores samples into temp tables w
   }
 });
 
+test("admin-review ops monitor status can trigger a synthetic monitor run", async () => {
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+  let runCount = 0;
+  const privateOpsMonitor = {
+    async runOnce() {
+      runCount += 1;
+      return {
+        ok: true,
+        status: "pass"
+      };
+    },
+    getStatus() {
+      return {
+        schema: "desktop-pet.ops.private-ops-monitor-status.v1",
+        ok: true,
+        monitor: {
+          enabled: true,
+          intervalMs: 300000,
+          staleAfterMs: 900000,
+          historyLimit: 12,
+          knownPackageGate: false,
+          consecutiveFailures: 0,
+          lastRunAt: "2026-06-24T10:00:00.000Z",
+          lastOkAt: "2026-06-24T10:00:00.000Z",
+          lastStatus: "pass",
+          stale: false
+        },
+        lastRun: {
+          at: "2026-06-24T10:00:00.000Z",
+          ok: true,
+          status: "pass",
+          durationMs: 12,
+          checks: [
+            { name: "community health is public-safe", status: "pass" }
+          ]
+        },
+        history: [
+          {
+            at: "2026-06-24T10:00:00.000Z",
+            ok: true,
+            status: "pass",
+            durationMs: 12,
+            checkCount: 1
+          }
+        ]
+      };
+    }
+  };
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      privateOpsMonitor,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/private-ops-monitor-status?run=1`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(runCount, 1);
+    assert.deepEqual(await response.json(), privateOpsMonitor.getStatus());
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review proxies community writes with server token and browser origin metadata", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

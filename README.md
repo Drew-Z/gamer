@@ -187,6 +187,18 @@ backup gate; the smoke then calls `/ops/community-db-backup-drill`, which reads
 the current Postgres tables, restores bounded row samples into temporary tables,
 and reports only table/row counts.
 
+For hiden/direct `admin-review` private ops deployments,
+`PRIVATE_OPS_DEPLOYMENT_ROLE=community` enables the in-process synthetic
+monitor by default. Set `PRIVATE_OPS_MONITOR_ENABLED=0` to disable it, or tune
+`PRIVATE_OPS_MONITOR_INTERVAL_MS`, `PRIVATE_OPS_MONITOR_STALE_AFTER_MS`, and
+`PRIVATE_OPS_MONITOR_HISTORY_LIMIT` when the platform needs different
+retention windows. The monitor writes one token-safe JSON summary line to
+stdout per run and keeps bounded recent history at
+`/ops/private-ops-monitor-status`. During deployment verification, set
+`PRIVATE_OPS_REQUIRE_MONITOR=1`; the smoke calls
+`/ops/private-ops-monitor-status?run=1` and requires the latest synthetic probe
+to pass.
+
 Operational helpers:
 
 ```powershell

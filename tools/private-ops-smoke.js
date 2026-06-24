@@ -8,6 +8,7 @@ const smokeSurface = resolveSmokeSurface(process.env);
 const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").trim();
 const requirePostgres = isEnabled(process.env.PRIVATE_OPS_REQUIRE_POSTGRES);
 const requireDbBackupDrill = isEnabled(process.env.PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL);
+const requireMonitor = isEnabled(process.env.PRIVATE_OPS_REQUIRE_MONITOR);
 const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
@@ -32,6 +33,10 @@ if (requirePostgres && smokeSurface !== "admin-review") {
 
 if (requireDbBackupDrill && smokeSurface !== "admin-review") {
   throw new Error("PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
+}
+
+if (requireMonitor && smokeSurface !== "admin-review") {
+  throw new Error("PRIVATE_OPS_REQUIRE_MONITOR is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
 }
 
 await runCheck("community health is public-safe", async () => {
@@ -165,6 +170,33 @@ if (smokeSurface === "admin-review") {
       );
     });
   }
+
+  if (requireMonitor) {
+    await runCheck("private ops monitor is reporting", async () => {
+      const response = await requestJson("/ops/private-ops-monitor-status?run=1");
+      assertStatus(response, 200);
+      assertEqual(
+        response.body.schema,
+        "desktop-pet.ops.private-ops-monitor-status.v1",
+        "private ops monitor schema"
+      );
+      assertEqual(response.body.ok, true, "private ops monitor ok");
+      assertEqual(response.body.monitor?.enabled, true, "private ops monitor enabled");
+      assertEqual(response.body.monitor?.lastStatus, "pass", "private ops monitor last status");
+      assertEqual(
+        response.body.monitor?.consecutiveFailures,
+        0,
+        "private ops monitor consecutive failures"
+      );
+      assertEqual(response.body.monitor?.stale, false, "private ops monitor stale");
+      assertEqual(response.body.lastRun?.ok, true, "private ops monitor last run ok");
+      assertAtLeast(
+        response.body.lastRun?.checks?.length,
+        5,
+        "private ops monitor check count"
+      );
+    });
+  }
 } else {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {
@@ -255,7 +287,8 @@ console.log(
       createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB),
       checkedKnownPackageGate: Boolean(knownAppJobId),
       requiredPostgres: requirePostgres,
-      requiredDbBackupDrill: requireDbBackupDrill
+      requiredDbBackupDrill: requireDbBackupDrill,
+      requiredMonitor: requireMonitor
     },
     null,
     2

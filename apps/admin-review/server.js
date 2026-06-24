@@ -7,6 +7,7 @@ import { createDatabaseConfig } from "../../services/community-api/src/database/
 import { listCommunityMigrations } from "../../services/community-api/src/database/migrations.js";
 import { createPgClientOptions } from "../../services/community-api/src/database/pg-options.js";
 import { runCommunityMigrations } from "../../services/community-api/src/database/runner.js";
+import { createPrivateOpsMonitor } from "./privateOpsMonitor.js";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(rootDir, "public");
@@ -427,6 +428,26 @@ const handleOpsRequest = async (request, response, url, options) => {
     return false;
   }
 
+  if (url.pathname === "/ops/private-ops-monitor-status") {
+    if (url.searchParams.get("run") === "1") {
+      await options.privateOpsMonitor?.runOnce?.();
+    }
+    writeJson(
+      response,
+      200,
+      options.privateOpsMonitor?.getStatus?.() ?? {
+        schema: "desktop-pet.ops.private-ops-monitor-status.v1",
+        ok: true,
+        monitor: {
+          enabled: false
+        },
+        lastRun: null,
+        history: []
+      }
+    );
+    return true;
+  }
+
   if (url.pathname === "/ops/community-db-readiness") {
     await handleCommunityDbReadiness(
       response,
@@ -542,6 +563,7 @@ export function createAdminReviewHttpHandler(options = {}) {
   const gaPetReviewStore = createGaPetReviewStore({
     runRoot: options.gaPetRunRoot
   });
+  const privateOpsMonitor = options.privateOpsMonitor;
 
   return async (request, response) => {
     try {
@@ -571,6 +593,7 @@ export function createAdminReviewHttpHandler(options = {}) {
         const handled = await handleOpsRequest(request, response, url, {
           communityApiUrl,
           createOpsPgClient: options.createOpsPgClient,
+          privateOpsMonitor,
           env
         });
         if (!handled) {
@@ -619,16 +642,27 @@ export function startAdminReviewServer(options = {}) {
   const communityApiUrl =
     options.communityApiUrl ?? env.COMMUNITY_API_URL ?? "http://127.0.0.1:4000";
   const gaPetRunRoot = options.gaPetRunRoot ?? env.GA_PET_RUN_ROOT;
+  const privateOpsMonitor =
+    options.privateOpsMonitor ??
+    createPrivateOpsMonitor({
+      env,
+      communityApiUrl
+    });
   const server = http.createServer(
     createAdminReviewHttpHandler({
       env,
       communityApiUrl,
-      gaPetRunRoot
+      gaPetRunRoot,
+      privateOpsMonitor
     })
   );
 
   server.listen(port, "0.0.0.0", () => {
     console.log(`admin-review listening on ${port}`);
+    privateOpsMonitor.start();
+  });
+  server.on("close", () => {
+    privateOpsMonitor.stop();
   });
 
   return server;
