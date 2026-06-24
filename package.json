@@ -11,6 +11,7 @@
     "start:ga-random-pet-worker": "node services/pet-generator/src/ga-random-pet-worker.js",
     "migrate:community-db": "node services/community-api/src/database/migrate.js",
     "migrate:community-db:dry-run": "node services/community-api/src/database/migrate.js --dry-run",
+    "preflight:private-ops": "node tools/private-ops-preflight.js",
     "smoke:private-ops": "node tools/private-ops-smoke.js"
   },
   "workspaces": [

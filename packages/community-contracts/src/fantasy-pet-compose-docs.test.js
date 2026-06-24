@@ -70,6 +70,7 @@ test("private ops Compose overlay gates startup through Postgres migrations", ()
 
 test("private ops smoke verifies auth readiness and leak boundaries", () => {
   const script = readRepoFile("tools/private-ops-smoke.js");
+  const preflight = readRepoFile("tools/private-ops-preflight.js");
   const packageJson = readRepoFile("package.json");
   const readme = readRepoFile("README.md");
 
@@ -86,8 +87,15 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /known job package gate is observable/);
   assert.match(script, /fantasy-pet\.package-download-response\.v1/);
   assert.match(script, /assertNoLeaks/);
+  assert.match(preflight, /PRIVATE_OPS_ENV_FILE/);
+  assert.match(preflight, /COMMUNITY_POSTGRES_PASSWORD/);
+  assert.match(preflight, /FANTASY_PET_ADAPTER_CONFIG_FILE/);
+  assert.match(preflight, /CADDY_ADMIN_BASIC_AUTH_HASH/);
+  assert.match(preflight, /COMMUNITY_CORS_ALLOWED_ORIGINS/);
   assert.match(packageJson, /"smoke:private-ops": "node tools\/private-ops-smoke\.js"/);
+  assert.match(packageJson, /"preflight:private-ops": "node tools\/private-ops-preflight\.js"/);
   assert.match(readme, /compose\.private-ops\.yaml/);
+  assert.match(readme, /npm\.cmd run preflight:private-ops/);
   assert.match(readme, /npm\.cmd run smoke:private-ops/);
   assert.match(readme, /PRIVATE_OPS_KNOWN_APP_JOB_ID/);
 });

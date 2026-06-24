@@ -129,11 +129,19 @@ Copy-Item .env.private-ops.example .env.private-ops
 # When storing the generated bcrypt hash in .env.private-ops, escape each
 # dollar sign as $$ so Docker Compose keeps the hash literal.
 
+npm.cmd run preflight:private-ops
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops up --build -d community-db community-migrate fantasy-pet-api fantasy-pet-worker-daemon community-api admin-review private-ops-proxy
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops run --rm community-migrate npm run migrate:community-db:dry-run
 npm.cmd run smoke:private-ops
 ```
+
+`tools/private-ops-preflight.js` reads `${PRIVATE_OPS_ENV_FILE}` or
+`.env.private-ops` before deployment and checks that required private values are
+present, no longer look like placeholders, and that
+`FANTASY_PET_ADAPTER_CONFIG_FILE` points at an existing private adapter config.
+The failure output names missing or placeholder variables without printing the
+configured secret values.
 
 `tools/private-ops-smoke.js` checks `/health`, `/v1/sla`,
 `/worker-readiness`, `/app-api-contract`, missing-token rejection, and one
