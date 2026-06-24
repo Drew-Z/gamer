@@ -137,6 +137,8 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   const restore = readRepoFile("tools/private-ops-restore.sh");
   const prune = readRepoFile("tools/private-ops-prune-agent-runs.sh");
   const rollback = readRepoFile("tools/private-ops-rollback.sh");
+  const hidenRelease = readRepoFile("tools/hiden-release.js");
+  const readme = readRepoFile("README.md");
 
   assert.match(caddyfile, /tls \{\$PRIVATE_OPS_TLS_MODE:internal\}/);
   assert.match(caddyfile, /basic_auth/);
@@ -158,6 +160,10 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(rollback, /migrate:community-db:dry-run/);
   assert.match(rollback, /--no-build/);
   assert.match(rollback, /--force-recreate/);
+  assert.match(hidenRelease, /GAMER_RELEASE_REF/);
+  assert.match(hidenRelease, /checkout", "--force", "FETCH_HEAD"/);
+  assert.match(readme, /GAMER_RELEASE_REF/);
+  assert.match(readme, /private-ops-v0\.16/);
 });
 
 test("Android build supports configurable local API base URLs", () => {

@@ -1,43 +1,19 @@
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncHidenRelease } from "./tools/hiden-release.js";
 
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
-function isEnabled(value) {
-  return ["1", "true", "yes", "on"].includes(
-    String(value ?? "").trim().toLowerCase()
-  );
-}
-
-function maybePullLatest() {
-  const enabled =
-    isEnabled(process.env.GAMER_AUTO_UPDATE) || isEnabled(process.env.AUTO_UPDATE);
-  if (!enabled || !existsSync(path.join(repoRoot, ".git"))) {
-    return;
-  }
-
-  try {
-    execFileSync("git", ["pull", "--ff-only", "origin", "main"], {
-      cwd: repoRoot,
-      stdio: "inherit",
-      timeout: 120_000
-    });
-  } catch (error) {
-    console.error("gamer auto-update failed; starting current checkout", error);
-  }
-}
-
-maybePullLatest();
-
-const { startAdminReviewServer } = await import("./apps/admin-review/server.js");
 const { loadEnvFiles } = await import("./services/community-api/src/env-file.js");
+loadEnvFiles();
+syncHidenRelease({
+  env: process.env,
+  repoRoot
+});
+const { startAdminReviewServer } = await import("./apps/admin-review/server.js");
 const { startCommunityApiServer } = await import(
   "./services/community-api/src/server.js"
 );
-
-loadEnvFiles();
 
 const publicPort = process.env.PORT ?? "24674";
 const communityApiPort = process.env.COMMUNITY_API_PORT ?? "4000";

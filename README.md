@@ -218,6 +218,13 @@ already-built release images, set `PRIVATE_OPS_ROLLBACK_APPLY=1`; then run
 `npm.cmd run smoke:private-ops` and inspect logs before reopening live
 generation.
 
+For hiden-style Git deployments, use `GAMER_RELEASE_REF` as the direct runtime
+rollback pin. Set it to a release tag such as `private-ops-v0.16` and restart
+hiden; `index.js` will fetch that ref, checkout `FETCH_HEAD`, and start the
+checked-out code instead of pulling `origin/main`. Remove `GAMER_RELEASE_REF`
+and restart to resume the normal `AUTO_UPDATE`/`GAMER_AUTO_UPDATE` mainline
+path.
+
 Use `deploy/private-ops-cron.example` for a 5-minute synthetic smoke probe and
 `deploy/private-ops-logrotate.conf` for local smoke/ops log rotation.
 
