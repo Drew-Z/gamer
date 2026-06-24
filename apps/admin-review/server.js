@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createGaPetReviewStore, decodeBody } from "./src/gaPetReviewStore.js";
+import { createDatabaseConfig } from "../../services/community-api/src/database/config.js";
+import { listCommunityMigrations } from "../../services/community-api/src/database/migrations.js";
+import { createPgClientOptions } from "../../services/community-api/src/database/pg-options.js";
+import { runCommunityMigrations } from "../../services/community-api/src/database/runner.js";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(rootDir, "public");
@@ -194,13 +198,113 @@ const safeJsonBody = (text) => {
   }
 };
 
-const handleOpsRequest = async (request, response, url, communityApiUrl) => {
-  if (request.method !== "GET" || url.pathname !== "/ops/internal-community-auth-check") {
+const createDefaultOpsPgClient = async (config) => {
+  const pg = await import("pg");
+  const { Client } = pg.default ?? pg;
+  return new Client(createPgClientOptions(config));
+};
+
+const databaseReadinessError = (response, status, body) => {
+  writeJson(response, status, {
+    schema: "desktop-pet.ops.community-db-readiness.v1",
+    ok: false,
+    ...body
+  });
+};
+
+const handleCommunityDbReadiness = async (response, env, createOpsPgClient) => {
+  const migrations = listCommunityMigrations();
+  const migrationCount = migrations.length;
+  let config;
+
+  try {
+    config = createDatabaseConfig(env);
+  } catch {
+    databaseReadinessError(response, 424, {
+      database: {
+        mode: "invalid",
+        postgresConfigured: false,
+        migrationCount
+      },
+      error: "database_url_invalid"
+    });
+    return;
+  }
+
+  if (config.mode !== "postgres") {
+    databaseReadinessError(response, 424, {
+      database: {
+        mode: config.mode,
+        postgresConfigured: false,
+        migrationCount
+      },
+      error: "postgres_database_url_required"
+    });
+    return;
+  }
+
+  let client;
+  try {
+    client = await createOpsPgClient(config);
+    await client.connect();
+    const result = await runCommunityMigrations({
+      client,
+      migrations,
+      dryRun: true
+    });
+
+    writeJson(response, 200, {
+      schema: "desktop-pet.ops.community-db-readiness.v1",
+      ok: true,
+      database: {
+        mode: "postgres",
+        postgresConfigured: true,
+        migrationCount,
+        dryRun: {
+          pending: result.pending.length,
+          applied: result.applied.length,
+          skipped: result.skipped.length
+        }
+      }
+    });
+  } catch {
+    databaseReadinessError(response, 502, {
+      database: {
+        mode: "postgres",
+        postgresConfigured: true,
+        migrationCount
+      },
+      error: "postgres_migration_dry_run_failed"
+    });
+  } finally {
+    try {
+      await client?.end?.();
+    } catch {
+      // Closing a failed readiness probe must not change the reported cause.
+    }
+  }
+};
+
+const handleOpsRequest = async (request, response, url, options) => {
+  if (request.method !== "GET") {
+    return false;
+  }
+
+  if (url.pathname === "/ops/community-db-readiness") {
+    await handleCommunityDbReadiness(
+      response,
+      options.env,
+      options.createOpsPgClient ?? createDefaultOpsPgClient
+    );
+    return true;
+  }
+
+  if (url.pathname !== "/ops/internal-community-auth-check") {
     return false;
   }
 
   try {
-    const upstream = await fetch(new URL("/v1/check-in", communityApiUrl), {
+    const upstream = await fetch(new URL("/v1/check-in", options.communityApiUrl), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -318,7 +422,11 @@ export function createAdminReviewHttpHandler(options = {}) {
       }
 
       if (url.pathname.startsWith("/ops/")) {
-        const handled = await handleOpsRequest(request, response, url, communityApiUrl);
+        const handled = await handleOpsRequest(request, response, url, {
+          communityApiUrl,
+          createOpsPgClient: options.createOpsPgClient,
+          env
+        });
         if (!handled) {
           writeJson(response, 404, { error: "not_found" });
         }

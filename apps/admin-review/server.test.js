@@ -237,6 +237,121 @@ test("admin-review ops check verifies raw community auth from the target host", 
   }
 });
 
+test("admin-review ops database readiness reports missing postgres without secrets", async () => {
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+        DATABASE_URL: ""
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/community-db-readiness`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+
+    assert.equal(response.status, 424);
+    assert.deepEqual(await response.json(), {
+      schema: "desktop-pet.ops.community-db-readiness.v1",
+      ok: false,
+      database: {
+        mode: "memory",
+        postgresConfigured: false,
+        migrationCount: 5
+      },
+      error: "postgres_database_url_required"
+    });
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
+test("admin-review ops database readiness runs postgres dry-run without leaking url", async () => {
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+  const queries = [];
+  const fakeClient = {
+    async connect() {},
+    async end() {},
+    async query(sql, params = []) {
+      queries.push({ sql, params });
+      if (/select id from schema_migrations/iu.test(sql)) {
+        return { rows: [{ id: "001_initial_community_schema" }] };
+      }
+      return { rows: [] };
+    }
+  };
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      createOpsPgClient: () => fakeClient,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+        DATABASE_URL: "postgres://db.example.invalid:5432/community?sslmode=require"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/community-db-readiness`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      schema: "desktop-pet.ops.community-db-readiness.v1",
+      ok: true,
+      database: {
+        mode: "postgres",
+        postgresConfigured: true,
+        migrationCount: 5,
+        dryRun: {
+          pending: 4,
+          applied: 0,
+          skipped: 1
+        }
+      }
+    });
+    assert.equal(JSON.stringify(body).includes("db.example.invalid"), false);
+    assert.ok(queries.some((query) => /select id from schema_migrations/iu.test(query.sql)));
+    assert.equal(queries.some((query) => query.sql === "BEGIN"), false);
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review proxies community writes with server token and browser origin metadata", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

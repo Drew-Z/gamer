@@ -6,6 +6,7 @@ const fantasyPetUpstreamToken = requireSecretEnv("FANTASY_PET_UPSTREAM_TOKEN");
 const basicAuthHeader = privateOpsBasicAuthHeader(process.env);
 const smokeSurface = resolveSmokeSurface(process.env);
 const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").trim();
+const requirePostgres = isEnabled(process.env.PRIVATE_OPS_REQUIRE_POSTGRES);
 const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
@@ -22,6 +23,10 @@ if (smokeSurface === "admin-review" && !basicAuthHeader) {
   throw new Error(
     "PRIVATE_OPS_BASIC_AUTH_USER and PRIVATE_OPS_BASIC_AUTH_PASSWORD are required for admin-review smoke surface."
   );
+}
+
+if (requirePostgres && smokeSurface !== "admin-review") {
+  throw new Error("PRIVATE_OPS_REQUIRE_POSTGRES is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
 }
 
 await runCheck("community health is public-safe", async () => {
@@ -97,6 +102,30 @@ if (smokeSurface === "admin-review") {
       "internal missing-token error"
     );
   });
+
+  if (requirePostgres) {
+    await runCheck("community postgres readiness is verified", async () => {
+      const response = await requestJson("/ops/community-db-readiness");
+      assertStatus(response, 200);
+      assertEqual(
+        response.body.schema,
+        "desktop-pet.ops.community-db-readiness.v1",
+        "community db readiness schema"
+      );
+      assertEqual(response.body.ok, true, "community db readiness ok");
+      assertEqual(response.body.database?.mode, "postgres", "community db mode");
+      assertEqual(
+        response.body.database?.postgresConfigured,
+        true,
+        "community postgres configured"
+      );
+      assertEqual(
+        response.body.database?.dryRun?.pending,
+        0,
+        "community pending migrations"
+      );
+    });
+  }
 } else {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {
@@ -185,7 +214,8 @@ console.log(
       smokeSurface,
       checks,
       createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB),
-      checkedKnownPackageGate: Boolean(knownAppJobId)
+      checkedKnownPackageGate: Boolean(knownAppJobId),
+      requiredPostgres: requirePostgres
     },
     null,
     2

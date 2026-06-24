@@ -178,7 +178,11 @@ while keeping `/health` public for platform health checks. When
 with `PRIVATE_OPS_SMOKE_SURFACE=admin-review`; the smoke verifies the public
 Basic Auth gate and calls the protected
 `/ops/internal-community-auth-check` endpoint so `admin-review` can verify raw
-Community API missing-token behavior from inside the target host.
+Community API missing-token behavior from inside the target host. Set
+`PRIVATE_OPS_REQUIRE_POSTGRES=1` during the target database gate; the smoke then
+also calls `/ops/community-db-readiness`, which verifies Postgres is configured
+and a migration dry-run reports zero pending migrations without printing
+`DATABASE_URL`.
 
 Operational helpers:
 
