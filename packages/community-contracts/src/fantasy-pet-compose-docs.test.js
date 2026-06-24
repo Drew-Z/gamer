@@ -23,8 +23,11 @@ test("fantasy pet public API has a Docker Compose overlay", () => {
   assert.match(compose, /fantasy-pet-api:/);
   assert.match(compose, /community-api:/);
   assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"http:\/\/fantasy-pet-api:8765"/);
+  assert.match(compose, /build:\s*\n\s+context: \.\.\/fantasy-pet-rule\s*\n\s+dockerfile: Dockerfile/);
+  assert.match(compose, /fantasy_pet_adapter_config:/);
   assert.match(compose, /8765:8765/);
   assert.match(compose, /tools\/app_server\.py|tools\\app_server\.py/);
+  assert.doesNotMatch(compose, /\.\.\/fantasy-pet-rule:\/workspace/);
   assert.doesNotMatch(compose, /enable-admin|\/admin|server-worker-cycle|agent-outputs/);
 });
 
@@ -53,6 +56,13 @@ test("private ops Compose overlay gates startup through Postgres migrations", ()
   assert.match(compose, /service_completed_successfully/);
   assert.match(compose, /COMMUNITY_DEMO_TOKEN:\s+"\$\{COMMUNITY_DEMO_TOKEN:\?set COMMUNITY_DEMO_TOKEN\}"/);
   assert.match(compose, /FANTASY_PET_UPSTREAM_TOKEN:\s+"\$\{FANTASY_PET_UPSTREAM_TOKEN:\?set FANTASY_PET_UPSTREAM_TOKEN\}"/);
+  assert.match(compose, /private-ops-proxy:/);
+  assert.match(compose, /CADDY_ADMIN_BASIC_AUTH_HASH:\s+"\$\{CADDY_ADMIN_BASIC_AUTH_HASH:\?set CADDY_ADMIN_BASIC_AUTH_HASH\}"/);
+  assert.match(compose, /deploy\/Caddyfile\.private-ops/);
+  assert.match(compose, /driver: json-file/);
+  assert.match(compose, /mem_limit:/);
+  assert.match(compose, /cpus:/);
+  assert.match(compose, /env_file:/);
   assert.match(compose, /\/health/);
   assert.match(compose, /\/worker-readiness/);
   assert.doesNotMatch(compose, /5432:5432/);
@@ -64,6 +74,8 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   const readme = readRepoFile("README.md");
 
   assert.match(script, /COMMUNITY_DEMO_TOKEN/);
+  assert.match(script, /FANTASY_PET_UPSTREAM_TOKEN/);
+  assert.match(script, /PRIVATE_OPS_BASIC_AUTH_USER/);
   assert.match(script, /\/health/);
   assert.match(script, /\/v1\/sla/);
   assert.match(script, /\/worker-readiness/);
@@ -74,6 +86,27 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(packageJson, /"smoke:private-ops": "node tools\/private-ops-smoke\.js"/);
   assert.match(readme, /compose\.private-ops\.yaml/);
   assert.match(readme, /npm\.cmd run smoke:private-ops/);
+});
+
+test("private ops deployment assets document TLS monitoring and backup hooks", () => {
+  const caddyfile = readRepoFile("deploy/Caddyfile.private-ops");
+  const cron = readRepoFile("deploy/private-ops-cron.example");
+  const logrotate = readRepoFile("deploy/private-ops-logrotate.conf");
+  const backup = readRepoFile("tools/private-ops-backup.sh");
+  const restore = readRepoFile("tools/private-ops-restore.sh");
+  const prune = readRepoFile("tools/private-ops-prune-agent-runs.sh");
+
+  assert.match(caddyfile, /tls \{\$PRIVATE_OPS_TLS_MODE:internal\}/);
+  assert.match(caddyfile, /basic_auth/);
+  assert.match(caddyfile, /reverse_proxy admin-review:4200/);
+  assert.match(cron, /\*\/5 \* \* \* \*/);
+  assert.match(cron, /npm run smoke:private-ops/);
+  assert.match(logrotate, /rotate 14/);
+  assert.match(backup, /pg_dump/);
+  assert.match(restore, /psql/);
+  assert.match(restore, /migrate:community-db:dry-run/);
+  assert.match(prune, /FANTASY_PET_RUN_RETENTION_DAYS:-14/);
+  assert.match(prune, /find \/data\/runs/);
 });
 
 test("Android build supports configurable local API base URLs", () => {

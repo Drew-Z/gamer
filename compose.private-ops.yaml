@@ -3,6 +3,8 @@ services:
     image: postgres:17-alpine
     profiles:
       - private-ops
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
       POSTGRES_DB: "${COMMUNITY_POSTGRES_DB:-gamer}"
       POSTGRES_USER: "${COMMUNITY_POSTGRES_USER:-gamer}"
@@ -14,15 +16,25 @@ services:
       retries: 6
       start_period: 10s
     restart: unless-stopped
+    cpus: "${COMMUNITY_DB_CPUS:-1.00}"
+    mem_limit: "${COMMUNITY_DB_MEM_LIMIT:-768m}"
+    logging: &private_ops_logging
+      driver: json-file
+      options:
+        max-size: "${PRIVATE_OPS_LOG_MAX_SIZE:-10m}"
+        max-file: "${PRIVATE_OPS_LOG_MAX_FILE:-5}"
     volumes:
       - community-postgres-data:/var/lib/postgresql/data
 
   community-migrate:
+    image: "${COMMUNITY_API_IMAGE:-desktop-pet-community-api:${GAMER_IMAGE_TAG:-local}}"
     build:
       context: .
       dockerfile: services/community-api/Dockerfile
     profiles:
       - private-ops
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
       DATABASE_URL: "postgresql://${COMMUNITY_POSTGRES_USER:-gamer}:${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}@community-db:5432/${COMMUNITY_POSTGRES_DB:-gamer}"
       POSTGRES_SSLMODE: "disable"
@@ -34,8 +46,14 @@ services:
       community-db:
         condition: service_healthy
     restart: "no"
+    cpus: "${COMMUNITY_MIGRATE_CPUS:-0.50}"
+    mem_limit: "${COMMUNITY_MIGRATE_MEM_LIMIT:-512m}"
+    logging: *private_ops_logging
 
   community-api:
+    image: "${COMMUNITY_API_IMAGE:-desktop-pet-community-api:${GAMER_IMAGE_TAG:-local}}"
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
       DATABASE_URL: "postgresql://${COMMUNITY_POSTGRES_USER:-gamer}:${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}@community-db:5432/${COMMUNITY_POSTGRES_DB:-gamer}"
       POSTGRES_SSLMODE: "disable"
@@ -59,8 +77,13 @@ services:
       retries: 6
       start_period: 10s
     restart: unless-stopped
+    cpus: "${COMMUNITY_API_CPUS:-1.00}"
+    mem_limit: "${COMMUNITY_API_MEM_LIMIT:-768m}"
+    logging: *private_ops_logging
 
   fantasy-pet-api:
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
       FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
     healthcheck:
@@ -74,11 +97,58 @@ services:
       retries: 8
       start_period: 20s
     restart: unless-stopped
+    cpus: "${FANTASY_PET_API_CPUS:-2.00}"
+    mem_limit: "${FANTASY_PET_API_MEM_LIMIT:-2g}"
+    logging: *private_ops_logging
 
   fantasy-pet-worker-daemon:
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
       FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
     restart: unless-stopped
+    cpus: "${FANTASY_PET_WORKER_CPUS:-2.00}"
+    mem_limit: "${FANTASY_PET_WORKER_MEM_LIMIT:-3g}"
+    logging: *private_ops_logging
+
+  admin-review:
+    image: "${ADMIN_REVIEW_IMAGE:-desktop-pet-admin-review:${GAMER_IMAGE_TAG:-local}}"
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
+    restart: unless-stopped
+    cpus: "${ADMIN_REVIEW_CPUS:-0.50}"
+    mem_limit: "${ADMIN_REVIEW_MEM_LIMIT:-512m}"
+    logging: *private_ops_logging
+
+  private-ops-proxy:
+    image: caddy:2-alpine
+    profiles:
+      - private-ops
+    env_file:
+      - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
+    environment:
+      PRIVATE_OPS_HOST: "${PRIVATE_OPS_HOST:-localhost}"
+      PRIVATE_OPS_TLS_MODE: "${PRIVATE_OPS_TLS_MODE:-internal}"
+      PRIVATE_OPS_ADMIN_USER: "${PRIVATE_OPS_ADMIN_USER:-operator}"
+      CADDY_ADMIN_BASIC_AUTH_HASH: "${CADDY_ADMIN_BASIC_AUTH_HASH:?set CADDY_ADMIN_BASIC_AUTH_HASH}"
+    ports:
+      - "${PRIVATE_OPS_HTTP_PORT:-80}:80"
+      - "${PRIVATE_OPS_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/Caddyfile.private-ops:/etc/caddy/Caddyfile:ro
+      - private-ops-caddy-data:/data
+      - private-ops-caddy-config:/config
+    depends_on:
+      admin-review:
+        condition: service_started
+      community-api:
+        condition: service_healthy
+    restart: unless-stopped
+    cpus: "${PRIVATE_OPS_PROXY_CPUS:-0.50}"
+    mem_limit: "${PRIVATE_OPS_PROXY_MEM_LIMIT:-256m}"
+    logging: *private_ops_logging
 
 volumes:
   community-postgres-data:
+  private-ops-caddy-data:
+  private-ops-caddy-config:

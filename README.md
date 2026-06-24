@@ -118,15 +118,17 @@ docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet
 ```
 
 Run the private small-scale ops stack with Postgres, migration gating,
-healthchecks, Community demo auth, and the protected fantasy-pet upstream:
+healthchecks, Community demo auth, the protected fantasy-pet upstream, and a
+Caddy TLS/Basic Auth reverse proxy:
 
 ```powershell
-$env:COMMUNITY_POSTGRES_PASSWORD="REPLACE_WITH_URL_SAFE_PRIVATE_PASSWORD"
-$env:COMMUNITY_DEMO_TOKEN="REPLACE_WITH_PRIVATE_COMMUNITY_DEMO_TOKEN"
-$env:FANTASY_PET_UPSTREAM_TOKEN="REPLACE_WITH_PRIVATE_AGENT_DEMO_TOKEN"
+Copy-Item .env.private-ops.example .env.private-ops
+# Edit .env.private-ops with private values before continuing.
+# Generate CADDY_ADMIN_BASIC_AUTH_HASH with:
+# docker run --rm caddy:2-alpine caddy hash-password --plaintext "REPLACE_WITH_PRIVATE_PASSWORD"
 
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
-docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops up --build -d community-db community-migrate fantasy-pet-api fantasy-pet-worker-daemon community-api
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops up --build -d community-db community-migrate fantasy-pet-api fantasy-pet-worker-daemon community-api admin-review private-ops-proxy
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops run --rm community-migrate npm run migrate:community-db:dry-run
 npm.cmd run smoke:private-ops
 ```
@@ -134,8 +136,22 @@ npm.cmd run smoke:private-ops
 `tools/private-ops-smoke.js` checks `/health`, `/v1/sla`,
 `/worker-readiness`, `/app-api-contract`, missing-token rejection, and one
 token-authenticated Community write without printing configured secret values.
-It does not create a live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is
-set for a quota-approved window.
+It also verifies `FANTASY_PET_UPSTREAM_TOKEN` is present before running. When
+the smoke goes through Caddy Basic Auth, set `PRIVATE_OPS_BASIC_AUTH_USER` and
+`PRIVATE_OPS_BASIC_AUTH_PASSWORD` in `.env.private-ops`. It does not create a
+live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is set for a
+quota-approved window.
+
+Operational helpers:
+
+```powershell
+tools\private-ops-backup.sh
+tools\private-ops-restore.sh backups\community-db-YYYYMMDDTHHMMSSZ.sql
+tools\private-ops-prune-agent-runs.sh
+```
+
+Use `deploy/private-ops-cron.example` for a 5-minute synthetic smoke probe and
+`deploy/private-ops-logrotate.conf` for local smoke/ops log rotation.
 
 The default ports are:
 
@@ -143,6 +159,7 @@ The default ports are:
 - Pet Generator Adapter: `http://localhost:4100`
 - Admin Review Prototype: `http://localhost:4200`
 - Fantasy Pet Public API: `http://127.0.0.1:8765`
+- Private Ops Proxy: `https://localhost`
 
 ## Community API
 

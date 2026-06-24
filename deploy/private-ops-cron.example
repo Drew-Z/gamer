@@ -1,0 +1,10 @@
+# Run as the private ops deploy user. Keep the env file outside git.
+#
+# Required local setup:
+# - /opt/desktop-pet/gamer points at the committed release checkout.
+# - /opt/desktop-pet/gamer/.env.private-ops contains COMMUNITY_BASE_URL,
+#   COMMUNITY_DEMO_TOKEN, FANTASY_PET_UPSTREAM_TOKEN, and optional
+#   PRIVATE_OPS_BASIC_AUTH_USER / PRIVATE_OPS_BASIC_AUTH_PASSWORD.
+# - /var/log/desktop-pet exists and is writable by the deploy user.
+
+*/5 * * * * cd /opt/desktop-pet/gamer && set -a && . ./.env.private-ops && set +a && npm run smoke:private-ops >> /var/log/desktop-pet/private-ops-smoke.log 2>&1

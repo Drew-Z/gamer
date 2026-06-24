@@ -7,6 +7,9 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.private-ops.example
+backups/
+secrets/
 services/community-api/data/
 services/pet-generator/data/
 .venv/

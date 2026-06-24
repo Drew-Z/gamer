@@ -13,28 +13,27 @@ services:
         condition: service_started
 
   fantasy-pet-api:
-    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    image: "${FANTASY_PET_IMAGE:-desktop-pet-agent:${FANTASY_PET_IMAGE_TAG:-local}}"
+    build:
+      context: ../fantasy-pet-rule
+      dockerfile: Dockerfile
     profiles:
       - fantasy-pet
-    working_dir: /workspace/fantasy-pet-rule
+    working_dir: /app
     environment:
       PYTHONUNBUFFERED: "1"
-      UV_CACHE_DIR: /data/uv-cache
+      FANTASY_PET_ADAPTER_CONFIG: /run/secrets/fantasy_pet_adapter_config
       FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
       FANTASY_PET_DEMO_MAX_ACTIVE_JOBS: "${FANTASY_PET_DEMO_MAX_ACTIVE_JOBS:-1}"
       FANTASY_PET_DEMO_HOURLY_CREATE_LIMIT: "${FANTASY_PET_DEMO_HOURLY_CREATE_LIMIT:-4}"
       FANTASY_PET_DEMO_DAILY_CREATE_LIMIT: "${FANTASY_PET_DEMO_DAILY_CREATE_LIMIT:-12}"
     command:
-      - uv
-      - run
-      - --with-requirements
-      - requirements-server.txt
       - python
       - tools/app_server.py
       - --run-root
       - /data/runs
       - --adapter-config
-      - /workspace/fantasy-pet-rule/config/adapter-config.server.json
+      - /run/secrets/fantasy_pet_adapter_config
       - --host
       - 0.0.0.0
       - --port
@@ -42,24 +41,20 @@ services:
     ports:
       - "8765:8765"
     volumes:
-      - ../fantasy-pet-rule:/workspace/fantasy-pet-rule
       - fantasy-pet-runs:/data/runs
-      - fantasy-pet-uv-cache:/data/uv-cache
+    secrets:
+      - fantasy_pet_adapter_config
 
   fantasy-pet-worker-daemon:
-    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    image: "${FANTASY_PET_IMAGE:-desktop-pet-agent:${FANTASY_PET_IMAGE_TAG:-local}}"
     profiles:
       - fantasy-pet
-    working_dir: /workspace/fantasy-pet-rule
+    working_dir: /app
     environment:
       PYTHONUNBUFFERED: "1"
-      UV_CACHE_DIR: /data/uv-cache
+      FANTASY_PET_ADAPTER_CONFIG: /run/secrets/fantasy_pet_adapter_config
       FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
     command:
-      - uv
-      - run
-      - --with-requirements
-      - requirements-server.txt
       - python
       - tools/run_server_worker_daemon.py
       - --run-root
@@ -79,16 +74,19 @@ services:
       - --adapter-config-name
       - adapter-config.json
       - --adapter-config-source
-      - /workspace/fantasy-pet-rule/config/adapter-config.server.json
+      - /run/secrets/fantasy_pet_adapter_config
       - --run-real-invocations
     depends_on:
       fantasy-pet-api:
         condition: service_started
     volumes:
-      - ../fantasy-pet-rule:/workspace/fantasy-pet-rule
       - fantasy-pet-runs:/data/runs
-      - fantasy-pet-uv-cache:/data/uv-cache
+    secrets:
+      - fantasy_pet_adapter_config
 
 volumes:
   fantasy-pet-runs:
-  fantasy-pet-uv-cache:
+
+secrets:
+  fantasy_pet_adapter_config:
+    file: "${FANTASY_PET_ADAPTER_CONFIG_FILE:-../fantasy-pet-rule/config/adapter-config.server.example.json}"

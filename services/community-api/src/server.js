@@ -37,6 +37,54 @@ const writeRaw = (response, result) => {
   response.end(result.body);
 };
 
+const unsafeRequestMethods = new Set(["DELETE", "PATCH", "POST", "PUT"]);
+
+export function createCorsHeaders(method, headers = {}, env = process.env) {
+  const allowedOrigins = String(env.COMMUNITY_CORS_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  if (allowedOrigins.length === 0) {
+    return {};
+  }
+
+  const origin = String(headers.origin ?? headers.Origin ?? "").trim();
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return {};
+  }
+
+  const requestedHeaders = String(headers["access-control-request-headers"] ?? "").trim();
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": requestedHeaders || "Content-Type, Authorization, X-Demo-Token",
+    "Access-Control-Max-Age": "600",
+    Vary: "Origin"
+  };
+}
+
+function writeCorsPreflight(response, method, headers, env) {
+  if (method !== "OPTIONS") {
+    return false;
+  }
+
+  const corsHeaders = createCorsHeaders(method, headers, env);
+  if (corsHeaders["Access-Control-Allow-Origin"]) {
+    response.writeHead(204, corsHeaders);
+    response.end();
+    return true;
+  }
+
+  if (String(env.COMMUNITY_CORS_ALLOWED_ORIGINS ?? "").trim()) {
+    writeJson(response, 403, {
+      error: "cors_origin_not_allowed"
+    });
+    return true;
+  }
+
+  return false;
+}
+
 export function createCommunityHttpHandler(options = {}) {
   const env = options.env ?? process.env;
   const rateLimit = options.rateLimit ?? createRateLimiterPolicyFromEnv(env);
@@ -83,6 +131,25 @@ export function createCommunityHttpHandler(options = {}) {
             return;
           }
         }
+      }
+
+      const corsHeaders = createCorsHeaders(method, request.headers, env);
+      for (const [name, value] of Object.entries(corsHeaders)) {
+        response.setHeader(name, value);
+      }
+      if (writeCorsPreflight(response, method, request.headers, env)) {
+        return;
+      }
+      if (
+        unsafeRequestMethods.has(method.toUpperCase()) &&
+        String(env.COMMUNITY_CORS_ALLOWED_ORIGINS ?? "").trim() &&
+        String(request.headers.origin ?? request.headers.Origin ?? "").trim() &&
+        !corsHeaders["Access-Control-Allow-Origin"]
+      ) {
+        writeJson(response, 403, {
+          error: "cors_origin_not_allowed"
+        });
+        return;
       }
 
       const authError = requireCommunityDemoAuth(method, requestUrl, request.headers, {

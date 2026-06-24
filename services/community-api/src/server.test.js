@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
 import { validPetPackageBundle } from "../../../packages/pet-package-spec/src/index.js";
-import { createCommunityHttpHandler, resolveCommunityApiPort } from "./server.js";
+import {
+  createCommunityHttpHandler,
+  createCorsHeaders,
+  resolveCommunityApiPort
+} from "./server.js";
 import { createRateLimiterPolicy } from "./rate-limit.js";
 import { createCommunityStore } from "./store.js";
 
@@ -103,6 +107,67 @@ test("community API port prefers PORT then SERVER_PORT then default", () => {
   assert.equal(resolveCommunityApiPort({ PORT: "5123", SERVER_PORT: "6123" }), 5123);
   assert.equal(resolveCommunityApiPort({ SERVER_PORT: "6123" }), 6123);
   assert.equal(resolveCommunityApiPort({}), 4000);
+});
+
+test("CORS headers are emitted only for configured allowed origins", () => {
+  const env = {
+    COMMUNITY_CORS_ALLOWED_ORIGINS: "https://desktop-pet.example.internal"
+  };
+
+  assert.deepEqual(
+    createCorsHeaders("GET", { origin: "https://desktop-pet.example.internal" }, env),
+    {
+      "Access-Control-Allow-Origin": "https://desktop-pet.example.internal",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Demo-Token",
+      "Access-Control-Max-Age": "600",
+      Vary: "Origin"
+    }
+  );
+  assert.deepEqual(
+    createCorsHeaders("GET", { origin: "https://example.invalid" }, env),
+    {}
+  );
+});
+
+test("HTTP server handles CORS preflight for private ops allowlist", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_CORS_ALLOWED_ORIGINS: "https://desktop-pet.example.internal"
+      },
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const allowed = await requestRaw(server, "OPTIONS", "/v1/check-in", "", {
+      Origin: "https://desktop-pet.example.internal",
+      "Access-Control-Request-Headers": "Content-Type, X-Demo-Token"
+    });
+    const blocked = await requestJson(
+      server,
+      "POST",
+      "/v1/check-in",
+      {
+        date: "2026-06-24"
+      },
+      {
+        Origin: "https://example.invalid"
+      }
+    );
+
+    assert.equal(allowed.status, 204);
+    assert.equal(
+      allowed.headers["access-control-allow-origin"],
+      "https://desktop-pet.example.internal"
+    );
+    assert.equal(blocked.status, 403);
+    assert.equal(blocked.body.error, "cors_origin_not_allowed");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
 
 test("HTTP server parses JSON body for check-in", async () => {

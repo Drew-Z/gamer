@@ -2,9 +2,11 @@
 
 const baseUrl = normalizeBaseUrl(process.env.COMMUNITY_BASE_URL ?? "http://127.0.0.1:4000");
 const communityDemoToken = requireSecretEnv("COMMUNITY_DEMO_TOKEN");
+const fantasyPetUpstreamToken = requireSecretEnv("FANTASY_PET_UPSTREAM_TOKEN");
+const basicAuthHeader = privateOpsBasicAuthHeader(process.env);
 const forbiddenFragments = [
   communityDemoToken,
-  process.env.FANTASY_PET_UPSTREAM_TOKEN,
+  fantasyPetUpstreamToken,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   process.env.DATABASE_URL
 ]
@@ -129,6 +131,9 @@ async function requestJson(path, options = {}) {
   };
   let body;
 
+  if (basicAuthHeader) {
+    headers.Authorization = basicAuthHeader;
+  }
   if (options.demoToken) {
     headers["X-Demo-Token"] = communityDemoToken;
   }
@@ -209,6 +214,18 @@ function assertNoLeaks(label, text) {
       throw new Error(`${label} response matched forbidden leak pattern ${pattern}`);
     }
   }
+}
+
+function privateOpsBasicAuthHeader(env) {
+  const user = String(env.PRIVATE_OPS_BASIC_AUTH_USER ?? "").trim();
+  const password = String(env.PRIVATE_OPS_BASIC_AUTH_PASSWORD ?? "").trim();
+  if (!user && !password) {
+    return "";
+  }
+  if (!user || !password) {
+    throw new Error("PRIVATE_OPS_BASIC_AUTH_USER and PRIVATE_OPS_BASIC_AUTH_PASSWORD must be set together.");
+  }
+  return `Basic ${Buffer.from(`${user}:${password}`).toString("base64")}`;
 }
 
 function isEnabled(value) {
