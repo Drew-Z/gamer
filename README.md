@@ -208,9 +208,19 @@ Operational helpers:
 ```powershell
 tools\private-ops-backup.sh
 tools\private-ops-restore.sh backups\community-db-YYYYMMDDTHHMMSSZ.sql
+node tools\private-ops-target-hooks-audit.js
+npm.cmd run audit:private-ops-hooks
 tools\private-ops-prune-agent-runs.sh
 tools\private-ops-rollback.sh private-ops-v0.2
 ```
+
+After installing the target scheduler and log retention hooks, run
+`npm.cmd run audit:private-ops-hooks`. For the final target gate, set
+`PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG=1` so the audit also requires the recurring
+smoke log to be recent, successful, and free of configured secret fragments.
+Override `PRIVATE_OPS_CRON_FILE`, `PRIVATE_OPS_LOGROTATE_FILE`,
+`PRIVATE_OPS_LOG_DIR`, and `PRIVATE_OPS_SMOKE_LOG_FILE` when the platform uses
+non-default paths.
 
 The helpers default to `.env.private-ops` and the default compose project. For
 operator drills that use a custom project name or temporary override file, set
@@ -230,7 +240,9 @@ and restart to resume the normal `AUTO_UPDATE`/`GAMER_AUTO_UPDATE` mainline
 path.
 
 Use `deploy/private-ops-cron.example` for a 5-minute synthetic smoke probe and
-`deploy/private-ops-logrotate.conf` for local smoke/ops log rotation.
+`deploy/private-ops-logrotate.conf` for local smoke/ops log rotation. The
+target hook audit turns those installed files plus the latest smoke log into a
+token-safe verification artifact.
 
 The default ports are:
 

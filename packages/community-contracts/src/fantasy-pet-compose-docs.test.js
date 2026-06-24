@@ -141,6 +141,8 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   const rollback = readRepoFile("tools/private-ops-rollback.sh");
   const hidenRelease = readRepoFile("tools/hiden-release.js");
   const readme = readRepoFile("README.md");
+  const hooksAudit = readRepoFile("tools/private-ops-target-hooks-audit.js");
+  const packageJson = readRepoFile("package.json");
 
   assert.match(caddyfile, /tls \{\$PRIVATE_OPS_TLS_MODE:internal\}/);
   assert.match(caddyfile, /basic_auth/);
@@ -166,12 +168,18 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(hidenRelease, /checkout", "--force", "FETCH_HEAD"/);
   assert.match(readme, /GAMER_RELEASE_REF/);
   assert.match(readme, /private-ops-v0\.16/);
+  assert.match(hooksAudit, /desktop-pet\.ops\.target-hooks-audit\.v1/);
+  assert.match(hooksAudit, /PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG/);
+  assert.match(hooksAudit, /private-ops-smoke\.log/);
+  assert.match(hooksAudit, /does not contain configured secret fragments/);
+  assert.match(packageJson, /"audit:private-ops-hooks": "node tools\/private-ops-target-hooks-audit\.js"/);
+  assert.match(readme, /audit:private-ops-hooks/);
+  assert.match(readme, /PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG=1/);
 });
 
 test("Android build supports configurable local API base URLs", () => {
   const buildGradle = readRepoFile("apps/android-community/app/build.gradle");
   const readme = readRepoFile("README.md");
-
   assert.match(
     buildGradle,
     /System\.getenv\('FANTASY_PET_API_BASE_URL'\)\s*\?:\s*communityApiBaseUrl/,
