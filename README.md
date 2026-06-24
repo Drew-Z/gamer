@@ -72,6 +72,12 @@ with `COMMUNITY_RATE_LIMIT_ENABLED=1`. Tune the window and budgets with
 `COMMUNITY_RATE_LIMIT_READ_MAX`. It is disabled by default so local and existing
 deployments keep their current behavior until the server opts in.
 
+For a private demo gateway, set `COMMUNITY_DEMO_TOKEN` on the Community API and
+Android demo build. Android sends it as `X-Demo-Token`. Set
+`FANTASY_PET_UPSTREAM_TOKEN` only on the Community API server so proxied
+fantasy-pet requests can authenticate upstream without exposing that token to
+the app.
+
 ## Verification
 
 Run the standard verification set before committing a phase:
@@ -83,6 +89,8 @@ node --test services/community-api/src/database/*.test.js
 D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest --console=plain
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
+npm.cmd run smoke:private-ops
 git diff --check
 ```
 
@@ -108,6 +116,26 @@ Run the community services plus the public `fantasy-pet-rule` app API:
 ```powershell
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
 ```
+
+Run the private small-scale ops stack with Postgres, migration gating,
+healthchecks, Community demo auth, and the protected fantasy-pet upstream:
+
+```powershell
+$env:COMMUNITY_POSTGRES_PASSWORD="REPLACE_WITH_URL_SAFE_PRIVATE_PASSWORD"
+$env:COMMUNITY_DEMO_TOKEN="REPLACE_WITH_PRIVATE_COMMUNITY_DEMO_TOKEN"
+$env:FANTASY_PET_UPSTREAM_TOKEN="REPLACE_WITH_PRIVATE_AGENT_DEMO_TOKEN"
+
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops up --build -d community-db community-migrate fantasy-pet-api fantasy-pet-worker-daemon community-api
+docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops run --rm community-migrate npm run migrate:community-db:dry-run
+npm.cmd run smoke:private-ops
+```
+
+`tools/private-ops-smoke.js` checks `/health`, `/v1/sla`,
+`/worker-readiness`, `/app-api-contract`, missing-token rejection, and one
+token-authenticated Community write without printing configured secret values.
+It does not create a live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is
+set for a quota-approved window.
 
 The default ports are:
 

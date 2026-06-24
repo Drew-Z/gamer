@@ -2,8 +2,15 @@ services:
   community-api:
     environment:
       FANTASY_PET_API_BASE_URL: "http://fantasy-pet-api:8765"
+      FANTASY_PET_UPSTREAM_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
+      COMMUNITY_DEMO_TOKEN: "${COMMUNITY_DEMO_TOKEN:-}"
+      COMMUNITY_RATE_LIMIT_ENABLED: "${COMMUNITY_RATE_LIMIT_ENABLED:-1}"
+      COMMUNITY_RATE_LIMIT_WINDOW_MS: "${COMMUNITY_RATE_LIMIT_WINDOW_MS:-60000}"
+      COMMUNITY_RATE_LIMIT_WRITE_MAX: "${COMMUNITY_RATE_LIMIT_WRITE_MAX:-4}"
+      COMMUNITY_RATE_LIMIT_READ_MAX: "${COMMUNITY_RATE_LIMIT_READ_MAX:-60}"
     depends_on:
-      - fantasy-pet-api
+      fantasy-pet-api:
+        condition: service_started
 
   fantasy-pet-api:
     image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
@@ -13,6 +20,10 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       UV_CACHE_DIR: /data/uv-cache
+      FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
+      FANTASY_PET_DEMO_MAX_ACTIVE_JOBS: "${FANTASY_PET_DEMO_MAX_ACTIVE_JOBS:-1}"
+      FANTASY_PET_DEMO_HOURLY_CREATE_LIMIT: "${FANTASY_PET_DEMO_HOURLY_CREATE_LIMIT:-4}"
+      FANTASY_PET_DEMO_DAILY_CREATE_LIMIT: "${FANTASY_PET_DEMO_DAILY_CREATE_LIMIT:-12}"
     command:
       - uv
       - run
@@ -43,6 +54,7 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       UV_CACHE_DIR: /data/uv-cache
+      FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
     command:
       - uv
       - run
@@ -70,7 +82,8 @@ services:
       - /workspace/fantasy-pet-rule/config/adapter-config.server.json
       - --run-real-invocations
     depends_on:
-      - fantasy-pet-api
+      fantasy-pet-api:
+        condition: service_started
     volumes:
       - ../fantasy-pet-rule:/workspace/fantasy-pet-rule
       - fantasy-pet-runs:/data/runs

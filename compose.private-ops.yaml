@@ -1,0 +1,84 @@
+services:
+  community-db:
+    image: postgres:17-alpine
+    profiles:
+      - private-ops
+    environment:
+      POSTGRES_DB: "${COMMUNITY_POSTGRES_DB:-gamer}"
+      POSTGRES_USER: "${COMMUNITY_POSTGRES_USER:-gamer}"
+      POSTGRES_PASSWORD: "${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - community-postgres-data:/var/lib/postgresql/data
+
+  community-migrate:
+    build:
+      context: .
+      dockerfile: services/community-api/Dockerfile
+    profiles:
+      - private-ops
+    environment:
+      DATABASE_URL: "postgresql://${COMMUNITY_POSTGRES_USER:-gamer}:${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}@community-db:5432/${COMMUNITY_POSTGRES_DB:-gamer}"
+      POSTGRES_SSLMODE: "disable"
+    command:
+      - npm
+      - run
+      - migrate:community-db
+    depends_on:
+      community-db:
+        condition: service_healthy
+    restart: "no"
+
+  community-api:
+    environment:
+      DATABASE_URL: "postgresql://${COMMUNITY_POSTGRES_USER:-gamer}:${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}@community-db:5432/${COMMUNITY_POSTGRES_DB:-gamer}"
+      POSTGRES_SSLMODE: "disable"
+      COMMUNITY_DEMO_TOKEN: "${COMMUNITY_DEMO_TOKEN:?set COMMUNITY_DEMO_TOKEN}"
+      FANTASY_PET_UPSTREAM_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
+      COMMUNITY_RATE_LIMIT_ENABLED: "${COMMUNITY_RATE_LIMIT_ENABLED:-1}"
+      COMMUNITY_RATE_LIMIT_WINDOW_MS: "${COMMUNITY_RATE_LIMIT_WINDOW_MS:-60000}"
+      COMMUNITY_RATE_LIMIT_WRITE_MAX: "${COMMUNITY_RATE_LIMIT_WRITE_MAX:-4}"
+      COMMUNITY_RATE_LIMIT_READ_MAX: "${COMMUNITY_RATE_LIMIT_READ_MAX:-60}"
+    depends_on:
+      community-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+
+  fantasy-pet-api:
+    environment:
+      FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8765/worker-readiness', timeout=5); sys.exit(0 if r.status < 500 else 1)"
+      interval: 15s
+      timeout: 8s
+      retries: 8
+      start_period: 20s
+    restart: unless-stopped
+
+  fantasy-pet-worker-daemon:
+    environment:
+      FANTASY_PET_DEMO_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
+    restart: unless-stopped
+
+volumes:
+  community-postgres-data:

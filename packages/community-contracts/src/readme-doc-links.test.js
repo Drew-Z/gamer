@@ -55,6 +55,21 @@ function quotePowerShellLiteral(value) {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
+function resolvePowerShell() {
+  for (const executable of ["powershell.exe", "pwsh", "powershell"]) {
+    const probe = spawnSync(
+      executable,
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+      { encoding: "utf8" },
+    );
+    if (!probe.error) {
+      return executable;
+    }
+  }
+
+  return "";
+}
+
 test("README exposes contract docs and phase verification commands", () => {
   const readme = readFileSync(readmePath, "utf8");
 
@@ -156,8 +171,9 @@ test("README exposes contract docs and phase verification commands", () => {
   assert.doesNotMatch(androidUiSmokeScript, /\/admin|server-worker-cycle|agent-outputs|targetOutput/);
 });
 
-test("fantasy pet PowerShell verification scripts parse before runtime", () => {
+test("fantasy pet PowerShell verification scripts parse before runtime", { skip: resolvePowerShell() === "" ? "PowerShell is not available in this test environment" : false }, () => {
   const scripts = [verifyFantasyPetIntegrationPath, androidUiSmokePath];
+  const powershellCommand = resolvePowerShell();
   const powershell = `
 $ErrorActionPreference = "Stop"
 $paths = @(${scripts.map(quotePowerShellLiteral).join(", ")})
@@ -172,7 +188,7 @@ foreach ($path in $paths) {
 `;
 
   const result = spawnSync(
-    "powershell.exe",
+    powershellCommand,
     ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", powershell],
     { encoding: "utf8" },
   );

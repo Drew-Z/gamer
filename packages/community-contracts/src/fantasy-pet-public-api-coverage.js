@@ -87,9 +87,7 @@ export function buildFantasyPetPublicApiCoverageReport(options = {}) {
     candidateArtifactReviewGate:
       sources.service.includes('kind == "candidate"') &&
       sources.service.includes("review_target_must_be_candidate"),
-    packageDownloadIsGated:
-      sources.service.includes("downloadReady || job.nextAction == \"download-package\"") &&
-      sources.service.includes("package_not_ready"),
+    packageDownloadIsGated: packageDownloadGatedByReadiness(sources),
     communityImportUiControlsReachable:
       sources.ui.includes("repository.createImportDraftFromFantasyPetPackage") &&
       sources.ui.includes("repository.submitImportDraftToCommunity") &&
@@ -169,6 +167,7 @@ function pythonCommandCandidates() {
     process.env.PYTHON,
     existsSync(CODEX_BUNDLED_PYTHON) ? CODEX_BUNDLED_PYTHON : "",
     "python",
+    "python3",
   ]
     .filter(Boolean)
     .map((executable) => ({ executable, args: [] }))
@@ -203,6 +202,17 @@ function generationStagesCoveredByPassThrough(sources) {
     sources.dto.includes("val currentStage: String") &&
     sources.service.includes("generationProgress.message") &&
     sources.service.includes("generationProgress.steps")
+  );
+}
+
+function packageDownloadGatedByReadiness(sources) {
+  return (
+    sources.service.includes("fun canShowPackageDownload(job: PetGenerationJobResponseDto): Boolean =") &&
+    sources.service.includes("!isContractDemoGenerationJob(job)") &&
+    sources.service.includes("job.downloadReady || job.generationProgress.summary.downloadReady") &&
+    sources.service.includes("if (!canShowPackageDownload(job))") &&
+    sources.service.includes('return ApiCallResult.Failure("package_not_ready")') &&
+    sources.service.includes("if (!canShowPackageDownload(job) || packageByteCount <= 0L)")
   );
 }
 

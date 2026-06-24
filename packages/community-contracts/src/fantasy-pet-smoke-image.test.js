@@ -20,6 +20,28 @@ const validPng1x1 =
 const invalidPngWithBadCrc =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
+function resolvePowerShell() {
+  for (const executable of ["powershell.exe", "pwsh", "powershell"]) {
+    const probe = spawnSync(
+      executable,
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+      { encoding: "utf8" },
+    );
+    if (!probe.error) {
+      return executable;
+    }
+  }
+
+  return "";
+}
+
+const powershell = resolvePowerShell();
+const powershellSkip = powershell === "" ? "PowerShell is not available in this test environment" : false;
+
+function testWithPowerShell(name, fn) {
+  test(name, { skip: powershellSkip }, fn);
+}
+
 function quotePowerShellLiteral(value) {
   return `'${value.replaceAll("'", "''")}'`;
 }
@@ -34,13 +56,13 @@ $result | ConvertTo-Json -Depth 4
 `;
 
   return spawnSync(
-    "powershell.exe",
+    powershell,
     ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
     { encoding: "utf8" },
   );
 }
 
-test("fantasy pet smoke image helper accepts decodable preview images", () => {
+testWithPowerShell("fantasy pet smoke image helper accepts decodable preview images", () => {
   const result = runImageDecode(validPng1x1);
 
   assert.equal(result.status, 0, result.stderr);
@@ -49,7 +71,7 @@ test("fantasy pet smoke image helper accepts decodable preview images", () => {
   assert.equal(decoded.height, 1);
 });
 
-test("fantasy pet smoke image helper rejects corrupt preview images", () => {
+testWithPowerShell("fantasy pet smoke image helper rejects corrupt preview images", () => {
   const result = runImageDecode(invalidPngWithBadCrc);
 
   assert.notEqual(result.status, 0);

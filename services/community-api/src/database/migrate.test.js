@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { listCommunityMigrations } from "./migrations.js";
 import { createPgClientOptions, runMigrationCli } from "./migrate.js";
 
 class FakeCliClient {
@@ -47,8 +48,9 @@ test("migration CLI fails safely when DATABASE_URL is blank", async () => {
 
 test("migration CLI supports dry-run with injected client", async () => {
   const stdout = [];
+  const migrations = listCommunityMigrations();
   const client = new FakeCliClient({
-    appliedIds: ["001_initial_community_schema"]
+    appliedIds: [migrations[0].id]
   });
 
   const exitCode = await runMigrationCli({
@@ -65,11 +67,12 @@ test("migration CLI supports dry-run with injected client", async () => {
   assert.equal(client.connected, true);
   assert.equal(client.ended, true);
   assert.match(stdout.join(""), /dryRun=true/);
-  assert.match(stdout.join(""), /pending=0/);
+  assert.match(stdout.join(""), new RegExp(`pending=${migrations.length - 1}\\b`));
 });
 
 test("migration CLI applies migrations and closes client", async () => {
   const stdout = [];
+  const migrations = listCommunityMigrations();
   const client = new FakeCliClient();
 
   const exitCode = await runMigrationCli({
@@ -86,7 +89,7 @@ test("migration CLI applies migrations and closes client", async () => {
   assert.equal(client.connected, true);
   assert.equal(client.ended, true);
   assert.match(stdout.join(""), /dryRun=false/);
-  assert.match(stdout.join(""), /applied=1/);
+  assert.match(stdout.join(""), new RegExp(`applied=${migrations.length}\\b`));
   assert.ok(client.queries.some((query) => query.sql === "BEGIN"));
 });
 

@@ -1,0 +1,216 @@
+#!/usr/bin/env node
+
+const baseUrl = normalizeBaseUrl(process.env.COMMUNITY_BASE_URL ?? "http://127.0.0.1:4000");
+const communityDemoToken = requireSecretEnv("COMMUNITY_DEMO_TOKEN");
+const forbiddenFragments = [
+  communityDemoToken,
+  process.env.FANTASY_PET_UPSTREAM_TOKEN,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.DATABASE_URL
+]
+  .map((value) => (typeof value === "string" ? value.trim() : ""))
+  .filter((value) => value.length >= 8);
+
+const checks = [];
+
+await runCheck("community health is public-safe", async () => {
+  const response = await requestJson("/health");
+  assertStatus(response, 200);
+  assertEqual(response.body.ok, true, "health.ok");
+  assertEqual(response.body.service, "community-api", "health.service");
+});
+
+await runCheck("community SLA is readable", async () => {
+  const response = await requestJson("/v1/sla");
+  assertStatus(response, 200);
+  assertObject(response.body, "sla");
+});
+
+await runCheck("agent worker readiness is proxied", async () => {
+  const response = await requestJson("/worker-readiness");
+  assertStatus(response, 200);
+  assertObject(response.body, "worker readiness");
+  assertEqual(response.body.schema, "fantasy-pet.worker-readiness-public.v1", "worker readiness schema");
+});
+
+await runCheck("agent app API contract is proxied", async () => {
+  const response = await requestJson("/app-api-contract");
+  assertStatus(response, 200);
+  assertObject(response.body, "app api contract");
+  assertEqual(response.body.schema, "fantasy-pet.app-api-contract.v1", "app api contract schema");
+});
+
+await runCheck("protected community write rejects missing token", async () => {
+  const response = await requestJson("/v1/check-in", {
+    method: "POST",
+    body: {
+      date: "2026-06-24"
+    }
+  });
+  assertStatus(response, 401);
+  assertEqual(response.body.error, "unauthorized_demo_request", "missing-token error");
+});
+
+await runCheck("protected community write accepts demo token", async () => {
+  const response = await requestJson("/v1/check-in", {
+    method: "POST",
+    demoToken: true,
+    body: {
+      date: "2026-06-24"
+    }
+  });
+  assertStatus(response, 200);
+  assertEqual(response.body.checkIn?.date, "2026-06-24", "check-in date");
+});
+
+await runCheck("fantasy-pet job creation rejects missing community token", async () => {
+  const response = await requestJson("/pet-generation-jobs", {
+    method: "POST",
+    body: createDemoJobRequest()
+  });
+  assertStatus(response, 401);
+  assertEqual(response.body.error, "unauthorized_demo_request", "fantasy-pet missing-token error");
+});
+
+if (isEnabled(process.env.PRIVATE_OPS_CREATE_JOB)) {
+  await runCheck("fantasy-pet job creation accepts demo token", async () => {
+    const response = await requestJson("/pet-generation-jobs", {
+      method: "POST",
+      demoToken: true,
+      body: createDemoJobRequest()
+    });
+    assertStatus(response, 201);
+    assertObject(response.body, "created fantasy-pet job");
+  });
+}
+
+console.log(
+  JSON.stringify(
+    {
+      ok: true,
+      baseUrl,
+      checks,
+      createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB)
+    },
+    null,
+    2
+  )
+);
+
+function normalizeBaseUrl(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) {
+    throw new Error("COMMUNITY_BASE_URL is blank");
+  }
+  return trimmed.replace(/\/+$/u, "");
+}
+
+function requireSecretEnv(name) {
+  const value = String(process.env[name] ?? "").trim();
+  if (value.length < 8) {
+    throw new Error(`${name} must be set to a private demo token before running private ops smoke.`);
+  }
+  return value;
+}
+
+function createDemoJobRequest() {
+  return {
+    schema: "fantasy-pet.app-job-create-request.v1",
+    description: "private ops smoke pet",
+    bodyShape: "small quadruped",
+    style: "desktop pet"
+  };
+}
+
+async function requestJson(path, options = {}) {
+  const method = options.method ?? "GET";
+  const headers = {
+    Accept: "application/json"
+  };
+  let body;
+
+  if (options.demoToken) {
+    headers["X-Demo-Token"] = communityDemoToken;
+  }
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(options.body);
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    method,
+    headers,
+    body
+  });
+  const text = await response.text();
+  assertNoLeaks(`${method} ${path}`, text);
+  const contentType = response.headers.get("content-type") ?? "";
+
+  return {
+    status: response.status,
+    body: contentType.includes("json") && text ? JSON.parse(text) : text
+  };
+}
+
+async function runCheck(name, callback) {
+  try {
+    await callback();
+    checks.push({
+      name,
+      status: "pass"
+    });
+  } catch (error) {
+    checks.push({
+      name,
+      status: "fail"
+    });
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${name}: ${detail}`);
+  }
+}
+
+function assertStatus(response, expected) {
+  if (response.status !== expected) {
+    throw new Error(`expected HTTP ${expected}, got ${response.status}`);
+  }
+}
+
+function assertEqual(actual, expected, label) {
+  if (actual !== expected) {
+    throw new Error(`${label} expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+
+function assertObject(value, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${label} must be a JSON object`);
+  }
+}
+
+function assertNoLeaks(label, text) {
+  for (const fragment of forbiddenFragments) {
+    if (text.includes(fragment)) {
+      throw new Error(`${label} response leaked a configured secret fragment`);
+    }
+  }
+
+  const forbiddenPatterns = [
+    /\/home\/[A-Za-z0-9_.-]+/u,
+    /[A-Za-z]:\\/u,
+    /adapter-config/u,
+    /agent-outputs/u,
+    /server-worker-cycle/u,
+    /task-packet/u,
+    /x-demo-token/iu,
+    /authorization/iu
+  ];
+  for (const pattern of forbiddenPatterns) {
+    if (pattern.test(text)) {
+      throw new Error(`${label} response matched forbidden leak pattern ${pattern}`);
+    }
+  }
+}
+
+function isEnabled(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? "").trim());
+}

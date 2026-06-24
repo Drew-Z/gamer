@@ -20,6 +20,28 @@ const launcherPath = path.join(
   "launch-fantasy-pet-android-ui-smoke.ps1",
 );
 
+function resolvePowerShell() {
+  for (const executable of ["powershell.exe", "pwsh", "powershell"]) {
+    const probe = spawnSync(
+      executable,
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+      { encoding: "utf8" },
+    );
+    if (!probe.error) {
+      return executable;
+    }
+  }
+
+  return "";
+}
+
+const powershell = resolvePowerShell();
+const powershellSkip = powershell === "" ? "PowerShell is not available in this test environment" : false;
+
+function testWithPowerShell(name, fn) {
+  test(name, { skip: powershellSkip }, fn);
+}
+
 function quotePowerShellLiteral(value) {
   return `'${value.replaceAll("'", "''")}'`;
 }
@@ -34,7 +56,7 @@ $result | ConvertTo-Json -Depth 4
 `;
 
   return spawnSync(
-    "powershell.exe",
+    powershell,
     ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
     { encoding: "utf8" },
   );
@@ -48,13 +70,13 @@ ${scriptBody}
 `;
 
   return spawnSync(
-    "powershell.exe",
+    powershell,
     ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
     { encoding: "utf8" },
   );
 }
 
-test("Android UI smoke assertion accepts contract demo warning with disabled review and download", () => {
+testWithPowerShell("Android UI smoke assertion accepts contract demo warning with disabled review and download", () => {
   const result = runContractDemoAssertion(`
 <hierarchy>
   <node text="" enabled="true" content-desc="generation-public-api-boundary-notice" bounds="[0,0][500,40]" />
@@ -80,7 +102,7 @@ test("Android UI smoke assertion accepts contract demo warning with disabled rev
   assert.equal(decoded.packageDownloadDisabled, true);
 });
 
-test("Android UI smoke helper extracts hierarchy XML from uiautomator stdout noise", () => {
+testWithPowerShell("Android UI smoke helper extracts hierarchy XML from uiautomator stdout noise", () => {
   const rawDump = `UI hierchary dumped to: /dev/tty
 <?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <hierarchy rotation="0">
@@ -98,7 +120,7 @@ ConvertTo-AndroidUiHierarchyXml -RawDumpLines @($rawDump)
   assert.match(result.stdout, /<\/hierarchy>/);
 });
 
-test("Android UI smoke helper rejects dumps without a hierarchy XML payload", () => {
+testWithPowerShell("Android UI smoke helper rejects dumps without a hierarchy XML payload", () => {
   const result = runPowerShellHelper(`
 ConvertTo-AndroidUiHierarchyXml -RawDumpLines @("UI hierchary dumped to: /dev/tty")
 `);
@@ -185,7 +207,7 @@ test("Android UI smoke launcher resets to the top before contract snapshots", ()
   );
 });
 
-test("Android UI smoke assertion rejects contract demo UI without public API boundary notice", () => {
+testWithPowerShell("Android UI smoke assertion rejects contract demo UI without public API boundary notice", () => {
   const result = runContractDemoAssertion(`
 <hierarchy>
   <node text="" enabled="true" content-desc="generation-contract-demo-notice" bounds="[0,0][100,40]" />
@@ -204,7 +226,7 @@ test("Android UI smoke assertion rejects contract demo UI without public API bou
   assert.match(result.stderr, /public API boundary/);
 });
 
-test("Android UI smoke assertion rejects contract demo UI without no-live-worker copy", () => {
+testWithPowerShell("Android UI smoke assertion rejects contract demo UI without no-live-worker copy", () => {
   const result = runContractDemoAssertion(`
 <hierarchy>
   <node text="" enabled="true" content-desc="generation-public-api-boundary-notice" bounds="[0,0][500,40]" />
@@ -223,7 +245,7 @@ test("Android UI smoke assertion rejects contract demo UI without no-live-worker
   assert.match(result.stderr, /no live generation worker/);
 });
 
-test("Android UI smoke assertion rejects enabled accept button for contract demo job", () => {
+testWithPowerShell("Android UI smoke assertion rejects enabled accept button for contract demo job", () => {
   const result = runContractDemoAssertion(`
 <hierarchy>
   <node text="" enabled="true" content-desc="generation-public-api-boundary-notice" bounds="[0,0][500,40]" />
@@ -243,7 +265,7 @@ test("Android UI smoke assertion rejects enabled accept button for contract demo
   assert.match(result.stderr, /generation-review-accept-button/);
 });
 
-test("Android UI smoke helper returns centers for text and content description bounds", () => {
+testWithPowerShell("Android UI smoke helper returns centers for text and content description bounds", () => {
   const script = `
 $ErrorActionPreference = "Stop"
 . ${quotePowerShellLiteral(helperPath)}
@@ -253,7 +275,7 @@ $poll = Get-AndroidUiCenterByContentDescription -UiXml $uiXml -ContentDescriptio
 [pscustomobject]@{ bubble = $bubble; poll = $poll } | ConvertTo-Json -Depth 4
 `;
   const result = spawnSync(
-    "powershell.exe",
+    powershell,
     ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
     { encoding: "utf8" },
   );

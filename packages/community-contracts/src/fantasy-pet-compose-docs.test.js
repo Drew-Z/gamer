@@ -42,6 +42,40 @@ test("README documents Docker startup for the fantasy pet public API", () => {
   assert.match(readme, /FANTASY_PET_API_BASE_URL/);
 });
 
+test("private ops Compose overlay gates startup through Postgres migrations", () => {
+  const compose = readRepoFile("compose.private-ops.yaml");
+
+  assert.match(compose, /community-db:/);
+  assert.match(compose, /postgres:17-alpine/);
+  assert.match(compose, /POSTGRES_PASSWORD:\s+"\$\{COMMUNITY_POSTGRES_PASSWORD:\?set COMMUNITY_POSTGRES_PASSWORD\}"/);
+  assert.match(compose, /community-migrate:/);
+  assert.match(compose, /migrate:community-db/);
+  assert.match(compose, /service_completed_successfully/);
+  assert.match(compose, /COMMUNITY_DEMO_TOKEN:\s+"\$\{COMMUNITY_DEMO_TOKEN:\?set COMMUNITY_DEMO_TOKEN\}"/);
+  assert.match(compose, /FANTASY_PET_UPSTREAM_TOKEN:\s+"\$\{FANTASY_PET_UPSTREAM_TOKEN:\?set FANTASY_PET_UPSTREAM_TOKEN\}"/);
+  assert.match(compose, /\/health/);
+  assert.match(compose, /\/worker-readiness/);
+  assert.doesNotMatch(compose, /5432:5432/);
+});
+
+test("private ops smoke verifies auth readiness and leak boundaries", () => {
+  const script = readRepoFile("tools/private-ops-smoke.js");
+  const packageJson = readRepoFile("package.json");
+  const readme = readRepoFile("README.md");
+
+  assert.match(script, /COMMUNITY_DEMO_TOKEN/);
+  assert.match(script, /\/health/);
+  assert.match(script, /\/v1\/sla/);
+  assert.match(script, /\/worker-readiness/);
+  assert.match(script, /\/app-api-contract/);
+  assert.match(script, /unauthorized_demo_request/);
+  assert.match(script, /PRIVATE_OPS_CREATE_JOB/);
+  assert.match(script, /assertNoLeaks/);
+  assert.match(packageJson, /"smoke:private-ops": "node tools\/private-ops-smoke\.js"/);
+  assert.match(readme, /compose\.private-ops\.yaml/);
+  assert.match(readme, /npm\.cmd run smoke:private-ops/);
+});
+
 test("Android build supports configurable local API base URLs", () => {
   const buildGradle = readRepoFile("apps/android-community/app/build.gradle");
   const readme = readRepoFile("README.md");
