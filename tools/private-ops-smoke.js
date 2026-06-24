@@ -10,7 +10,8 @@ const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
-  process.env.DATABASE_URL
+  process.env.DATABASE_URL,
+  process.env.PRIVATE_OPS_BASIC_AUTH_PASSWORD
 ]
   .map((value) => (typeof value === "string" ? value.trim() : ""))
   .filter((value) => value.length >= 8);
