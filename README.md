@@ -173,7 +173,10 @@ For hiden-style direct Node deployments that expose `admin-review` without the
 private Caddy proxy, set `PRIVATE_OPS_BASIC_AUTH_USER` and
 `PRIVATE_OPS_BASIC_AUTH_PASSWORD` in `.env.local`; `admin-review` will require
 Basic Auth before serving the Web UI or proxying Community/Agent requests,
-while keeping `/health` public for platform health checks.
+while keeping `/health` public for platform health checks. When
+`COMMUNITY_BASE_URL` points at this public admin-review surface, run the smoke
+with `PRIVATE_OPS_SMOKE_SURFACE=admin-review`; the smoke verifies the public
+Basic Auth gate instead of expecting raw Community API missing-token behavior.
 
 Operational helpers:
 

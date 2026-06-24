@@ -4,6 +4,7 @@ const baseUrl = normalizeBaseUrl(process.env.COMMUNITY_BASE_URL ?? "http://127.0
 const communityDemoToken = requireSecretEnv("COMMUNITY_DEMO_TOKEN");
 const fantasyPetUpstreamToken = requireSecretEnv("FANTASY_PET_UPSTREAM_TOKEN");
 const basicAuthHeader = privateOpsBasicAuthHeader(process.env);
+const smokeSurface = resolveSmokeSurface(process.env);
 const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").trim();
 const forbiddenFragments = [
   communityDemoToken,
@@ -16,8 +17,16 @@ const forbiddenFragments = [
 
 const checks = [];
 
+if (smokeSurface === "admin-review" && !basicAuthHeader) {
+  throw new Error(
+    "PRIVATE_OPS_BASIC_AUTH_USER and PRIVATE_OPS_BASIC_AUTH_PASSWORD are required for admin-review smoke surface."
+  );
+}
+
 await runCheck("community health is public-safe", async () => {
-  const response = await requestJson("/health");
+  const response = await requestJson("/health", {
+    basicAuth: smokeSurface !== "admin-review"
+  });
   assertStatus(response, 200);
   assertEqual(response.body.ok, true, "health.ok");
   assertEqual(response.body.service, "community-api", "health.service");
@@ -43,43 +52,68 @@ await runCheck("agent app API contract is proxied", async () => {
   assertEqual(response.body.schema, "fantasy-pet.app-api-contract.v1", "app api contract schema");
 });
 
-await runCheck("protected community write rejects missing token", async () => {
-  const response = await requestJson("/v1/check-in", {
-    method: "POST",
-    body: {
-      date: "2026-06-24"
-    }
+if (smokeSurface === "admin-review") {
+  await runCheck("admin-review rejects missing basic auth", async () => {
+    const response = await requestJson("/v1/check-in", {
+      method: "POST",
+      basicAuth: false,
+      body: {
+        date: "2026-06-24"
+      }
+    });
+    assertStatus(response, 401);
+    assertEqual(response.body.error, "admin_basic_auth_required", "missing-basic-auth error");
   });
-  assertStatus(response, 401);
-  assertEqual(response.body.error, "unauthorized_demo_request", "missing-token error");
-});
 
-await runCheck("protected community write accepts demo token", async () => {
-  const response = await requestJson("/v1/check-in", {
-    method: "POST",
-    demoToken: true,
-    body: {
-      date: "2026-06-24"
-    }
+  await runCheck("protected community write accepts admin-review basic auth", async () => {
+    const response = await requestJson("/v1/check-in", {
+      method: "POST",
+      body: {
+        date: "2026-06-24"
+      }
+    });
+    assertStatus(response, 200);
+    assertEqual(response.body.checkIn?.date, "2026-06-24", "check-in date");
   });
-  assertStatus(response, 200);
-  assertEqual(response.body.checkIn?.date, "2026-06-24", "check-in date");
-});
+} else {
+  await runCheck("protected community write rejects missing token", async () => {
+    const response = await requestJson("/v1/check-in", {
+      method: "POST",
+      body: {
+        date: "2026-06-24"
+      }
+    });
+    assertStatus(response, 401);
+    assertEqual(response.body.error, "unauthorized_demo_request", "missing-token error");
+  });
 
-await runCheck("fantasy-pet job creation rejects missing community token", async () => {
-  const response = await requestJson("/pet-generation-jobs", {
-    method: "POST",
-    body: createDemoJobRequest()
+  await runCheck("protected community write accepts demo token", async () => {
+    const response = await requestJson("/v1/check-in", {
+      method: "POST",
+      demoToken: true,
+      body: {
+        date: "2026-06-24"
+      }
+    });
+    assertStatus(response, 200);
+    assertEqual(response.body.checkIn?.date, "2026-06-24", "check-in date");
   });
-  assertStatus(response, 401);
-  assertEqual(response.body.error, "unauthorized_demo_request", "fantasy-pet missing-token error");
-});
+
+  await runCheck("fantasy-pet job creation rejects missing community token", async () => {
+    const response = await requestJson("/pet-generation-jobs", {
+      method: "POST",
+      body: createDemoJobRequest()
+    });
+    assertStatus(response, 401);
+    assertEqual(response.body.error, "unauthorized_demo_request", "fantasy-pet missing-token error");
+  });
+}
 
 if (isEnabled(process.env.PRIVATE_OPS_CREATE_JOB)) {
   await runCheck("fantasy-pet job creation accepts demo token", async () => {
     const response = await requestJson("/pet-generation-jobs", {
       method: "POST",
-      demoToken: true,
+      demoToken: smokeSurface !== "admin-review",
       body: createDemoJobRequest()
     });
     assertStatus(response, 201);
@@ -92,7 +126,7 @@ if (knownAppJobId) {
     const response = await requestPackageGate(
       `/pet-generation-jobs/${encodeURIComponent(knownAppJobId)}/package`,
       {
-        demoToken: true
+        demoToken: smokeSurface !== "admin-review"
       }
     );
 
@@ -126,6 +160,7 @@ console.log(
     {
       ok: true,
       baseUrl,
+      smokeSurface,
       checks,
       createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB),
       checkedKnownPackageGate: Boolean(knownAppJobId)
@@ -151,6 +186,14 @@ function requireSecretEnv(name) {
   return value;
 }
 
+function resolveSmokeSurface(env) {
+  const value = String(env.PRIVATE_OPS_SMOKE_SURFACE ?? "community-api").trim();
+  if (!["community-api", "admin-review"].includes(value)) {
+    throw new Error("PRIVATE_OPS_SMOKE_SURFACE must be community-api or admin-review.");
+  }
+  return value;
+}
+
 function createDemoJobRequest() {
   return {
     schema: "fantasy-pet.app-job-create-request.v1",
@@ -167,7 +210,7 @@ async function requestJson(path, options = {}) {
   };
   let body;
 
-  if (basicAuthHeader) {
+  if (basicAuthHeader && options.basicAuth !== false) {
     headers.Authorization = basicAuthHeader;
   }
   if (options.demoToken) {
@@ -198,7 +241,7 @@ async function requestPackageGate(path, options = {}) {
     Accept: "application/zip, application/json"
   };
 
-  if (basicAuthHeader) {
+  if (basicAuthHeader && options.basicAuth !== false) {
     headers.Authorization = basicAuthHeader;
   }
   if (options.demoToken) {
