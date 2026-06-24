@@ -140,9 +140,11 @@ npm.cmd run smoke:private-ops
 token-authenticated Community write without printing configured secret values.
 It also verifies `FANTASY_PET_UPSTREAM_TOKEN` is present before running. When
 the smoke goes through Caddy Basic Auth, set `PRIVATE_OPS_BASIC_AUTH_USER` and
-`PRIVATE_OPS_BASIC_AUTH_PASSWORD` in `.env.private-ops`. It does not create a
-live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is set for a
-quota-approved window.
+`PRIVATE_OPS_BASIC_AUTH_PASSWORD` in `.env.private-ops`. Set
+`PRIVATE_OPS_KNOWN_APP_JOB_ID` to monitor a human-reviewed known job package
+gate; the smoke accepts either a ready ZIP or a stable gated JSON response. It
+does not create a live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is set
+for a quota-approved window.
 
 Operational helpers:
 

@@ -82,10 +82,14 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /\/app-api-contract/);
   assert.match(script, /unauthorized_demo_request/);
   assert.match(script, /PRIVATE_OPS_CREATE_JOB/);
+  assert.match(script, /PRIVATE_OPS_KNOWN_APP_JOB_ID/);
+  assert.match(script, /known job package gate is observable/);
+  assert.match(script, /fantasy-pet\.package-download-response\.v1/);
   assert.match(script, /assertNoLeaks/);
   assert.match(packageJson, /"smoke:private-ops": "node tools\/private-ops-smoke\.js"/);
   assert.match(readme, /compose\.private-ops\.yaml/);
   assert.match(readme, /npm\.cmd run smoke:private-ops/);
+  assert.match(readme, /PRIVATE_OPS_KNOWN_APP_JOB_ID/);
 });
 
 test("private ops deployment assets document TLS monitoring and backup hooks", () => {

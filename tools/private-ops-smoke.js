@@ -4,6 +4,7 @@ const baseUrl = normalizeBaseUrl(process.env.COMMUNITY_BASE_URL ?? "http://127.0
 const communityDemoToken = requireSecretEnv("COMMUNITY_DEMO_TOKEN");
 const fantasyPetUpstreamToken = requireSecretEnv("FANTASY_PET_UPSTREAM_TOKEN");
 const basicAuthHeader = privateOpsBasicAuthHeader(process.env);
+const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").trim();
 const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
@@ -86,13 +87,48 @@ if (isEnabled(process.env.PRIVATE_OPS_CREATE_JOB)) {
   });
 }
 
+if (knownAppJobId) {
+  await runCheck("known job package gate is observable", async () => {
+    const response = await requestPackageGate(
+      `/pet-generation-jobs/${encodeURIComponent(knownAppJobId)}/package`,
+      {
+        demoToken: true
+      }
+    );
+
+    if (response.status === 200) {
+      if (!response.contentType.includes("application/zip")) {
+        throw new Error(`ready package must be application/zip, got ${response.contentType}`);
+      }
+      if (response.bytes.length < 2 || response.bytes[0] !== 0x50 || response.bytes[1] !== 0x4b) {
+        throw new Error("ready package did not start with ZIP magic bytes");
+      }
+      return;
+    }
+
+    if (response.status === 409) {
+      assertObject(response.body, "package gate");
+      assertEqual(
+        response.body.schema,
+        "fantasy-pet.package-download-response.v1",
+        "package gate schema"
+      );
+      assertEqual(response.body.status, "blocked", "package gate status");
+      return;
+    }
+
+    throw new Error(`expected package ready 200 or gated 409, got HTTP ${response.status}`);
+  });
+}
+
 console.log(
   JSON.stringify(
     {
       ok: true,
       baseUrl,
       checks,
-      createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB)
+      createdLiveJob: isEnabled(process.env.PRIVATE_OPS_CREATE_JOB),
+      checkedKnownPackageGate: Boolean(knownAppJobId)
     },
     null,
     2
@@ -153,6 +189,41 @@ async function requestJson(path, options = {}) {
 
   return {
     status: response.status,
+    body: contentType.includes("json") && text ? JSON.parse(text) : text
+  };
+}
+
+async function requestPackageGate(path, options = {}) {
+  const headers = {
+    Accept: "application/zip, application/json"
+  };
+
+  if (basicAuthHeader) {
+    headers.Authorization = basicAuthHeader;
+  }
+  if (options.demoToken) {
+    headers["X-Demo-Token"] = communityDemoToken;
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: "GET",
+    headers
+  });
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/zip")) {
+    return {
+      status: response.status,
+      contentType,
+      bytes: new Uint8Array(await response.arrayBuffer())
+    };
+  }
+
+  const text = await response.text();
+  assertNoLeaks(`GET ${path}`, text);
+
+  return {
+    status: response.status,
+    contentType,
     body: contentType.includes("json") && text ? JSON.parse(text) : text
   };
 }

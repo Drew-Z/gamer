@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"apps/**/*.test.js\" \"packages/**/*.test.js\" \"services/**/*.test.js\"",
+    "test": "node --test \"apps/**/*.test.js\" \"packages/**/*.test.js\" \"services/**/*.test.js\" \"tools/**/*.test.js\"",
     "start:admin-review": "node apps/admin-review/server.js",
     "start:community-api": "node services/community-api/src/server.js",
     "start:pet-generator": "node services/pet-generator/src/server.js",
