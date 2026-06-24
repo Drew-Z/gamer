@@ -58,6 +58,7 @@ services:
       DATABASE_URL: "postgresql://${COMMUNITY_POSTGRES_USER:-gamer}:${COMMUNITY_POSTGRES_PASSWORD:?set COMMUNITY_POSTGRES_PASSWORD}@community-db:5432/${COMMUNITY_POSTGRES_DB:-gamer}"
       POSTGRES_SSLMODE: "disable"
       COMMUNITY_DEMO_TOKEN: "${COMMUNITY_DEMO_TOKEN:?set COMMUNITY_DEMO_TOKEN}"
+      FANTASY_PET_API_BASE_URL: "${FANTASY_PET_API_BASE_URL:?set FANTASY_PET_API_BASE_URL}"
       FANTASY_PET_UPSTREAM_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:?set FANTASY_PET_UPSTREAM_TOKEN}"
       COMMUNITY_RATE_LIMIT_ENABLED: "${COMMUNITY_RATE_LIMIT_ENABLED:-1}"
       COMMUNITY_RATE_LIMIT_WINDOW_MS: "${COMMUNITY_RATE_LIMIT_WINDOW_MS:-60000}"
@@ -82,6 +83,8 @@ services:
     logging: *private_ops_logging
 
   fantasy-pet-api:
+    profiles:
+      - fantasy-pet
     env_file:
       - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:
@@ -102,6 +105,8 @@ services:
     logging: *private_ops_logging
 
   fantasy-pet-worker-daemon:
+    profiles:
+      - fantasy-pet
     env_file:
       - ${PRIVATE_OPS_ENV_FILE:-.env.private-ops}
     environment:

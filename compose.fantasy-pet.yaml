@@ -1,7 +1,7 @@
 services:
   community-api:
     environment:
-      FANTASY_PET_API_BASE_URL: "http://fantasy-pet-api:8765"
+      FANTASY_PET_API_BASE_URL: "${FANTASY_PET_API_BASE_URL:-http://fantasy-pet-api:8765}"
       FANTASY_PET_UPSTREAM_TOKEN: "${FANTASY_PET_UPSTREAM_TOKEN:-}"
       COMMUNITY_DEMO_TOKEN: "${COMMUNITY_DEMO_TOKEN:-}"
       COMMUNITY_RATE_LIMIT_ENABLED: "${COMMUNITY_RATE_LIMIT_ENABLED:-1}"

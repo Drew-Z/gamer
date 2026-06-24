@@ -51,6 +51,7 @@ test("private ops preflight passes with a complete env file and existing adapter
       "COMMUNITY_POSTGRES_PASSWORD=postgres-private-password-123",
       "COMMUNITY_DEMO_TOKEN=community-private-token-123",
       "FANTASY_PET_UPSTREAM_TOKEN=agent-private-token-123",
+      "FANTASY_PET_API_BASE_URL=http://fantasy-pet-api:8765",
       `FANTASY_PET_ADAPTER_CONFIG_FILE=${adapterConfig}`,
       "PRIVATE_OPS_HOST=desktop-pet.internal",
       "CADDY_ADMIN_BASIC_AUTH_HASH=$$2a$$14$$abcdefghijklmnopqrstuuabcdefghijklmnopqrstuuabcdefgh",
@@ -72,6 +73,37 @@ test("private ops preflight passes with a complete env file and existing adapter
     output.checks.join("\n"),
     /COMMUNITY_DEMO_TOKEN|FANTASY_PET_ADAPTER_CONFIG_FILE/,
   );
+  assert.doesNotMatch(result.stdout, /community-private-token-123|agent-private-token-123/);
+});
+
+test("private ops preflight supports hiden community role with a remote Baidu agent URL", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "private-ops-preflight-"));
+  const envFile = path.join(tempDir, ".env.private-ops");
+  fs.writeFileSync(
+    envFile,
+    [
+      "PRIVATE_OPS_DEPLOYMENT_ROLE=community",
+      "COMMUNITY_POSTGRES_PASSWORD=postgres-private-password-123",
+      "COMMUNITY_DEMO_TOKEN=community-private-token-123",
+      "FANTASY_PET_UPSTREAM_TOKEN=agent-private-token-123",
+      "FANTASY_PET_API_BASE_URL=https://agent.baidu-private.example",
+      "PRIVATE_OPS_HOST=hiden-community.internal",
+      "CADDY_ADMIN_BASIC_AUTH_HASH=$$2a$$14$$abcdefghijklmnopqrstuuabcdefghijklmnopqrstuuabcdefgh",
+      "COMMUNITY_CORS_ALLOWED_ORIGINS=https://hiden-community.internal",
+      ""
+    ].join("\n"),
+  );
+
+  const result = await runPreflight({
+    PRIVATE_OPS_ENV_FILE: envFile
+  });
+
+  assert.equal(result.exitCode, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.ok, true);
+  assert.equal(output.deploymentRole, "community");
+  assert.equal(output.checkedAdapterConfig, false);
+  assert.match(output.checks.join("\n"), /FANTASY_PET_API_BASE_URL/);
   assert.doesNotMatch(result.stdout, /community-private-token-123|agent-private-token-123/);
 });
 

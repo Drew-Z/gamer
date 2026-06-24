@@ -117,19 +117,32 @@ Run the community services plus the public `fantasy-pet-rule` app API:
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet up --build
 ```
 
-Run the private small-scale ops stack with Postgres, migration gating,
-healthchecks, Community demo auth, the protected fantasy-pet upstream, and a
-Caddy TLS/Basic Auth reverse proxy:
+Run the hiden private Community API stack with Postgres, migration gating,
+healthchecks, Community demo auth, a protected Baidu fantasy-pet Agent upstream,
+and a Caddy TLS/Basic Auth reverse proxy:
 
 ```powershell
 Copy-Item .env.private-ops.example .env.private-ops
 # Edit .env.private-ops with private values before continuing.
+# Set PRIVATE_OPS_DEPLOYMENT_ROLE=community on hiden.
+# Set FANTASY_PET_API_BASE_URL to the private Baidu Agent API URL.
 # Generate CADDY_ADMIN_BASIC_AUTH_HASH with:
 # docker run --rm caddy:2-alpine caddy hash-password --plaintext "REPLACE_WITH_PRIVATE_PASSWORD"
 # When storing the generated bcrypt hash in .env.private-ops, escape each
 # dollar sign as $$ so Docker Compose keeps the hash literal.
 
 npm.cmd run preflight:private-ops
+docker compose -f compose.yaml -f compose.private-ops.yaml --profile private-ops config
+docker compose -f compose.yaml -f compose.private-ops.yaml --profile private-ops up --build -d community-db community-migrate community-api admin-review private-ops-proxy
+docker compose -f compose.yaml -f compose.private-ops.yaml --profile private-ops run --rm community-migrate npm run migrate:community-db:dry-run
+npm.cmd run smoke:private-ops
+```
+
+For a single-host local or fallback drill where `gamer` also starts the
+`fantasy-pet-rule` Agent containers, keep `PRIVATE_OPS_DEPLOYMENT_ROLE=combined`
+and include `compose.fantasy-pet.yaml` plus the `fantasy-pet` profile:
+
+```powershell
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops up --build -d community-db community-migrate fantasy-pet-api fantasy-pet-worker-daemon community-api admin-review private-ops-proxy
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops run --rm community-migrate npm run migrate:community-db:dry-run
@@ -138,7 +151,9 @@ npm.cmd run smoke:private-ops
 
 `tools/private-ops-preflight.js` reads `${PRIVATE_OPS_ENV_FILE}` or
 `.env.private-ops` before deployment and checks that required private values are
-present, no longer look like placeholders, and that
+present and no longer look like placeholders. In `community` role it verifies
+the hiden Community API has a remote `FANTASY_PET_API_BASE_URL` for the Baidu
+Agent. In `combined` role it also verifies
 `FANTASY_PET_ADAPTER_CONFIG_FILE` points at an existing private adapter config.
 The failure output names missing or placeholder variables without printing the
 configured secret values.

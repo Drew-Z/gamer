@@ -17,7 +17,13 @@ const requiredChecks = [
     validate: (context) => validateSecret(context, 16)
   },
   {
+    name: "FANTASY_PET_API_BASE_URL",
+    roles: ["community", "combined"],
+    validate: validateAgentBaseUrl
+  },
+  {
     name: "FANTASY_PET_ADAPTER_CONFIG_FILE",
+    roles: ["combined"],
     validate: validateAdapterConfig
   },
   {
@@ -40,6 +46,7 @@ const values = {
   ...fileValues,
   ...selectedProcessEnv(process.env)
 };
+const deploymentRole = resolveDeploymentRole(values);
 const errors = [];
 const checks = [];
 
@@ -49,7 +56,16 @@ if (!fileValues) {
     reason: "env file was not found or could not be read"
   });
 } else {
+  if (!["combined", "community"].includes(deploymentRole)) {
+    errors.push({
+      name: "PRIVATE_OPS_DEPLOYMENT_ROLE",
+      reason: "must be combined or community"
+    });
+  }
   for (const check of requiredChecks) {
+    if (check.roles && !check.roles.includes(deploymentRole)) {
+      continue;
+    }
     const error = check.validate({
       name: check.name,
       value: values[check.name],
@@ -72,6 +88,7 @@ if (errors.length > 0) {
       {
         ok: false,
         checkedEnvFile: envFile,
+        deploymentRole,
         errors
       },
       null,
@@ -85,13 +102,18 @@ if (errors.length > 0) {
       {
         ok: true,
         checkedEnvFile: envFile,
-        checkedAdapterConfig: true,
+        deploymentRole,
+        checkedAdapterConfig: deploymentRole === "combined",
         checks
       },
       null,
       2
     )
   );
+}
+
+function resolveDeploymentRole(values) {
+  return String(values.PRIVATE_OPS_DEPLOYMENT_ROLE ?? "combined").trim() || "combined";
 }
 
 function resolveEnvFile(args, env) {
@@ -184,6 +206,25 @@ function validateAdapterConfig({ name, value, envFile }) {
     }
   } catch {
     return "must point at an existing adapter config file";
+  }
+  return "";
+}
+
+function validateAgentBaseUrl({ name, value }) {
+  const trimmed = normalizeValue(value);
+  if (!trimmed) {
+    return "is required";
+  }
+  if (isPlaceholder(trimmed, name)) {
+    return "still looks like a placeholder";
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return "must be an http(s) URL";
+    }
+  } catch {
+    return "must be an http(s) URL";
   }
   return "";
 }

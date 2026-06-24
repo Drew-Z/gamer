@@ -22,7 +22,7 @@ test("fantasy pet public API has a Docker Compose overlay", () => {
 
   assert.match(compose, /fantasy-pet-api:/);
   assert.match(compose, /community-api:/);
-  assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"http:\/\/fantasy-pet-api:8765"/);
+  assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"\$\{FANTASY_PET_API_BASE_URL:-http:\/\/fantasy-pet-api:8765\}"/);
   assert.match(compose, /build:\s*\n\s+context: \.\.\/fantasy-pet-rule\s*\n\s+dockerfile: Dockerfile/);
   assert.match(compose, /fantasy_pet_adapter_config:/);
   assert.match(compose, /8765:8765/);
@@ -56,6 +56,7 @@ test("private ops Compose overlay gates startup through Postgres migrations", ()
   assert.match(compose, /service_completed_successfully/);
   assert.match(compose, /COMMUNITY_DEMO_TOKEN:\s+"\$\{COMMUNITY_DEMO_TOKEN:\?set COMMUNITY_DEMO_TOKEN\}"/);
   assert.match(compose, /FANTASY_PET_UPSTREAM_TOKEN:\s+"\$\{FANTASY_PET_UPSTREAM_TOKEN:\?set FANTASY_PET_UPSTREAM_TOKEN\}"/);
+  assert.match(compose, /FANTASY_PET_API_BASE_URL:\s+"\$\{FANTASY_PET_API_BASE_URL:\?set FANTASY_PET_API_BASE_URL\}"/);
   assert.match(compose, /private-ops-proxy:/);
   assert.match(compose, /CADDY_ADMIN_BASIC_AUTH_HASH:\s+"\$\{CADDY_ADMIN_BASIC_AUTH_HASH:\?set CADDY_ADMIN_BASIC_AUTH_HASH\}"/);
   assert.match(compose, /deploy\/Caddyfile\.private-ops/);
@@ -63,6 +64,8 @@ test("private ops Compose overlay gates startup through Postgres migrations", ()
   assert.match(compose, /mem_limit:/);
   assert.match(compose, /cpus:/);
   assert.match(compose, /env_file:/);
+  assert.match(compose, /fantasy-pet-api:\s*[\s\S]*profiles:\s*[\s\S]*-\s+fantasy-pet/);
+  assert.match(compose, /fantasy-pet-worker-daemon:\s*[\s\S]*profiles:\s*[\s\S]*-\s+fantasy-pet/);
   assert.match(compose, /\/health/);
   assert.match(compose, /\/worker-readiness/);
   assert.doesNotMatch(compose, /5432:5432/);
@@ -88,13 +91,17 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /fantasy-pet\.package-download-response\.v1/);
   assert.match(script, /assertNoLeaks/);
   assert.match(preflight, /PRIVATE_OPS_ENV_FILE/);
+  assert.match(preflight, /PRIVATE_OPS_DEPLOYMENT_ROLE/);
   assert.match(preflight, /COMMUNITY_POSTGRES_PASSWORD/);
+  assert.match(preflight, /FANTASY_PET_API_BASE_URL/);
   assert.match(preflight, /FANTASY_PET_ADAPTER_CONFIG_FILE/);
   assert.match(preflight, /CADDY_ADMIN_BASIC_AUTH_HASH/);
   assert.match(preflight, /COMMUNITY_CORS_ALLOWED_ORIGINS/);
   assert.match(packageJson, /"smoke:private-ops": "node tools\/private-ops-smoke\.js"/);
   assert.match(packageJson, /"preflight:private-ops": "node tools\/private-ops-preflight\.js"/);
   assert.match(readme, /compose\.private-ops\.yaml/);
+  assert.match(readme, /hiden/iu);
+  assert.match(readme, /Baidu/iu);
   assert.match(readme, /npm\.cmd run preflight:private-ops/);
   assert.match(readme, /npm\.cmd run smoke:private-ops/);
   assert.match(readme, /PRIVATE_OPS_KNOWN_APP_JOB_ID/);
