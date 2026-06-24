@@ -385,7 +385,7 @@ class FantasyPetGenerationServiceTest {
     }
 
     @Test
-    fun candidateGalleryItemsPreferCompleteActionReviewPlaybackOverSourceCandidate() {
+    fun candidateGalleryItemsPreferRuntimeActionReviewPlaybackOverSourceCandidate() {
         val service = FantasyPetGenerationService(FakeFantasyPetGenerationClient())
         val job = PetGenerationJobResponseDto(
             appJobId = "job-123",
@@ -406,10 +406,10 @@ class FantasyPetGenerationServiceTest {
                     downloadId = "artifact-11",
                     downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11",
                     actionId = "idle",
-                    reviewStage = "complete-action-review",
-                    previewKind = "complete-action-playback",
+                    reviewStage = "runtime-action-review",
+                    previewKind = "runtime-action-playback",
                     mediaType = "text/html",
-                    frameCount = 4,
+                    frameCount = 6,
                     fps = 8
                 )
             )
@@ -419,10 +419,10 @@ class FantasyPetGenerationServiceTest {
 
         assertEquals(1, items.size)
         assertEquals("artifact-11", items.single().targetDownloadId)
-        assertEquals("complete-action-review", items.single().reviewStage)
-        assertEquals("complete-action-playback", items.single().previewKind)
+        assertEquals("runtime-action-review", items.single().reviewStage)
+        assertEquals("runtime-action-playback", items.single().previewKind)
         assertEquals("text/html", items.single().mediaType)
-        assertEquals(4, items.single().frameCount)
+        assertEquals(6, items.single().frameCount)
         assertEquals(8, items.single().fps)
         assertEquals(
             "http://127.0.0.1:8765/pet-generation-jobs/job-123/artifacts/artifact-11",
@@ -806,7 +806,7 @@ class FantasyPetGenerationServiceTest {
     }
 
     @Test
-    fun reviewDecisionForJobUsesCompleteActionReviewStage() = runTest {
+    fun reviewDecisionForJobUsesRuntimeActionReviewStage() = runTest {
         val fakeClient = FakeFantasyPetGenerationClient()
         val service = FantasyPetGenerationService(fakeClient)
         val job = PetGenerationJobResponseDto(
@@ -818,8 +818,8 @@ class FantasyPetGenerationServiceTest {
                     kind = "review",
                     downloadId = "artifact-11",
                     actionId = "idle",
-                    reviewStage = "complete-action-review",
-                    previewKind = "complete-action-playback",
+                    reviewStage = "runtime-action-review",
+                    previewKind = "runtime-action-playback",
                     mediaType = "text/html",
                     downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11"
                 )
@@ -835,7 +835,7 @@ class FantasyPetGenerationServiceTest {
 
         assertTrue(result is ApiCallResult.Success)
         assertEquals("artifact-11", fakeClient.reviewRequest?.targetDownloadId)
-        assertEquals("complete-action-review", fakeClient.reviewRequest?.stage)
+        assertEquals("runtime-action-review", fakeClient.reviewRequest?.stage)
     }
 
     @Test

@@ -69,7 +69,7 @@ class FantasyPetGenerationUiModelTest {
     @Test
     fun appJobIdValidationBlocksUnsafeCreateAndPollIds() {
         assertEquals(
-            "App job id can use letters, numbers, dot, underscore, or dash.",
+            "Task name can use letters, numbers, dot, underscore, or dash.",
             generationCreateValidationMessage(
                 description = "tiny dragon",
                 bodyShape = "balanced",
@@ -96,7 +96,7 @@ class FantasyPetGenerationUiModelTest {
         assertFalse(canPollGenerationJob("job 123"))
         assertTrue(canPollGenerationJob("job-123.preview_a"))
         assertEquals(
-            "App job id can use letters, numbers, dot, underscore, or dash.",
+            "Task name can use letters, numbers, dot, underscore, or dash.",
             pollGenerationJobValidationMessage("https://example.com/job")
         )
     }
@@ -1193,7 +1193,7 @@ class FantasyPetGenerationUiModelTest {
     }
 
     @Test
-    fun reviewDecisionButtonsAllowCompleteActionPlaybackReviewArtifact() {
+    fun reviewDecisionButtonsAllowRuntimeActionPlaybackReviewArtifact() {
         val job = PetGenerationJobResponseDto(
             appJobId = "job-123",
             progressStatus = "waiting-for-review",
@@ -1213,10 +1213,10 @@ class FantasyPetGenerationUiModelTest {
                     downloadId = "artifact-11",
                     downloadUrl = "/pet-generation-jobs/job-123/artifacts/artifact-11",
                     actionId = "idle",
-                    reviewStage = "complete-action-review",
-                    previewKind = "complete-action-playback",
+                    reviewStage = "runtime-action-review",
+                    previewKind = "runtime-action-playback",
                     mediaType = "text/html",
-                    frameCount = 4,
+                    frameCount = 6,
                     fps = 8
                 )
             )

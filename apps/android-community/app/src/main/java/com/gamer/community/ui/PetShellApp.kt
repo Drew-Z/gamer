@@ -1090,12 +1090,18 @@ fun PetShellApp(
 fun PetShellApp() {
     val repository = remember {
         CommunityRepository(
-            client = HttpCommunityApiClient(com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL)
+            client = HttpCommunityApiClient(
+                baseUrl = com.gamer.community.BuildConfig.COMMUNITY_API_BASE_URL,
+                demoToken = com.gamer.community.BuildConfig.COMMUNITY_DEMO_TOKEN
+            )
         )
     }
     val generationService = remember {
         FantasyPetGenerationService(
-            client = HttpFantasyPetGenerationClient(com.gamer.community.BuildConfig.FANTASY_PET_API_BASE_URL),
+            client = HttpFantasyPetGenerationClient(
+                baseUrl = com.gamer.community.BuildConfig.FANTASY_PET_API_BASE_URL,
+                demoToken = com.gamer.community.BuildConfig.COMMUNITY_DEMO_TOKEN
+            ),
             apiBaseUrl = com.gamer.community.BuildConfig.FANTASY_PET_API_BASE_URL
         )
     }
@@ -6842,7 +6848,7 @@ private fun RemoteCandidateWebPreview(
     AndroidView(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(320.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFEFF3F7))
             .semantics {

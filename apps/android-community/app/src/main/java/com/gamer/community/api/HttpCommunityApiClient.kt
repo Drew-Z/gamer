@@ -14,7 +14,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class HttpCommunityApiClient(
-    private val baseUrl: String
+    private val baseUrl: String,
+    private val demoToken: String = ""
 ) : CommunityApiClient {
     override suspend fun getCommunityHome(): ApiCallResult<CommunityHomeResponseDto> =
         get("/v1/community-home", Companion::decodeCommunityHome)
@@ -84,6 +85,9 @@ class HttpCommunityApiClient(
             connection.connectTimeout = 10_000
             connection.readTimeout = 10_000
             connection.setRequestProperty("Accept", "application/json")
+            demoToken.trim().takeIf { it.isNotBlank() }?.let { token ->
+                connection.setRequestProperty("X-Demo-Token", token)
+            }
 
             if (body != null) {
                 connection.doOutput = true

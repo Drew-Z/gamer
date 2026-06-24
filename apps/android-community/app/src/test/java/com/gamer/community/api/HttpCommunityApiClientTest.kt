@@ -39,6 +39,40 @@ class HttpCommunityApiClientTest {
     }
 
     @Test
+    fun configuredDemoTokenIsSentAsDemoHeader() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+
+        TestServer(
+            responseBody = """{"items":[]}""",
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            HttpCommunityApiClient(
+                baseUrl = server.baseUrl,
+                demoToken = "community-secret"
+            ).getFeed()
+
+            assertEquals("community-secret", recordedRequest.get()?.demoToken)
+        }
+    }
+
+    @Test
+    fun blankDemoTokenIsNotSentAsDemoHeader() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+
+        TestServer(
+            responseBody = """{"items":[]}""",
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            HttpCommunityApiClient(
+                baseUrl = server.baseUrl,
+                demoToken = " "
+            ).getFeed()
+
+            assertEquals(null, recordedRequest.get()?.demoToken)
+        }
+    }
+
+    @Test
     fun decodesWalletJson() {
         val json = """
             {
@@ -650,7 +684,14 @@ private class TestServer(
     init {
         server.createContext("/") { exchange ->
             val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            handler?.invoke(RecordedRequest(exchange.requestMethod, exchange.requestURI.rawPath, body))
+            handler?.invoke(
+                RecordedRequest(
+                    method = exchange.requestMethod,
+                    path = exchange.requestURI.rawPath,
+                    body = body,
+                    demoToken = exchange.requestHeaders.getFirst("X-Demo-Token")
+                )
+            )
             val bytes = responseBody.toByteArray(Charsets.UTF_8)
             exchange.sendResponseHeaders(status, bytes.size.toLong())
             exchange.responseBody.use { it.write(bytes) }
@@ -663,4 +704,9 @@ private class TestServer(
     }
 }
 
-private data class RecordedRequest(val method: String, val path: String, val body: String)
+private data class RecordedRequest(
+    val method: String,
+    val path: String,
+    val body: String,
+    val demoToken: String?
+)

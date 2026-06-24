@@ -44,6 +44,40 @@ class HttpFantasyPetGenerationClientTest {
     }
 
     @Test
+    fun configuredDemoTokenIsSentAsDemoHeader() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+
+        TestServer(
+            responseBody = """{"appJobId":"job-123"}""",
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            HttpFantasyPetGenerationClient(
+                baseUrl = server.baseUrl,
+                demoToken = "community-secret"
+            ).getJob("job-123")
+
+            assertEquals("community-secret", recordedRequest.get()?.demoToken)
+        }
+    }
+
+    @Test
+    fun blankDemoTokenIsNotSentAsDemoHeader() = runTest {
+        val recordedRequest = AtomicReference<RecordedRequest>()
+
+        TestServer(
+            responseBody = """{"appJobId":"job-123"}""",
+            handler = { recordedRequest.set(it) }
+        ).use { server ->
+            HttpFantasyPetGenerationClient(
+                baseUrl = server.baseUrl,
+                demoToken = " "
+            ).getJob("job-123")
+
+            assertEquals(null, recordedRequest.get()?.demoToken)
+        }
+    }
+
+    @Test
     fun getJobRequestsEncodedPublicPath() = runTest {
         val recordedRequest = AtomicReference<RecordedRequest>()
 
@@ -207,7 +241,14 @@ private class TestServer(
     init {
         server.createContext("/") { exchange ->
             val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            handler?.invoke(RecordedRequest(exchange.requestMethod, exchange.requestURI.rawPath, body))
+            handler?.invoke(
+                RecordedRequest(
+                    method = exchange.requestMethod,
+                    path = exchange.requestURI.rawPath,
+                    body = body,
+                    demoToken = exchange.requestHeaders.getFirst("X-Demo-Token")
+                )
+            )
             val bytes = responseBody.toByteArray(Charsets.UTF_8)
             exchange.sendResponseHeaders(status, bytes.size.toLong())
             exchange.responseBody.use { it.write(bytes) }
@@ -220,4 +261,9 @@ private class TestServer(
     }
 }
 
-private data class RecordedRequest(val method: String, val path: String, val body: String)
+private data class RecordedRequest(
+    val method: String,
+    val path: String,
+    val body: String,
+    val demoToken: String?
+)

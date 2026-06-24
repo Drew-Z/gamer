@@ -44,10 +44,16 @@ class MainActivity : ComponentActivity() {
         }
 
         val repository = CommunityRepository(
-            client = HttpCommunityApiClient(BuildConfig.COMMUNITY_API_BASE_URL)
+            client = HttpCommunityApiClient(
+                baseUrl = BuildConfig.COMMUNITY_API_BASE_URL,
+                demoToken = BuildConfig.COMMUNITY_DEMO_TOKEN
+            )
         )
         val generationService = FantasyPetGenerationService(
-            client = HttpFantasyPetGenerationClient(BuildConfig.FANTASY_PET_API_BASE_URL),
+            client = HttpFantasyPetGenerationClient(
+                baseUrl = BuildConfig.FANTASY_PET_API_BASE_URL,
+                demoToken = BuildConfig.COMMUNITY_DEMO_TOKEN
+            ),
             apiBaseUrl = BuildConfig.FANTASY_PET_API_BASE_URL
         )
 

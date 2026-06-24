@@ -16,7 +16,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class HttpFantasyPetGenerationClient(
-    private val baseUrl: String
+    private val baseUrl: String,
+    private val demoToken: String = ""
 ) : FantasyPetGenerationClient {
     override suspend fun createJob(
         request: PetGenerationJobCreateRequestDto
@@ -143,6 +144,9 @@ class HttpFantasyPetGenerationClient(
         (URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection).apply {
             connectTimeout = 10_000
             readTimeout = 10_000
+            demoToken.trim().takeIf { it.isNotBlank() }?.let { token ->
+                setRequestProperty("X-Demo-Token", token)
+            }
         }
 
     private fun String.pathSegment(): String =

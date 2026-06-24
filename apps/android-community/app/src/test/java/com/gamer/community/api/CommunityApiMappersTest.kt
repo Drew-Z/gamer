@@ -84,12 +84,12 @@ class CommunityApiMappersTest {
 
         assertEquals("Approved import", posts[0].sourceLabel)
         assertEquals("+80 petcoin", posts[0].rewardLabel)
-        assertEquals("Draft import-draft-local-001", posts[0].importDraftLabel)
-        assertEquals("Submission submission-local-002", posts[0].submissionLabel)
-        assertEquals("Score score-import-draft-local-001", posts[0].scoreReportLabel)
-        assertEquals("Source fantasy-pet-rule", posts[0].importSourceLabel)
-        assertEquals("Preview previews/overall-showcase.png", posts[0].importPreviewLabel)
-        assertEquals("Package exports/stardust-package.zip", posts[0].exportArtifactLabel)
+        assertEquals("Draft ready", posts[0].importDraftLabel)
+        assertEquals("Review submitted", posts[0].submissionLabel)
+        assertEquals("Score ready", posts[0].scoreReportLabel)
+        assertEquals("Reviewed source", posts[0].importSourceLabel)
+        assertEquals("Preview ready", posts[0].importPreviewLabel)
+        assertEquals("Package ready", posts[0].exportArtifactLabel)
         assertEquals("2 motion sheets", posts[0].motionSheetLabel)
     }
 

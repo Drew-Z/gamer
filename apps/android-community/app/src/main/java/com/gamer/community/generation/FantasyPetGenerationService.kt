@@ -477,12 +477,12 @@ class FantasyPetGenerationService(
 
     private fun PetGenerationJobResponseDto.reviewableArtifactsForUi(): List<PetGenerationArtifactDto> {
         val reviewableArtifacts = artifacts.filter { it.isReviewableCandidateArtifact() }
-        val completeActionReviews = reviewableArtifacts.filter { it.isCompleteActionReviewPlaybackArtifact() }
-        return completeActionReviews.takeIf { it.isNotEmpty() } ?: reviewableArtifacts
+        val runtimeActionReviews = reviewableArtifacts.filter { it.isRuntimeActionReviewPlaybackArtifact() }
+        return runtimeActionReviews.takeIf { it.isNotEmpty() } ?: reviewableArtifacts
     }
 
     private fun PetGenerationArtifactDto.isReviewableCandidateArtifact(): Boolean =
-        (kind == "candidate" || isCompleteActionReviewPlaybackArtifact()) &&
+        (kind == "candidate" || isRuntimeActionReviewPlaybackArtifact()) &&
             downloadId.isOpaqueDownloadId() &&
             actionId.isBlankOrOpaqueUiToken() &&
             !listOf(
@@ -1744,7 +1744,7 @@ private fun PetGenerationProgressSecurityDto.hasUnsafeProgressBoundary(): Boolea
 private fun PetGenerationArtifactDto.isSelectedReviewButtonCandidate(
     selectedCandidateDownloadId: String
 ): Boolean =
-    (kind == "candidate" || isCompleteActionReviewPlaybackArtifact()) &&
+    (kind == "candidate" || isRuntimeActionReviewPlaybackArtifact()) &&
         downloadId == selectedCandidateDownloadId &&
         reviewDecision.isBlank() &&
         downloadId.isOpaqueCandidateDownloadIdForUi() &&
@@ -1767,17 +1767,17 @@ private fun PetGenerationArtifactDto.isSelectedReviewButtonCandidate(
 
 private fun List<PetGenerationArtifactDto>.reviewButtonTargetsForUi(): List<PetGenerationArtifactDto> {
     val publicTargets = filter { artifact ->
-        artifact.kind == "candidate" || artifact.isCompleteActionReviewPlaybackArtifact()
+        artifact.kind == "candidate" || artifact.isRuntimeActionReviewPlaybackArtifact()
     }
-    val completeActionReviews = publicTargets.filter { it.isCompleteActionReviewPlaybackArtifact() }
-    return completeActionReviews.takeIf { it.isNotEmpty() } ?: publicTargets
+    val runtimeActionReviews = publicTargets.filter { it.isRuntimeActionReviewPlaybackArtifact() }
+    return runtimeActionReviews.takeIf { it.isNotEmpty() } ?: publicTargets
 }
 
-private fun PetGenerationArtifactDto.isCompleteActionReviewPlaybackArtifact(): Boolean =
+private fun PetGenerationArtifactDto.isRuntimeActionReviewPlaybackArtifact(): Boolean =
     kind.equals("review", ignoreCase = true) &&
-        previewKind.equals("complete-action-playback", ignoreCase = true) &&
+        previewKind.equals("runtime-action-playback", ignoreCase = true) &&
         mediaType.equals("text/html", ignoreCase = true) &&
-        reviewStage.publicReviewStage() == "complete-action-review"
+        reviewStage.publicReviewStage() == "runtime-action-review"
 
 private fun String.publicReviewStage(): String {
     val normalized = trim().lowercase()
