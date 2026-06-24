@@ -199,6 +199,10 @@ stdout per run and keeps bounded recent history at
 `/ops/private-ops-monitor-status?run=1` and requires the latest synthetic probe
 to pass.
 
+After the private entry is placed behind TLS, set `PRIVATE_OPS_REQUIRE_TLS=1`
+in the deployment smoke environment. This makes `tools/private-ops-smoke.js`
+fail before sending requests unless `COMMUNITY_BASE_URL` uses `https://`.
+
 Operational helpers:
 
 ```powershell

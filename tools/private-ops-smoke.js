@@ -9,6 +9,7 @@ const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").tri
 const requirePostgres = isEnabled(process.env.PRIVATE_OPS_REQUIRE_POSTGRES);
 const requireDbBackupDrill = isEnabled(process.env.PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL);
 const requireMonitor = isEnabled(process.env.PRIVATE_OPS_REQUIRE_MONITOR);
+const requireTls = isEnabled(process.env.PRIVATE_OPS_REQUIRE_TLS);
 const forbiddenFragments = [
   communityDemoToken,
   fantasyPetUpstreamToken,
@@ -37,6 +38,10 @@ if (requireDbBackupDrill && smokeSurface !== "admin-review") {
 
 if (requireMonitor && smokeSurface !== "admin-review") {
   throw new Error("PRIVATE_OPS_REQUIRE_MONITOR is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
+}
+
+if (requireTls && !baseUrl.startsWith("https://")) {
+  throw new Error("PRIVATE_OPS_REQUIRE_TLS requires COMMUNITY_BASE_URL to use https.");
 }
 
 await runCheck("community health is public-safe", async () => {
@@ -288,7 +293,8 @@ console.log(
       checkedKnownPackageGate: Boolean(knownAppJobId),
       requiredPostgres: requirePostgres,
       requiredDbBackupDrill: requireDbBackupDrill,
-      requiredMonitor: requireMonitor
+      requiredMonitor: requireMonitor,
+      requiredTls: requireTls
     },
     null,
     2

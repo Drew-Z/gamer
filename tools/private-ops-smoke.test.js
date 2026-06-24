@@ -679,6 +679,39 @@ test("private ops smoke can require admin-review monitor status", async () => {
   }
 });
 
+test("private ops smoke rejects non-HTTPS base URL when TLS is required", async () => {
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    requests.push({
+      method: request.method,
+      url: request.url
+    });
+    response.writeHead(200, {
+      "Content-Type": "application/json"
+    });
+    response.end(JSON.stringify({
+      ok: true,
+      service: "community-api"
+    }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const result = await runSmoke({
+      COMMUNITY_BASE_URL: `http://127.0.0.1:${server.address().port}`,
+      COMMUNITY_DEMO_TOKEN: "community-token-123",
+      FANTASY_PET_UPSTREAM_TOKEN: "upstream-token-123",
+      PRIVATE_OPS_REQUIRE_TLS: "1"
+    });
+
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /PRIVATE_OPS_REQUIRE_TLS requires COMMUNITY_BASE_URL to use https/);
+    assert.deepEqual(requests, []);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("private ops smoke rejects basic auth password leaks", async () => {
   const validBasicAuth = `Basic ${Buffer.from("operator:private-password").toString("base64")}`;
   const server = http.createServer((request, response) => {
