@@ -170,6 +170,94 @@ test("HTTP server handles CORS preflight for private ops allowlist", async () =>
   }
 });
 
+test("HTTP admin review requires a trusted browser origin when an allowlist is configured", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_CORS_ALLOWED_ORIGINS: "https://desktop-pet.example.internal",
+        COMMUNITY_DEMO_TOKEN: "community-demo-token-123"
+      },
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const draftResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts",
+      {
+        readiness: {
+          status: "community-ready",
+          reason: "preview accepted by user"
+        },
+        importSummary: {
+          source: {
+            petId: "pet-admin-origin-001",
+            baseIdentityStatus: "accepted"
+          },
+          review: {
+            blockers: [],
+            previewDecision: "keep",
+            exportStatus: "ready"
+          }
+        },
+        ownershipClaimId: "claim-pet-admin-origin-001"
+      },
+      {
+        "X-Demo-Token": "community-demo-token-123"
+      }
+    );
+    const submitResponse = await requestJson(
+      server,
+      "POST",
+      "/v1/import-drafts/submit",
+      {
+        draftId: draftResponse.body.id
+      },
+      {
+        "X-Demo-Token": "community-demo-token-123"
+      }
+    );
+
+    const missingOrigin = await requestJson(
+      server,
+      "POST",
+      "/v1/admin/reviews",
+      {
+        submissionId: submitResponse.body.submission.id,
+        status: "approved",
+        reviewer: "admin-ui"
+      },
+      {
+        "X-Demo-Token": "community-demo-token-123"
+      }
+    );
+    const trustedReferer = await requestJson(
+      server,
+      "POST",
+      "/v1/admin/reviews",
+      {
+        submissionId: submitResponse.body.submission.id,
+        status: "held",
+        reviewer: "admin-ui"
+      },
+      {
+        Referer: "https://desktop-pet.example.internal/admin",
+        "X-Demo-Token": "community-demo-token-123"
+      }
+    );
+
+    assert.equal(missingOrigin.status, 403);
+    assert.equal(missingOrigin.body.error, "admin_origin_required");
+    assert.equal(trustedReferer.status, 200);
+    assert.equal(trustedReferer.body.status, "held");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP server parses JSON body for check-in", async () => {
   const server = http.createServer(
     createCommunityHttpHandler({

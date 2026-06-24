@@ -39,16 +39,85 @@ const writeRaw = (response, result) => {
 
 const unsafeRequestMethods = new Set(["DELETE", "PATCH", "POST", "PUT"]);
 
-export function createCorsHeaders(method, headers = {}, env = process.env) {
-  const allowedOrigins = String(env.COMMUNITY_CORS_ALLOWED_ORIGINS ?? "")
+function splitOriginList(value) {
+  return String(value ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+}
+
+function headerValue(headers = {}, name) {
+  const value = headers[name] ?? headers[name.toLowerCase()] ?? headers[name.toUpperCase()];
+
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
+  return typeof value === "string" ? value : "";
+}
+
+function trustedAdminReviewOrigins(env) {
+  const explicit = splitOriginList(env.COMMUNITY_ADMIN_REVIEW_TRUSTED_ORIGINS);
+  return explicit.length > 0 ? explicit : splitOriginList(env.COMMUNITY_CORS_ALLOWED_ORIGINS);
+}
+
+function originFromReferer(value) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
+
+function isAdminReviewWrite(method, requestUrl) {
+  const url = new URL(requestUrl, "http://localhost");
+  return method.toUpperCase() === "POST" && url.pathname === "/v1/admin/reviews";
+}
+
+function validateAdminReviewOrigin(method, requestUrl, headers, env) {
+  if (!isAdminReviewWrite(method, requestUrl)) {
+    return null;
+  }
+
+  const allowedOrigins = trustedAdminReviewOrigins(env);
+  if (allowedOrigins.length === 0) {
+    return null;
+  }
+
+  const origin = headerValue(headers, "origin").trim();
+  if (origin) {
+    return allowedOrigins.includes(origin)
+      ? null
+      : {
+          error: "admin_origin_not_allowed"
+        };
+  }
+
+  const refererOrigin = originFromReferer(headerValue(headers, "referer").trim());
+  if (refererOrigin) {
+    return allowedOrigins.includes(refererOrigin)
+      ? null
+      : {
+          error: "admin_origin_not_allowed"
+        };
+  }
+
+  return {
+    error: "admin_origin_required"
+  };
+}
+
+export function createCorsHeaders(method, headers = {}, env = process.env) {
+  const allowedOrigins = splitOriginList(env.COMMUNITY_CORS_ALLOWED_ORIGINS);
   if (allowedOrigins.length === 0) {
     return {};
   }
 
-  const origin = String(headers.origin ?? headers.Origin ?? "").trim();
+  const origin = headerValue(headers, "origin").trim();
   if (!origin || !allowedOrigins.includes(origin)) {
     return {};
   }
@@ -143,12 +212,17 @@ export function createCommunityHttpHandler(options = {}) {
       if (
         unsafeRequestMethods.has(method.toUpperCase()) &&
         String(env.COMMUNITY_CORS_ALLOWED_ORIGINS ?? "").trim() &&
-        String(request.headers.origin ?? request.headers.Origin ?? "").trim() &&
+        headerValue(request.headers, "origin").trim() &&
         !corsHeaders["Access-Control-Allow-Origin"]
       ) {
         writeJson(response, 403, {
           error: "cors_origin_not_allowed"
         });
+        return;
+      }
+      const adminOriginError = validateAdminReviewOrigin(method, requestUrl, request.headers, env);
+      if (adminOriginError) {
+        writeJson(response, 403, adminOriginError);
         return;
       }
 

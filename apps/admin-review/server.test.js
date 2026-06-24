@@ -99,6 +99,72 @@ test("admin-review proxies the fantasy pet review queue overview", async () => {
   }
 });
 
+test("admin-review proxies community writes with server token and browser origin metadata", async () => {
+  const upstreamRequests = [];
+  const upstream = http.createServer((request, response) => {
+    let body = "";
+    request.on("data", (chunk) => {
+      body += chunk;
+    });
+    request.on("end", () => {
+      upstreamRequests.push({
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body
+      });
+      response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ ok: true }));
+    });
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      communityDemoToken: "server-community-demo-token"
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/v1/admin/reviews`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://desktop-pet.example.internal",
+        Referer: "https://desktop-pet.example.internal/admin",
+        "X-Demo-Token": "client-token-must-not-forward"
+      },
+      body: JSON.stringify({
+        submissionId: "submission-local-002",
+        status: "approved",
+        reviewer: "admin-ui"
+      })
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true });
+    assert.equal(upstreamRequests.length, 1);
+    assert.equal(upstreamRequests[0].url, "/v1/admin/reviews");
+    assert.equal(
+      upstreamRequests[0].headers.origin,
+      "https://desktop-pet.example.internal"
+    );
+    assert.equal(
+      upstreamRequests[0].headers.referer,
+      "https://desktop-pet.example.internal/admin"
+    );
+    assert.equal(
+      upstreamRequests[0].headers["x-demo-token"],
+      "server-community-demo-token"
+    );
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review does not proxy fantasy pet admin worker routes", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

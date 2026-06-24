@@ -67,15 +67,31 @@ const proxyTargetPath = (url) => {
   return url.pathname + url.search;
 };
 
-const proxyRequest = async (request, response, url, communityApiUrl) => {
+const trimString = (value) => (typeof value === "string" ? value.trim() : "");
+
+const proxyRequest = async (request, response, url, communityApiUrl, options = {}) => {
   const target = new URL(proxyTargetPath(url), communityApiUrl);
   const body = await readRequestBody(request);
+  const headers = {
+    "Content-Type": request.headers["content-type"] ?? "application/json"
+  };
+  const origin = trimString(request.headers.origin);
+  const referer = trimString(request.headers.referer);
+  const communityDemoToken = trimString(options.communityDemoToken);
+
+  if (origin) {
+    headers.Origin = origin;
+  }
+  if (referer) {
+    headers.Referer = referer;
+  }
+  if (communityDemoToken) {
+    headers["X-Demo-Token"] = communityDemoToken;
+  }
 
   const upstream = await fetch(target, {
     method: request.method,
-    headers: {
-      "Content-Type": request.headers["content-type"] ?? "application/json"
-    },
+    headers,
     body: body.length > 0 ? body : undefined
   });
 
@@ -136,7 +152,10 @@ const isInside = (target, parent) => {
 };
 
 export function createAdminReviewHttpHandler(options = {}) {
+  const env = options.env ?? process.env;
   const communityApiUrl = options.communityApiUrl ?? "http://127.0.0.1:4000";
+  const communityDemoToken =
+    options.communityDemoToken ?? env.COMMUNITY_DEMO_TOKEN ?? "";
   const gaPetReviewStore = createGaPetReviewStore({
     runRoot: options.gaPetRunRoot
   });
@@ -159,7 +178,9 @@ export function createAdminReviewHttpHandler(options = {}) {
       }
 
       if (url.pathname.startsWith("/api/") || shouldProxyDirect(request.method ?? "GET", url.pathname)) {
-        await proxyRequest(request, response, url, communityApiUrl);
+        await proxyRequest(request, response, url, communityApiUrl, {
+          communityDemoToken
+        });
         return;
       }
 
@@ -197,7 +218,11 @@ export function startAdminReviewServer(options = {}) {
     options.communityApiUrl ?? env.COMMUNITY_API_URL ?? "http://127.0.0.1:4000";
   const gaPetRunRoot = options.gaPetRunRoot ?? env.GA_PET_RUN_ROOT;
   const server = http.createServer(
-    createAdminReviewHttpHandler({ communityApiUrl, gaPetRunRoot })
+    createAdminReviewHttpHandler({
+      env,
+      communityApiUrl,
+      gaPetRunRoot
+    })
   );
 
   server.listen(port, "0.0.0.0", () => {

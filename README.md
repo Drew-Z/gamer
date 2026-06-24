@@ -225,6 +225,12 @@ Invoke-RestMethod -Uri http://localhost:4000/v1/admin/review-queue
 
 The static admin review prototype lives in `apps/admin-review`. It reads the
 community API review queue and can approve, hold, reject, or revoke submissions.
+In private ops, the browser talks to admin-review through the private proxy;
+admin-review injects the server-side `COMMUNITY_DEMO_TOKEN` when it proxies to
+Community API, so the token is not shipped to browser JavaScript. When
+`COMMUNITY_CORS_ALLOWED_ORIGINS` or
+`COMMUNITY_ADMIN_REVIEW_TRUSTED_ORIGINS` is configured, Community admin review
+writes require a matching browser `Origin` or `Referer`.
 
 Run it with the community API:
 
