@@ -20,6 +20,14 @@ const writeJson = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
+const writeJsonWithHeaders = (response, status, headers, body) => {
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    ...headers
+  });
+  response.end(JSON.stringify(body));
+};
+
 const readRequestBody = async (request) =>
   new Promise((resolve, reject) => {
     const chunks = [];
@@ -68,6 +76,83 @@ const proxyTargetPath = (url) => {
 };
 
 const trimString = (value) => (typeof value === "string" ? value.trim() : "");
+
+const resolveBuiltInBasicAuth = (env) => {
+  const user = trimString(env.PRIVATE_OPS_BASIC_AUTH_USER);
+  const password = trimString(env.PRIVATE_OPS_BASIC_AUTH_PASSWORD);
+
+  if (!user && !password) {
+    return {
+      enabled: false,
+      misconfigured: false,
+      user: "",
+      password: ""
+    };
+  }
+
+  return {
+    enabled: Boolean(user && password),
+    misconfigured: !user || !password,
+    user,
+    password
+  };
+};
+
+const requestBasicAuthCredentials = (headers = {}) => {
+  const header = trimString(headers.authorization);
+  const match = /^Basic\s+(.+)$/iu.exec(header);
+  if (!match) {
+    return null;
+  }
+
+  try {
+    const decoded = Buffer.from(match[1], "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    if (separator < 0) {
+      return null;
+    }
+
+    return {
+      user: decoded.slice(0, separator),
+      password: decoded.slice(separator + 1)
+    };
+  } catch {
+    return null;
+  }
+};
+
+const validateBuiltInBasicAuth = (request, response, basicAuth) => {
+  if (!basicAuth.enabled && !basicAuth.misconfigured) {
+    return false;
+  }
+
+  if (basicAuth.misconfigured) {
+    writeJson(response, 503, {
+      error: "admin_basic_auth_misconfigured"
+    });
+    return true;
+  }
+
+  const credentials = requestBasicAuthCredentials(request.headers);
+  if (
+    credentials?.user === basicAuth.user &&
+    credentials.password === basicAuth.password
+  ) {
+    return false;
+  }
+
+  writeJsonWithHeaders(
+    response,
+    401,
+    {
+      "WWW-Authenticate": 'Basic realm="Desktop Pet Private Ops"'
+    },
+    {
+      error: "admin_basic_auth_required"
+    }
+  );
+  return true;
+};
 
 const proxyRequest = async (request, response, url, communityApiUrl, options = {}) => {
   const target = new URL(proxyTargetPath(url), communityApiUrl);
@@ -156,6 +241,7 @@ export function createAdminReviewHttpHandler(options = {}) {
   const communityApiUrl = options.communityApiUrl ?? "http://127.0.0.1:4000";
   const communityDemoToken =
     options.communityDemoToken ?? env.COMMUNITY_DEMO_TOKEN ?? "";
+  const builtInBasicAuth = resolveBuiltInBasicAuth(env);
   const gaPetReviewStore = createGaPetReviewStore({
     runRoot: options.gaPetRunRoot
   });
@@ -163,6 +249,13 @@ export function createAdminReviewHttpHandler(options = {}) {
   return async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://localhost");
+
+      if (
+        url.pathname !== "/health" &&
+        validateBuiltInBasicAuth(request, response, builtInBasicAuth)
+      ) {
+        return;
+      }
 
       if (url.pathname.startsWith("/ga-review/")) {
         const handled = await handleGaReviewRequest(

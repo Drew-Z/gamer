@@ -99,6 +99,82 @@ test("admin-review proxies the fantasy pet review queue overview", async () => {
   }
 });
 
+test("admin-review challenges requests when built-in basic auth is configured", async () => {
+  const upstreamRequests = [];
+  const upstream = http.createServer((request, response) => {
+    upstreamRequests.push({ method: request.method, url: request.url });
+    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ ok: true }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/v1/sla`);
+
+    assert.equal(response.status, 401);
+    assert.match(response.headers.get("www-authenticate") ?? "", /^Basic /u);
+    assert.deepEqual(await response.json(), { error: "admin_basic_auth_required" });
+    assert.deepEqual(upstreamRequests, []);
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
+test("admin-review accepts built-in basic auth without forwarding credentials", async () => {
+  const upstreamRequests = [];
+  const upstream = http.createServer((request, response) => {
+    upstreamRequests.push({
+      method: request.method,
+      url: request.url,
+      headers: request.headers
+    });
+    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ ok: true }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(`http://127.0.0.1:${port}/v1/sla`, {
+      headers: {
+        Authorization: `Basic ${credentials}`
+      }
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true });
+    assert.equal(upstreamRequests.length, 1);
+    assert.equal(upstreamRequests[0].url, "/v1/sla");
+    assert.equal(upstreamRequests[0].headers.authorization, undefined);
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review proxies community writes with server token and browser origin metadata", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {

@@ -169,6 +169,12 @@ gate; the smoke accepts either a ready ZIP or a stable gated JSON response. It
 does not create a live generation job unless `PRIVATE_OPS_CREATE_JOB=1` is set
 for a quota-approved window.
 
+For hiden-style direct Node deployments that expose `admin-review` without the
+private Caddy proxy, set `PRIVATE_OPS_BASIC_AUTH_USER` and
+`PRIVATE_OPS_BASIC_AUTH_PASSWORD` in `.env.local`; `admin-review` will require
+Basic Auth before serving the Web UI or proxying Community/Agent requests,
+while keeping `/health` public for platform health checks.
+
 Operational helpers:
 
 ```powershell
