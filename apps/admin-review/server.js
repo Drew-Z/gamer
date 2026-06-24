@@ -186,6 +186,53 @@ const proxyRequest = async (request, response, url, communityApiUrl, options = {
   response.end(Buffer.from(await upstream.arrayBuffer()));
 };
 
+const safeJsonBody = (text) => {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+};
+
+const handleOpsRequest = async (request, response, url, communityApiUrl) => {
+  if (request.method !== "GET" || url.pathname !== "/ops/internal-community-auth-check") {
+    return false;
+  }
+
+  try {
+    const upstream = await fetch(new URL("/v1/check-in", communityApiUrl), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        date: "2026-06-24"
+      })
+    });
+    const body = safeJsonBody(await upstream.text());
+    const error = typeof body.error === "string" ? body.error : "";
+    const ok = upstream.status === 401 && error === "unauthorized_demo_request";
+
+    writeJson(response, ok ? 200 : 502, {
+      schema: "desktop-pet.ops.internal-community-auth-check.v1",
+      ok,
+      communityWriteWithoutToken: {
+        status: upstream.status,
+        error
+      }
+    });
+  } catch {
+    writeJson(response, 502, {
+      schema: "desktop-pet.ops.internal-community-auth-check.v1",
+      ok: false,
+      error: "community_api_unreachable"
+    });
+  }
+
+  return true;
+};
+
 const handleGaReviewRequest = async (request, response, url, store) => {
   if (request.method === "GET" && url.pathname === "/ga-review/candidates") {
     const limit = Number.parseInt(url.searchParams.get("limit") || "40", 10);
@@ -264,6 +311,14 @@ export function createAdminReviewHttpHandler(options = {}) {
           url,
           gaPetReviewStore
         );
+        if (!handled) {
+          writeJson(response, 404, { error: "not_found" });
+        }
+        return;
+      }
+
+      if (url.pathname.startsWith("/ops/")) {
+        const handled = await handleOpsRequest(request, response, url, communityApiUrl);
         if (!handled) {
           writeJson(response, 404, { error: "not_found" });
         }

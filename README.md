@@ -176,7 +176,9 @@ Basic Auth before serving the Web UI or proxying Community/Agent requests,
 while keeping `/health` public for platform health checks. When
 `COMMUNITY_BASE_URL` points at this public admin-review surface, run the smoke
 with `PRIVATE_OPS_SMOKE_SURFACE=admin-review`; the smoke verifies the public
-Basic Auth gate instead of expecting raw Community API missing-token behavior.
+Basic Auth gate and calls the protected
+`/ops/internal-community-auth-check` endpoint so `admin-review` can verify raw
+Community API missing-token behavior from inside the target host.
 
 Operational helpers:
 

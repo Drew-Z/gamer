@@ -76,6 +76,27 @@ if (smokeSurface === "admin-review") {
     assertStatus(response, 200);
     assertEqual(response.body.checkIn?.date, "2026-06-24", "check-in date");
   });
+
+  await runCheck("internal community auth rejects missing token", async () => {
+    const response = await requestJson("/ops/internal-community-auth-check");
+    assertStatus(response, 200);
+    assertEqual(
+      response.body.schema,
+      "desktop-pet.ops.internal-community-auth-check.v1",
+      "internal auth check schema"
+    );
+    assertEqual(response.body.ok, true, "internal auth check ok");
+    assertEqual(
+      response.body.communityWriteWithoutToken?.status,
+      401,
+      "internal missing-token status"
+    );
+    assertEqual(
+      response.body.communityWriteWithoutToken?.error,
+      "unauthorized_demo_request",
+      "internal missing-token error"
+    );
+  });
 } else {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {

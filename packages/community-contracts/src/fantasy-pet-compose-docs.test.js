@@ -82,6 +82,8 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /PRIVATE_OPS_BASIC_AUTH_USER/);
   assert.match(script, /PRIVATE_OPS_SMOKE_SURFACE/);
   assert.match(script, /admin-review rejects missing basic auth/);
+  assert.match(script, /internal community auth rejects missing token/);
+  assert.match(script, /\/ops\/internal-community-auth-check/);
   assert.match(script, /\/health/);
   assert.match(script, /\/v1\/sla/);
   assert.match(script, /\/worker-readiness/);
@@ -93,6 +95,7 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(script, /fantasy-pet\.package-download-response\.v1/);
   assert.match(script, /assertNoLeaks/);
   assert.match(readme, /PRIVATE_OPS_SMOKE_SURFACE=admin-review/);
+  assert.match(readme, /\/ops\/internal-community-auth-check/);
   assert.match(preflight, /PRIVATE_OPS_ENV_FILE/);
   assert.match(preflight, /PRIVATE_OPS_DEPLOYMENT_ROLE/);
   assert.match(preflight, /COMMUNITY_POSTGRES_PASSWORD/);

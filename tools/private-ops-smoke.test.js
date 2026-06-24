@@ -188,6 +188,18 @@ test("private ops smoke supports admin-review basic auth surface", async () => {
       return;
     }
 
+    if (request.method === "GET" && request.url === "/ops/internal-community-auth-check") {
+      sendJson(200, {
+        schema: "desktop-pet.ops.internal-community-auth-check.v1",
+        ok: true,
+        communityWriteWithoutToken: {
+          status: 401,
+          error: "unauthorized_demo_request"
+        }
+      });
+      return;
+    }
+
     sendJson(404, {
       error: "not_found"
     });
@@ -211,6 +223,13 @@ test("private ops smoke supports admin-review basic auth surface", async () => {
       output.checks.some(
         (entry) =>
           entry.name === "admin-review rejects missing basic auth" &&
+          entry.status === "pass",
+      ),
+    );
+    assert(
+      output.checks.some(
+        (entry) =>
+          entry.name === "internal community auth rejects missing token" &&
           entry.status === "pass",
       ),
     );

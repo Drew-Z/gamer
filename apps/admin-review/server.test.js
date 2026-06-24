@@ -175,6 +175,68 @@ test("admin-review accepts built-in basic auth without forwarding credentials", 
   }
 });
 
+test("admin-review ops check verifies raw community auth from the target host", async () => {
+  const upstreamRequests = [];
+  const upstream = http.createServer((request, response) => {
+    let body = "";
+    request.on("data", (chunk) => {
+      body += chunk;
+    });
+    request.on("end", () => {
+      upstreamRequests.push({
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body
+      });
+      response.writeHead(401, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ error: "unauthorized_demo_request" }));
+    });
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/internal-community-auth-check`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      schema: "desktop-pet.ops.internal-community-auth-check.v1",
+      ok: true,
+      communityWriteWithoutToken: {
+        status: 401,
+        error: "unauthorized_demo_request"
+      }
+    });
+    assert.equal(upstreamRequests.length, 1);
+    assert.equal(upstreamRequests[0].method, "POST");
+    assert.equal(upstreamRequests[0].url, "/v1/check-in");
+    assert.equal(upstreamRequests[0].headers["x-demo-token"], undefined);
+    assert.equal(upstreamRequests[0].headers.authorization, undefined);
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
 test("admin-review proxies community writes with server token and browser origin metadata", async () => {
   const upstreamRequests = [];
   const upstream = http.createServer((request, response) => {
