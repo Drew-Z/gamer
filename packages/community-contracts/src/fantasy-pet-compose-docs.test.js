@@ -95,6 +95,7 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   const backup = readRepoFile("tools/private-ops-backup.sh");
   const restore = readRepoFile("tools/private-ops-restore.sh");
   const prune = readRepoFile("tools/private-ops-prune-agent-runs.sh");
+  const rollback = readRepoFile("tools/private-ops-rollback.sh");
 
   assert.match(caddyfile, /tls \{\$PRIVATE_OPS_TLS_MODE:internal\}/);
   assert.match(caddyfile, /basic_auth/);
@@ -107,6 +108,11 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(restore, /migrate:community-db:dry-run/);
   assert.match(prune, /FANTASY_PET_RUN_RETENTION_DAYS:-14/);
   assert.match(prune, /find \/data\/runs/);
+  assert.match(rollback, /PRIVATE_OPS_ROLLBACK_APPLY/);
+  assert.match(rollback, /GAMER_IMAGE_TAG/);
+  assert.match(rollback, /FANTASY_PET_IMAGE_TAG/);
+  assert.match(rollback, /migrate:community-db:dry-run/);
+  assert.match(rollback, /--no-build/);
 });
 
 test("Android build supports configurable local API base URLs", () => {

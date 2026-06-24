@@ -150,12 +150,18 @@ Operational helpers:
 tools\private-ops-backup.sh
 tools\private-ops-restore.sh backups\community-db-YYYYMMDDTHHMMSSZ.sql
 tools\private-ops-prune-agent-runs.sh
+tools\private-ops-rollback.sh private-ops-v0.2
 ```
 
 The helpers default to `.env.private-ops` and the default compose project. For
 operator drills that use a custom project name or temporary override file, set
 `PRIVATE_OPS_ENV_FILE`, `PRIVATE_OPS_COMPOSE_PROJECT_NAME`, or
 `PRIVATE_OPS_COMPOSE_OVERRIDE_FILE`.
+
+`tools/private-ops-rollback.sh` is plan-only by default. To apply a rollback to
+already-built release images, set `PRIVATE_OPS_ROLLBACK_APPLY=1`; then run
+`npm.cmd run smoke:private-ops` and inspect logs before reopening live
+generation.
 
 Use `deploy/private-ops-cron.example` for a 5-minute synthetic smoke probe and
 `deploy/private-ops-logrotate.conf` for local smoke/ops log rotation.
