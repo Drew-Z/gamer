@@ -76,6 +76,14 @@ export function resolveFantasyPetApiBaseUrl(options = {}) {
   return candidate.trim().replace(/\/+$/u, "");
 }
 
+export function resolveFantasyPetUpstreamToken(options = {}) {
+  const env = options.env ?? process.env;
+  const candidate =
+    options.fantasyPetUpstreamToken ?? env.FANTASY_PET_UPSTREAM_TOKEN ?? "";
+
+  return typeof candidate === "string" ? candidate.trim() : "";
+}
+
 export async function proxyFantasyPetPublicRequest(method, requestUrl, options = {}) {
   const baseUrl = resolveFantasyPetApiBaseUrl(options);
   if (!baseUrl) {
@@ -94,11 +102,12 @@ export async function proxyFantasyPetPublicRequest(method, requestUrl, options =
   const incomingUrl = new URL(requestUrl, "http://localhost");
   const upstreamUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, baseUrl);
   const normalizedMethod = method.toUpperCase();
+  const upstreamToken = resolveFantasyPetUpstreamToken(options);
 
   try {
     const upstreamResponse = await fetchImpl(upstreamUrl, {
       method: normalizedMethod,
-      headers: forwardedRequestHeaders(options.headers),
+      headers: forwardedRequestHeaders(options.headers, upstreamToken),
       body: methodAllowsBody(normalizedMethod) ? options.rawBody ?? "" : undefined
     });
     const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
@@ -120,7 +129,7 @@ export async function proxyFantasyPetPublicRequest(method, requestUrl, options =
   }
 }
 
-function forwardedRequestHeaders(headers = {}) {
+function forwardedRequestHeaders(headers = {}, upstreamToken = "") {
   const forwarded = {};
   const contentType = headerValue(headers, "content-type");
   const accept = headerValue(headers, "accept");
@@ -130,6 +139,9 @@ function forwardedRequestHeaders(headers = {}) {
   }
   if (accept) {
     forwarded.Accept = accept;
+  }
+  if (upstreamToken) {
+    forwarded.Authorization = `Bearer ${upstreamToken}`;
   }
 
   return forwarded;

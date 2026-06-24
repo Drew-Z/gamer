@@ -6,7 +6,7 @@ import { createCommunityHttpHandler, resolveCommunityApiPort } from "./server.js
 import { createRateLimiterPolicy } from "./rate-limit.js";
 import { createCommunityStore } from "./store.js";
 
-const requestJson = (server, method, path, body) =>
+const requestJson = (server, method, path, body, headers = {}) =>
   new Promise((resolve, reject) => {
     const address = server.address();
     const payload = body ? JSON.stringify(body) : "";
@@ -18,7 +18,8 @@ const requestJson = (server, method, path, body) =>
         method,
         headers: {
           "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(payload)
+          "Content-Length": Buffer.byteLength(payload),
+          ...headers
         }
       },
       (response) => {
@@ -38,7 +39,7 @@ const requestJson = (server, method, path, body) =>
     request.end(payload);
   });
 
-const requestRaw = (server, method, path, body = "") =>
+const requestRaw = (server, method, path, body = "", headers = {}) =>
   new Promise((resolve, reject) => {
     const address = server.address();
     const payload = Buffer.isBuffer(body) ? body : Buffer.from(body);
@@ -49,7 +50,8 @@ const requestRaw = (server, method, path, body = "") =>
         path,
         method,
         headers: {
-          "Content-Length": payload.byteLength
+          "Content-Length": payload.byteLength,
+          ...headers
         }
       },
       (response) => {
@@ -165,6 +167,42 @@ test("HTTP server rejects invalid JSON body", async () => {
   }
 });
 
+test("HTTP server requires community demo token for protected community writes", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_DEMO_TOKEN: "community-secret"
+      },
+      store: createCommunityStore()
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const blocked = await requestJson(server, "POST", "/v1/check-in", {
+      date: "2026-06-23"
+    });
+    const allowed = await requestJson(
+      server,
+      "POST",
+      "/v1/check-in",
+      {
+        date: "2026-06-23"
+      },
+      {
+        "X-Demo-Token": "community-secret"
+      }
+    );
+
+    assert.equal(blocked.status, 401);
+    assert.equal(blocked.body.error, "unauthorized_demo_request");
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.body.checkIn.date, "2026-06-23");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP server reports unconfigured fantasy pet public proxy", async () => {
   const server = http.createServer(
     createCommunityHttpHandler({
@@ -183,6 +221,38 @@ test("HTTP server reports unconfigured fantasy pet public proxy", async () => {
     assert.equal(response.body.error, "fantasy_pet_api_unconfigured");
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("HTTP server requires community demo token for protected fantasy pet proxy calls", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(500, {
+      "Content-Type": "application/json"
+    });
+    response.end(JSON.stringify({ error: "should_not_reach_upstream" }));
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_DEMO_TOKEN: "community-secret",
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "POST", "/pet-generation-jobs", {
+      schema: "fantasy-pet.app-job-create-request.v1",
+      description: "tiny dragon"
+    });
+
+    assert.equal(response.status, 401);
+    assert.equal(response.body.error, "unauthorized_demo_request");
+    assert.equal(upstream.requests.length, 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
   }
 });
 
@@ -226,6 +296,85 @@ test("HTTP server proxies fantasy pet public job creation", async () => {
         "\"schema\":\"fantasy-pet.app-job-create-request.v1\""
       )
     );
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
+  }
+});
+
+test("HTTP server injects upstream fantasy pet token without forwarding client demo token", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(201, {
+      "Content-Type": "application/json"
+    });
+    response.end(
+      JSON.stringify({
+        schema: "fantasy-pet.app-job-response.v1",
+        appJobId: "job-123",
+        status: "queued"
+      })
+    );
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_DEMO_TOKEN: "community-secret",
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl,
+        FANTASY_PET_UPSTREAM_TOKEN: "upstream-secret"
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(
+      server,
+      "POST",
+      "/pet-generation-jobs",
+      {
+        schema: "fantasy-pet.app-job-create-request.v1",
+        description: "tiny dragon"
+      },
+      {
+        "X-Demo-Token": "community-secret"
+      }
+    );
+
+    assert.equal(response.status, 201);
+    assert.equal(upstream.requests.length, 1);
+    assert.equal(upstream.requests[0].headers.authorization, "Bearer upstream-secret");
+    assert.equal(upstream.requests[0].headers["x-demo-token"], undefined);
+    assert.notEqual(upstream.requests[0].headers.authorization, "Bearer community-secret");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => upstream.server.close(resolve));
+  }
+});
+
+test("HTTP server leaves public-safe readiness available with community demo token configured", async () => {
+  const upstream = await createFantasyPetUpstream((request, response) => {
+    response.writeHead(200, {
+      "Content-Type": "application/json"
+    });
+    response.end(JSON.stringify({ schema: "fantasy-pet.worker-readiness-public.v1" }));
+  });
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_DEMO_TOKEN: "community-secret",
+        FANTASY_PET_API_BASE_URL: upstream.baseUrl,
+        FANTASY_PET_UPSTREAM_TOKEN: "upstream-secret"
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const response = await requestJson(server, "GET", "/worker-readiness");
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.schema, "fantasy-pet.worker-readiness-public.v1");
+    assert.equal(upstream.requests[0].headers.authorization, "Bearer upstream-secret");
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await new Promise((resolve) => upstream.server.close(resolve));

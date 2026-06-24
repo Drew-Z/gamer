@@ -4,6 +4,24 @@ The community API currently runs on local in-memory state and exposes stable JSO
 contracts for the Android community shell, admin review console, and pet package
 integration services.
 
+## Demo auth and gateway tokens
+
+When `COMMUNITY_DEMO_TOKEN` is configured, protected demo operations require:
+
+```http
+X-Demo-Token: <community-demo-token>
+```
+
+`Authorization: Bearer <community-demo-token>` is also accepted for non-Android
+operator tooling. Public-safe probes stay readable without the community token:
+`GET /health`, `GET /v1/sla`, `GET /worker-readiness`, and
+`GET /app-api-contract`.
+
+When `FANTASY_PET_UPSTREAM_TOKEN` is configured, the Community API injects it as
+`Authorization: Bearer <upstream-token>` on proxied fantasy-pet requests. The
+client's `X-Demo-Token` is not forwarded upstream, so Android only knows the
+community demo token and never receives the server-to-server Agent API token.
+
 ## Proxied fantasy-pet public app endpoints
 
 When `FANTASY_PET_API_BASE_URL` is configured, the community API can also act as

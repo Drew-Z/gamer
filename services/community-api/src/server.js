@@ -6,6 +6,7 @@ import {
   proxyFantasyPetPublicRequest
 } from "./fantasy-pet-proxy.js";
 import { createConfiguredCommunityStore } from "./configured-store.js";
+import { requireCommunityDemoAuth } from "./demo-auth.js";
 import { formatRequestLog } from "./logging.js";
 import { createRateLimiterPolicyFromEnv, resolveClientIp } from "./rate-limit.js";
 import { handleCommunityRequest } from "./routes.js";
@@ -84,12 +85,22 @@ export function createCommunityHttpHandler(options = {}) {
         }
       }
 
+      const authError = requireCommunityDemoAuth(method, requestUrl, request.headers, {
+        env,
+        communityDemoToken: options.communityDemoToken
+      });
+      if (authError) {
+        writeRaw(response, authError);
+        return;
+      }
+
       const rawBody = await readBody(request);
 
       if (isFantasyPetPublicProxyRequest(method, requestUrl)) {
         const result = await proxyFantasyPetPublicRequest(method, requestUrl, {
           env: options.env,
           fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
+          fantasyPetUpstreamToken: options.fantasyPetUpstreamToken,
           fetch: options.fetch,
           headers: request.headers,
           rawBody
@@ -142,6 +153,8 @@ export function startCommunityApiServer(options = {}) {
     createCommunityHttpHandler({
       env,
       fantasyPetApiBaseUrl: options.fantasyPetApiBaseUrl,
+      fantasyPetUpstreamToken: options.fantasyPetUpstreamToken,
+      communityDemoToken: options.communityDemoToken,
       rateLimit: options.rateLimit,
       store
     })
