@@ -34,8 +34,11 @@ if [ "${PRIVATE_OPS_ROLLBACK_APPLY:-0}" != "1" ]; then
   exit 0
 fi
 
-export GAMER_IMAGE_TAG=${GAMER_IMAGE_TAG:-$target_release}
-export FANTASY_PET_IMAGE_TAG=${FANTASY_PET_IMAGE_TAG:-$target_release}
+export GAMER_IMAGE_TAG=$target_release
+export FANTASY_PET_IMAGE_TAG=$target_release
+export COMMUNITY_API_IMAGE=desktop-pet-community-api:$target_release
+export ADMIN_REVIEW_IMAGE=desktop-pet-admin-review:$target_release
+export FANTASY_PET_IMAGE=desktop-pet-agent:$target_release
 
 docker compose "$@" --profile fantasy-pet --profile private-ops \
   stop fantasy-pet-worker-daemon || true
@@ -48,5 +51,5 @@ docker compose "$@" --profile fantasy-pet --profile private-ops \
   community-api admin-review private-ops-proxy \
   fantasy-pet-api fantasy-pet-worker-daemon
 
-printf 'private ops rollback applied targetRelease=%s gamerImageTag=%s fantasyPetImageTag=%s\n' \
-  "$target_release" "$GAMER_IMAGE_TAG" "$FANTASY_PET_IMAGE_TAG"
+printf 'private ops rollback applied targetRelease=%s communityApiImage=%s adminReviewImage=%s fantasyPetImage=%s\n' \
+  "$target_release" "$COMMUNITY_API_IMAGE" "$ADMIN_REVIEW_IMAGE" "$FANTASY_PET_IMAGE"

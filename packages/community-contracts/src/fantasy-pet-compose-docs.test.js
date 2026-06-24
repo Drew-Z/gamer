@@ -111,6 +111,9 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(rollback, /PRIVATE_OPS_ROLLBACK_APPLY/);
   assert.match(rollback, /GAMER_IMAGE_TAG/);
   assert.match(rollback, /FANTASY_PET_IMAGE_TAG/);
+  assert.match(rollback, /COMMUNITY_API_IMAGE=desktop-pet-community-api:\$target_release/);
+  assert.match(rollback, /ADMIN_REVIEW_IMAGE=desktop-pet-admin-review:\$target_release/);
+  assert.match(rollback, /FANTASY_PET_IMAGE=desktop-pet-agent:\$target_release/);
   assert.match(rollback, /migrate:community-db:dry-run/);
   assert.match(rollback, /--no-build/);
   assert.match(rollback, /--force-recreate/);
