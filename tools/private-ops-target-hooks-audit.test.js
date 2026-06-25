@@ -182,13 +182,59 @@ test("private ops target hooks audit accepts hiden user-level hook state", async
   assert.doesNotMatch(result.stdout, /community-private-token-123|agent-private-token-123|basic-auth-password-123/);
 });
 
-function runAudit(env) {
+test("private ops target hooks audit defaults user mode logs to the checkout", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "private-ops-user-hooks-default-"));
+  const logDir = path.join(tempDir, ".private-ops", "logs");
+  fs.mkdirSync(logDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(logDir, "private-ops-user-hooks.json"),
+    JSON.stringify({
+      schema: "desktop-pet.ops.user-hooks-state.v1",
+      enabled: true,
+      smokeLogConfigured: true,
+      scheduler: {
+        mode: "user-process",
+        intervalMs: 300000,
+        smokeCommand: "node tools/private-ops-smoke.js"
+      },
+      logRotation: {
+        rotate: 14,
+        maxBytes: 1048576,
+        compress: false
+      }
+    })
+  );
+  fs.writeFileSync(
+    path.join(logDir, "private-ops-smoke.log"),
+    JSON.stringify({
+      ok: true,
+      checks: [{ name: "community health is public-safe", status: "pass" }]
+    })
+  );
+
+  const result = await runAudit(
+    {
+      PRIVATE_OPS_HOOKS_MODE: "user",
+      PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG: "1"
+    },
+    tempDir
+  );
+
+  assert.equal(result.exitCode, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.ok, true);
+  assert.equal(output.targetHooks.hooksMode, "user");
+  assert.match(JSON.stringify(output.checks), /user-level hook state file exists/);
+  assert.match(JSON.stringify(output.checks), /fresh recurring smoke log exists/);
+});
+
+function runAudit(env, cwd = repoRoot) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,
       [path.join(repoRoot, "tools/private-ops-target-hooks-audit.js")],
       {
-        cwd: repoRoot,
+        cwd,
         env: {
           ...process.env,
           ...env

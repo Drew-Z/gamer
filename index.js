@@ -35,7 +35,8 @@ startAdminReviewServer({
     ...process.env,
     PORT: publicPort,
     COMMUNITY_API_URL: communityApiUrl
-  }
+  },
+  repoRoot
 });
 
 startPrivateOpsUserHooks({

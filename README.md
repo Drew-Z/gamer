@@ -199,6 +199,13 @@ stdout per run and keeps bounded recent history at
 `/ops/private-ops-monitor-status?run=1` and requires the latest synthetic probe
 to pass.
 
+For hiden/direct `admin-review` deployments that cannot install system
+cron/logrotate, set `PRIVATE_OPS_REQUIRE_HOOKS=1` during the final recurring
+operations gate. The smoke calls `/ops/private-ops-hooks-audit` through the same
+Basic Auth protected admin-review surface and requires
+`npm run audit:private-ops-hooks` to pass without exposing configured secret
+fragments.
+
 After the private entry is placed behind TLS, set `PRIVATE_OPS_REQUIRE_TLS=1`
 in the deployment smoke environment. This makes `tools/private-ops-smoke.js`
 fail before sending requests unless `COMMUNITY_BASE_URL` uses `https://`.
@@ -227,7 +234,8 @@ file, system cron/logrotate cannot be installed. Use the built-in user-level
 hook instead: set `PRIVATE_OPS_HOOKS_MODE=user`,
 `PRIVATE_OPS_USER_HOOKS_ENABLED=1`, `COMMUNITY_BASE_URL` to the HTTPS
 admin-review URL, `PRIVATE_OPS_SMOKE_SURFACE=admin-review`, and the same smoke
-requirements used by the live gate. `index.js` starts
+requirements used by the live gate, including `PRIVATE_OPS_REQUIRE_HOOKS=1` for
+the final hook audit. `index.js` starts
 `tools/private-ops-user-hooks.js`, waits briefly after boot, runs
 `tools/private-ops-smoke.js` every five minutes, writes
 `.private-ops/logs/private-ops-smoke.log`, rotates it in user space, and writes
@@ -239,6 +247,10 @@ $env:PRIVATE_OPS_HOOKS_MODE = "user"
 $env:PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG = "1"
 npm.cmd run audit:private-ops-hooks
 ```
+
+If shell access is not available, verify through the protected Web entry by
+running smoke with `PRIVATE_OPS_REQUIRE_HOOKS=1`; it calls
+`/ops/private-ops-hooks-audit` and returns only redacted audit status.
 
 The helpers default to `.env.private-ops` and the default compose project. For
 operator drills that use a custom project name or temporary override file, set

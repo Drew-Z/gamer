@@ -9,6 +9,7 @@ const knownAppJobId = String(process.env.PRIVATE_OPS_KNOWN_APP_JOB_ID ?? "").tri
 const requirePostgres = isEnabled(process.env.PRIVATE_OPS_REQUIRE_POSTGRES);
 const requireDbBackupDrill = isEnabled(process.env.PRIVATE_OPS_REQUIRE_DB_BACKUP_DRILL);
 const requireMonitor = isEnabled(process.env.PRIVATE_OPS_REQUIRE_MONITOR);
+const requireHooks = isEnabled(process.env.PRIVATE_OPS_REQUIRE_HOOKS);
 const requireTls = isEnabled(process.env.PRIVATE_OPS_REQUIRE_TLS);
 const forbiddenFragments = [
   communityDemoToken,
@@ -38,6 +39,10 @@ if (requireDbBackupDrill && smokeSurface !== "admin-review") {
 
 if (requireMonitor && smokeSurface !== "admin-review") {
   throw new Error("PRIVATE_OPS_REQUIRE_MONITOR is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
+}
+
+if (requireHooks && smokeSurface !== "admin-review") {
+  throw new Error("PRIVATE_OPS_REQUIRE_HOOKS is currently supported only with PRIVATE_OPS_SMOKE_SURFACE=admin-review.");
 }
 
 if (requireTls && !baseUrl.startsWith("https://")) {
@@ -202,6 +207,24 @@ if (smokeSurface === "admin-review") {
       );
     });
   }
+
+  if (requireHooks) {
+    await runCheck("private ops hooks audit passes", async () => {
+      const response = await requestJson("/ops/private-ops-hooks-audit");
+      assertStatus(response, 200);
+      assertEqual(
+        response.body.schema,
+        "desktop-pet.ops.target-hooks-audit.v1",
+        "private ops hooks audit schema"
+      );
+      assertEqual(response.body.ok, true, "private ops hooks audit ok");
+      assertAtLeast(
+        response.body.checks?.length,
+        1,
+        "private ops hooks audit check count"
+      );
+    });
+  }
 } else {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {
@@ -294,6 +317,7 @@ console.log(
       requiredPostgres: requirePostgres,
       requiredDbBackupDrill: requireDbBackupDrill,
       requiredMonitor: requireMonitor,
+      requiredHooks: requireHooks,
       requiredTls: requireTls
     },
     null,

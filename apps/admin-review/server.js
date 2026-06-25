@@ -7,6 +7,7 @@ import { createDatabaseConfig } from "../../services/community-api/src/database/
 import { listCommunityMigrations } from "../../services/community-api/src/database/migrations.js";
 import { createPgClientOptions } from "../../services/community-api/src/database/pg-options.js";
 import { runCommunityMigrations } from "../../services/community-api/src/database/runner.js";
+import { runPrivateOpsTargetHooksAudit } from "../../tools/private-ops-target-hooks-audit.js";
 import { createPrivateOpsMonitor } from "./privateOpsMonitor.js";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
@@ -448,6 +449,15 @@ const handleOpsRequest = async (request, response, url, options) => {
     return true;
   }
 
+  if (url.pathname === "/ops/private-ops-hooks-audit") {
+    const audit = runPrivateOpsTargetHooksAudit({
+      env: options.env,
+      cwd: options.repoRoot ?? process.cwd()
+    });
+    writeJson(response, audit.ok ? 200 : 424, audit);
+    return true;
+  }
+
   if (url.pathname === "/ops/community-db-readiness") {
     await handleCommunityDbReadiness(
       response,
@@ -564,6 +574,7 @@ export function createAdminReviewHttpHandler(options = {}) {
     runRoot: options.gaPetRunRoot
   });
   const privateOpsMonitor = options.privateOpsMonitor;
+  const repoRoot = options.repoRoot ?? path.resolve(rootDir, "../..");
 
   return async (request, response) => {
     try {
@@ -594,6 +605,7 @@ export function createAdminReviewHttpHandler(options = {}) {
           communityApiUrl,
           createOpsPgClient: options.createOpsPgClient,
           privateOpsMonitor,
+          repoRoot,
           env
         });
         if (!handled) {
@@ -642,6 +654,7 @@ export function startAdminReviewServer(options = {}) {
   const communityApiUrl =
     options.communityApiUrl ?? env.COMMUNITY_API_URL ?? "http://127.0.0.1:4000";
   const gaPetRunRoot = options.gaPetRunRoot ?? env.GA_PET_RUN_ROOT;
+  const repoRoot = options.repoRoot ?? path.resolve(rootDir, "../..");
   const privateOpsMonitor =
     options.privateOpsMonitor ??
     createPrivateOpsMonitor({
@@ -653,6 +666,7 @@ export function startAdminReviewServer(options = {}) {
       env,
       communityApiUrl,
       gaPetRunRoot,
+      repoRoot,
       privateOpsMonitor
     })
   );

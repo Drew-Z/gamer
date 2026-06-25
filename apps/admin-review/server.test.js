@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { createAdminReviewHttpHandler } from "./server.js";
 
@@ -584,6 +587,87 @@ test("admin-review ops monitor status can trigger a synthetic monitor run", asyn
     assert.equal(response.status, 200);
     assert.equal(runCount, 1);
     assert.deepEqual(await response.json(), privateOpsMonitor.getStatus());
+  } finally {
+    await close(server);
+    await close(upstream);
+  }
+});
+
+test("admin-review ops hooks audit reports hiden user hook state without secrets", async () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "admin-review-hooks-audit-"));
+  const logDir = path.join(repoRoot, ".private-ops", "logs");
+  fs.mkdirSync(logDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(logDir, "private-ops-user-hooks.json"),
+    JSON.stringify({
+      schema: "desktop-pet.ops.user-hooks-state.v1",
+      enabled: true,
+      smokeLogConfigured: true,
+      scheduler: {
+        mode: "user-process",
+        intervalMs: 300000,
+        smokeCommand: "node tools/private-ops-smoke.js"
+      },
+      logRotation: {
+        rotate: 14,
+        maxBytes: 1048576,
+        compress: false
+      }
+    })
+  );
+  fs.writeFileSync(
+    path.join(logDir, "private-ops-smoke.log"),
+    JSON.stringify({
+      ok: true,
+      checks: [{ name: "community health is public-safe", status: "pass" }]
+    })
+  );
+  const upstream = http.createServer((request, response) => {
+    response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: "not_found" }));
+  });
+  const upstreamPort = await listen(upstream);
+
+  const server = http.createServer(
+    createAdminReviewHttpHandler({
+      communityApiUrl: `http://127.0.0.1:${upstreamPort}`,
+      repoRoot,
+      env: {
+        PRIVATE_OPS_BASIC_AUTH_USER: "operator",
+        PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
+        PRIVATE_OPS_HOOKS_MODE: "user",
+        PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG: "1",
+        COMMUNITY_DEMO_TOKEN: "community-private-token-123",
+        FANTASY_PET_UPSTREAM_TOKEN: "agent-private-token-123"
+      }
+    })
+  );
+  const port = await listen(server);
+
+  try {
+    const unauthenticated = await fetch(
+      `http://127.0.0.1:${port}/ops/private-ops-hooks-audit`
+    );
+    assert.equal(unauthenticated.status, 401);
+
+    const credentials = Buffer.from("operator:private-password").toString("base64");
+    const response = await fetch(
+      `http://127.0.0.1:${port}/ops/private-ops-hooks-audit`,
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`
+        }
+      }
+    );
+    const text = await response.text();
+    const body = JSON.parse(text);
+
+    assert.equal(response.status, 200);
+    assert.equal(body.schema, "desktop-pet.ops.target-hooks-audit.v1");
+    assert.equal(body.ok, true);
+    assert.equal(body.targetHooks.hooksMode, "user");
+    assert.match(JSON.stringify(body.checks), /user-level scheduler is enabled/);
+    assert.doesNotMatch(text, /private-password|community-private-token-123|agent-private-token-123/);
   } finally {
     await close(server);
     await close(upstream);

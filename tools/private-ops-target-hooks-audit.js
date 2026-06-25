@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const schema = "desktop-pet.ops.target-hooks-audit.v1";
 
@@ -64,10 +65,12 @@ const redactPaths = (paths) => ({
   smokeLogConfigured: Boolean(paths.smokeLogFile)
 });
 
-const resolvePaths = (env) => {
-  const logDir = trimString(env.PRIVATE_OPS_LOG_DIR) || "/var/log/desktop-pet";
+const resolvePaths = (env, cwd = process.cwd()) => {
   const hooksMode =
     trimString(env.PRIVATE_OPS_HOOKS_MODE).toLowerCase() === "user" ? "user" : "system";
+  const logDir =
+    trimString(env.PRIVATE_OPS_LOG_DIR) ||
+    (hooksMode === "user" ? path.join(cwd, ".private-ops", "logs") : "/var/log/desktop-pet");
   return {
     hooksMode,
     cronFile:
@@ -217,10 +220,11 @@ const auditForbiddenFragments = (checks, label, text, env) => {
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 
-const main = () => {
-  const env = process.env;
-  const now = new Date();
-  const paths = resolvePaths(env);
+export function runPrivateOpsTargetHooksAudit(options = {}) {
+  const env = options.env ?? process.env;
+  const now = options.now ?? new Date();
+  const cwd = options.cwd ?? process.cwd();
+  const paths = resolvePaths(env, cwd);
   const checks = [];
 
   addCheck(checks, "log directory exists", directoryExists(paths.logDir));
@@ -252,7 +256,7 @@ const main = () => {
   }
 
   const ok = checks.every((check) => check.status === "pass");
-  const output = {
+  return {
     schema,
     ok,
     auditedAt: now.toISOString(),
@@ -260,6 +264,11 @@ const main = () => {
     freshSmokeLogRequired: isEnabled(env.PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG),
     checks
   };
+}
+
+const main = () => {
+  const output = runPrivateOpsTargetHooksAudit();
+  const ok = output.ok;
 
   const rendered = `${JSON.stringify(output, null, 2)}\n`;
   if (ok) {
@@ -270,4 +279,9 @@ const main = () => {
   process.exitCode = ok ? 0 : 1;
 };
 
-main();
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main();
+}
