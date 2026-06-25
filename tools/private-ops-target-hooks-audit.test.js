@@ -129,6 +129,59 @@ test("private ops target hooks audit fails stale logs and secret leaks safely", 
   assert.doesNotMatch(result.stderr, /community-private-token-123/);
 });
 
+test("private ops target hooks audit accepts hiden user-level hook state", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "private-ops-user-hooks-"));
+  const logDir = path.join(tempDir, "logs");
+  const stateFile = path.join(logDir, "private-ops-user-hooks.json");
+  const smokeLogFile = path.join(logDir, "private-ops-smoke.log");
+  fs.mkdirSync(logDir);
+  fs.writeFileSync(
+    stateFile,
+    JSON.stringify({
+      schema: "desktop-pet.ops.user-hooks-state.v1",
+      enabled: true,
+      smokeLogConfigured: true,
+      scheduler: {
+        mode: "user-process",
+        intervalMs: 300000,
+        smokeCommand: "node tools/private-ops-smoke.js"
+      },
+      logRotation: {
+        rotate: 14,
+        maxBytes: 1048576,
+        compress: false
+      }
+    })
+  );
+  fs.writeFileSync(
+    smokeLogFile,
+    JSON.stringify({
+      ok: true,
+      checks: [{ name: "community health is public-safe", status: "pass" }],
+      requiredTls: true
+    })
+  );
+
+  const result = await runAudit({
+    PRIVATE_OPS_HOOKS_MODE: "user",
+    PRIVATE_OPS_USER_HOOKS_STATE_FILE: stateFile,
+    PRIVATE_OPS_LOG_DIR: logDir,
+    PRIVATE_OPS_SMOKE_LOG_FILE: smokeLogFile,
+    PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG: "1",
+    COMMUNITY_DEMO_TOKEN: "community-private-token-123",
+    FANTASY_PET_UPSTREAM_TOKEN: "agent-private-token-123",
+    PRIVATE_OPS_BASIC_AUTH_PASSWORD: "basic-auth-password-123"
+  });
+
+  assert.equal(result.exitCode, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.ok, true);
+  assert.equal(output.targetHooks.userSchedulerConfigured, true);
+  assert.match(JSON.stringify(output.checks), /user-level scheduler runs private ops smoke/);
+  assert.match(JSON.stringify(output.checks), /user-level log rotation keeps at least 14 rotations/);
+  assert.doesNotMatch(result.stdout, /community-private-token-123|agent-private-token-123|basic-auth-password-123/);
+});
+
 function runAudit(env) {
   return new Promise((resolve, reject) => {
     const child = spawn(

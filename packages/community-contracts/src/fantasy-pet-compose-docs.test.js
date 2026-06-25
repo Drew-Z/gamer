@@ -140,6 +140,7 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   const prune = readRepoFile("tools/private-ops-prune-agent-runs.sh");
   const rollback = readRepoFile("tools/private-ops-rollback.sh");
   const hidenRelease = readRepoFile("tools/hiden-release.js");
+  const userHooks = readRepoFile("tools/private-ops-user-hooks.js");
   const readme = readRepoFile("README.md");
   const hooksAudit = readRepoFile("tools/private-ops-target-hooks-audit.js");
   const packageJson = readRepoFile("package.json");
@@ -166,6 +167,8 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(rollback, /--force-recreate/);
   assert.match(hidenRelease, /GAMER_RELEASE_REF/);
   assert.match(hidenRelease, /checkout", "--force", "FETCH_HEAD"/);
+  assert.match(userHooks, /desktop-pet\.ops\.user-hooks-state\.v1/);
+  assert.match(userHooks, /PRIVATE_OPS_HOOKS_MODE/);
   assert.match(readme, /GAMER_RELEASE_REF/);
   assert.match(readme, /private-ops-v0\.16/);
   assert.match(hooksAudit, /desktop-pet\.ops\.target-hooks-audit\.v1/);
@@ -174,6 +177,7 @@ test("private ops deployment assets document TLS monitoring and backup hooks", (
   assert.match(hooksAudit, /does not contain configured secret fragments/);
   assert.match(packageJson, /"audit:private-ops-hooks": "node tools\/private-ops-target-hooks-audit\.js"/);
   assert.match(readme, /audit:private-ops-hooks/);
+  assert.match(readme, /PRIVATE_OPS_HOOKS_MODE=user/);
   assert.match(readme, /PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG=1/);
 });
 

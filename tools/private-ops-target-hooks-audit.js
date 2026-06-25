@@ -56,21 +56,29 @@ const addCheck = (checks, name, ok, details = {}) => {
 };
 
 const redactPaths = (paths) => ({
+  hooksMode: paths.hooksMode,
   cronConfigured: Boolean(paths.cronFile),
   logrotateConfigured: Boolean(paths.logrotateFile),
+  userSchedulerConfigured: Boolean(paths.userHooksStateFile),
   logDirConfigured: Boolean(paths.logDir),
   smokeLogConfigured: Boolean(paths.smokeLogFile)
 });
 
 const resolvePaths = (env) => {
   const logDir = trimString(env.PRIVATE_OPS_LOG_DIR) || "/var/log/desktop-pet";
+  const hooksMode =
+    trimString(env.PRIVATE_OPS_HOOKS_MODE).toLowerCase() === "user" ? "user" : "system";
   return {
+    hooksMode,
     cronFile:
       trimString(env.PRIVATE_OPS_CRON_FILE) ||
       "/opt/desktop-pet/gamer/deploy/private-ops-cron.example",
     logrotateFile:
       trimString(env.PRIVATE_OPS_LOGROTATE_FILE) ||
       "/etc/logrotate.d/desktop-pet-private-ops",
+    userHooksStateFile:
+      trimString(env.PRIVATE_OPS_USER_HOOKS_STATE_FILE) ||
+      path.join(logDir, "private-ops-user-hooks.json"),
     logDir,
     smokeLogFile:
       trimString(env.PRIVATE_OPS_SMOKE_LOG_FILE) ||
@@ -113,6 +121,53 @@ const auditLogrotate = (checks, logrotateText, logDir) => {
     checks,
     "logrotate handles active log writers",
     /\bcopytruncate\b/iu.test(logrotateText) || /\bcreate\s+0?[0-7]{3}\b/iu.test(logrotateText)
+  );
+};
+
+const auditUserHooks = (checks, stateText) => {
+  let state;
+  try {
+    state = JSON.parse(stateText);
+  } catch {
+    addCheck(checks, "user-level hook state is valid json", false);
+    return;
+  }
+
+  const intervalMs = Number.parseInt(String(state.scheduler?.intervalMs ?? ""), 10);
+  const rotateCount = Number.parseInt(String(state.logRotation?.rotate ?? ""), 10);
+  const maxBytes = Number.parseInt(String(state.logRotation?.maxBytes ?? ""), 10);
+  const smokeCommand = trimString(state.scheduler?.smokeCommand);
+
+  addCheck(
+    checks,
+    "user-level hook state uses expected schema",
+    state.schema === "desktop-pet.ops.user-hooks-state.v1"
+  );
+  addCheck(checks, "user-level scheduler is enabled", state.enabled === true);
+  addCheck(
+    checks,
+    "user-level scheduler has 5-minute cadence",
+    Number.isFinite(intervalMs) && intervalMs > 0 && intervalMs <= 5 * 60 * 1000,
+    { intervalMs: Number.isFinite(intervalMs) ? intervalMs : 0 }
+  );
+  addCheck(
+    checks,
+    "user-level scheduler runs private ops smoke",
+    /npm(?:\.cmd)?\s+run\s+smoke:private-ops/u.test(smokeCommand) ||
+      /private-ops-smoke\.js/u.test(smokeCommand)
+  );
+  addCheck(checks, "user-level scheduler writes smoke log", state.smokeLogConfigured === true);
+  addCheck(
+    checks,
+    "user-level log rotation keeps at least 14 rotations",
+    Number.isFinite(rotateCount) && rotateCount >= 14,
+    { rotateCount: Number.isFinite(rotateCount) ? rotateCount : 0 }
+  );
+  addCheck(
+    checks,
+    "user-level log rotation has bounded file size",
+    Number.isFinite(maxBytes) && maxBytes > 0,
+    { maxBytes: Number.isFinite(maxBytes) ? maxBytes : 0 }
   );
 };
 
@@ -168,19 +223,28 @@ const main = () => {
   const paths = resolvePaths(env);
   const checks = [];
 
-  addCheck(checks, "external scheduler file exists", fileExists(paths.cronFile));
-  if (fileExists(paths.cronFile)) {
-    const cronText = readTextFile(paths.cronFile);
-    auditCron(checks, cronText);
-    auditForbiddenFragments(checks, "external scheduler file", cronText, env);
-  }
-
   addCheck(checks, "log directory exists", directoryExists(paths.logDir));
-  addCheck(checks, "logrotate config file exists", fileExists(paths.logrotateFile));
-  if (fileExists(paths.logrotateFile)) {
-    const logrotateText = readTextFile(paths.logrotateFile);
-    auditLogrotate(checks, logrotateText, paths.logDir);
-    auditForbiddenFragments(checks, "logrotate config", logrotateText, env);
+  if (paths.hooksMode === "user") {
+    addCheck(checks, "user-level hook state file exists", fileExists(paths.userHooksStateFile));
+    if (fileExists(paths.userHooksStateFile)) {
+      const stateText = readTextFile(paths.userHooksStateFile);
+      auditUserHooks(checks, stateText);
+      auditForbiddenFragments(checks, "user-level hook state", stateText, env);
+    }
+  } else {
+    addCheck(checks, "external scheduler file exists", fileExists(paths.cronFile));
+    if (fileExists(paths.cronFile)) {
+      const cronText = readTextFile(paths.cronFile);
+      auditCron(checks, cronText);
+      auditForbiddenFragments(checks, "external scheduler file", cronText, env);
+    }
+
+    addCheck(checks, "logrotate config file exists", fileExists(paths.logrotateFile));
+    if (fileExists(paths.logrotateFile)) {
+      const logrotateText = readTextFile(paths.logrotateFile);
+      auditLogrotate(checks, logrotateText, paths.logDir);
+      auditForbiddenFragments(checks, "logrotate config", logrotateText, env);
+    }
   }
 
   if (isEnabled(env.PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG)) {

@@ -9,7 +9,10 @@ test("repository keeps runtime entrypoint separate from private ops assets", () 
   const indexPath = join(root, "index.js");
 
   assert.ok(existsSync(indexPath));
-  assert.ok(readFileSync(indexPath, "utf8").includes("startCommunityApiServer"));
+  const indexSource = readFileSync(indexPath, "utf8");
+  assert.ok(indexSource.includes("startCommunityApiServer"));
+  assert.ok(indexSource.includes("startPrivateOpsUserHooks"));
+  assert.ok(existsSync(join(root, "tools", "private-ops-user-hooks.js")));
   assert.ok(existsSync(join(root, "deploy", "Caddyfile.private-ops")));
   assert.ok(existsSync(join(root, "deploy", "private-ops-cron.example")));
   assert.equal(existsSync(join(root, "docs", "deployment")), false);

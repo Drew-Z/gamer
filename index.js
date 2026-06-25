@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { syncHidenRelease } from "./tools/hiden-release.js";
+import { startPrivateOpsUserHooks } from "./tools/private-ops-user-hooks.js";
 
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,4 +36,9 @@ startAdminReviewServer({
     PORT: publicPort,
     COMMUNITY_API_URL: communityApiUrl
   }
+});
+
+startPrivateOpsUserHooks({
+  env: process.env,
+  repoRoot
 });

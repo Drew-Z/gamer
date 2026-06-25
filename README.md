@@ -222,6 +222,24 @@ Override `PRIVATE_OPS_CRON_FILE`, `PRIVATE_OPS_LOGROTATE_FILE`,
 `PRIVATE_OPS_LOG_DIR`, and `PRIVATE_OPS_SMOKE_LOG_FILE` when the platform uses
 non-default paths.
 
+On hiden-style hosts that allow only user-level access and a fixed Node startup
+file, system cron/logrotate cannot be installed. Use the built-in user-level
+hook instead: set `PRIVATE_OPS_HOOKS_MODE=user`,
+`PRIVATE_OPS_USER_HOOKS_ENABLED=1`, `COMMUNITY_BASE_URL` to the HTTPS
+admin-review URL, `PRIVATE_OPS_SMOKE_SURFACE=admin-review`, and the same smoke
+requirements used by the live gate. `index.js` starts
+`tools/private-ops-user-hooks.js`, waits briefly after boot, runs
+`tools/private-ops-smoke.js` every five minutes, writes
+`.private-ops/logs/private-ops-smoke.log`, rotates it in user space, and writes
+`.private-ops/logs/private-ops-user-hooks.json` for audit. Verify this mode
+with:
+
+```powershell
+$env:PRIVATE_OPS_HOOKS_MODE = "user"
+$env:PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG = "1"
+npm.cmd run audit:private-ops-hooks
+```
+
 The helpers default to `.env.private-ops` and the default compose project. For
 operator drills that use a custom project name or temporary override file, set
 `PRIVATE_OPS_ENV_FILE`, `PRIVATE_OPS_COMPOSE_PROJECT_NAME`, or
