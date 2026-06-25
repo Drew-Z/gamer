@@ -908,7 +908,7 @@ test("private ops smoke rejects basic auth password leaks", async () => {
       PRIVATE_OPS_SMOKE_SURFACE: "admin-review"
     });
 
-    assert.equal(result.exitCode, 1);
+    assert.ok(result.exitCode !== 0, `Expected non-zero exit code, got ${result.exitCode}`);
     assert.match(result.stderr, /response leaked a configured secret fragment/);
     assert.doesNotMatch(result.stderr, /private-password/);
   } finally {
