@@ -652,7 +652,7 @@ test("admin-review ops hooks audit reports hiden user hook state without secrets
 
     const credentials = Buffer.from("operator:private-password").toString("base64");
     const response = await fetch(
-      `http://127.0.0.1:${port}/ops/private-ops-hooks-audit`,
+      `http://127.0.0.1:${port}/ops/private-ops-hooks-audit?fresh=1`,
       {
         headers: {
           Authorization: `Basic ${credentials}`
@@ -665,6 +665,7 @@ test("admin-review ops hooks audit reports hiden user hook state without secrets
     assert.equal(response.status, 200);
     assert.equal(body.schema, "desktop-pet.ops.target-hooks-audit.v1");
     assert.equal(body.ok, true);
+    assert.equal(body.freshSmokeLogRequired, true);
     assert.equal(body.targetHooks.hooksMode, "user");
     assert.match(JSON.stringify(body.checks), /user-level scheduler is enabled/);
     assert.doesNotMatch(text, /private-password|community-private-token-123|agent-private-token-123/);

@@ -117,7 +117,7 @@ test("private ops smoke verifies auth readiness and leak boundaries", () => {
   assert.match(readme, /PRIVATE_OPS_REQUIRE_MONITOR=1/);
   assert.match(readme, /\/ops\/private-ops-monitor-status/);
   assert.match(readme, /PRIVATE_OPS_REQUIRE_HOOKS=1/);
-  assert.match(readme, /\/ops\/private-ops-hooks-audit/);
+  assert.match(readme, /\/ops\/private-ops-hooks-audit\?fresh=1/);
   assert.match(readme, /PRIVATE_OPS_REQUIRE_TLS=1/);
   assert.match(preflight, /PRIVATE_OPS_ENV_FILE/);
   assert.match(preflight, /PRIVATE_OPS_DEPLOYMENT_ROLE/);

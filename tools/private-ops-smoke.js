@@ -210,7 +210,10 @@ if (smokeSurface === "admin-review") {
 
   if (requireHooks) {
     await runCheck("private ops hooks audit passes", async () => {
-      const response = await requestJson("/ops/private-ops-hooks-audit");
+      const hooksAuditPath = isEnabled(process.env.PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG)
+        ? "/ops/private-ops-hooks-audit?fresh=1"
+        : "/ops/private-ops-hooks-audit";
+      const response = await requestJson(hooksAuditPath);
       assertStatus(response, 200);
       assertEqual(
         response.body.schema,

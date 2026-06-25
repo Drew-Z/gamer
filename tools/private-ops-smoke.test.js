@@ -753,7 +753,7 @@ test("private ops smoke can require admin-review hooks audit", async () => {
       return;
     }
 
-    if (request.method === "GET" && request.url === "/ops/private-ops-hooks-audit") {
+    if (request.method === "GET" && request.url === "/ops/private-ops-hooks-audit?fresh=1") {
       sendJson(200, {
         schema: "desktop-pet.ops.target-hooks-audit.v1",
         ok: true,
@@ -776,6 +776,7 @@ test("private ops smoke can require admin-review hooks audit", async () => {
       PRIVATE_OPS_BASIC_AUTH_USER: "operator",
       PRIVATE_OPS_BASIC_AUTH_PASSWORD: "private-password",
       PRIVATE_OPS_REQUIRE_HOOKS: "1",
+      PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG: "1",
       PRIVATE_OPS_SMOKE_SURFACE: "admin-review"
     });
 
@@ -793,7 +794,7 @@ test("private ops smoke can require admin-review hooks audit", async () => {
       requests.some(
         (request) =>
           request.method === "GET" &&
-          request.url === "/ops/private-ops-hooks-audit" &&
+          request.url === "/ops/private-ops-hooks-audit?fresh=1" &&
           request.headers.authorization === validBasicAuth,
       ),
     );

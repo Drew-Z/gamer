@@ -205,6 +205,10 @@ operations gate. The smoke calls `/ops/private-ops-hooks-audit` through the same
 Basic Auth protected admin-review surface and requires
 `npm run audit:private-ops-hooks` to pass without exposing configured secret
 fragments.
+For a protected remote audit without shell access, call
+`/ops/private-ops-hooks-audit?fresh=1` through the Basic Auth protected
+admin-review entry; `fresh=1` makes the server require the recurring smoke log
+to be recent and successful.
 
 After the private entry is placed behind TLS, set `PRIVATE_OPS_REQUIRE_TLS=1`
 in the deployment smoke environment. This makes `tools/private-ops-smoke.js`
@@ -249,8 +253,9 @@ npm.cmd run audit:private-ops-hooks
 ```
 
 If shell access is not available, verify through the protected Web entry by
-running smoke with `PRIVATE_OPS_REQUIRE_HOOKS=1`; it calls
-`/ops/private-ops-hooks-audit` and returns only redacted audit status.
+running smoke with `PRIVATE_OPS_REQUIRE_HOOKS=1` and
+`PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG=1`; it calls
+`/ops/private-ops-hooks-audit?fresh=1` and returns only redacted audit status.
 
 The helpers default to `.env.private-ops` and the default compose project. For
 operator drills that use a custom project name or temporary override file, set

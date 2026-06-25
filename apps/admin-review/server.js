@@ -450,8 +450,14 @@ const handleOpsRequest = async (request, response, url, options) => {
   }
 
   if (url.pathname === "/ops/private-ops-hooks-audit") {
+    const requireFreshSmokeLog = url.searchParams.get("fresh") === "1";
     const audit = runPrivateOpsTargetHooksAudit({
-      env: options.env,
+      env: requireFreshSmokeLog
+        ? {
+            ...options.env,
+            PRIVATE_OPS_REQUIRE_FRESH_SMOKE_LOG: "1"
+          }
+        : options.env,
       cwd: options.repoRoot ?? process.cwd()
     });
     writeJson(response, audit.ok ? 200 : 424, audit);
