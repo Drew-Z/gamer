@@ -10,6 +10,7 @@ import { requireCommunityDemoAuth } from "./demo-auth.js";
 import { formatRequestLog } from "./logging.js";
 import { createRateLimiterPolicyFromEnv, resolveClientIp } from "./rate-limit.js";
 import { handleCommunityRequest } from "./routes.js";
+import { handleMetricsRequest } from "./metrics.js";
 
 export function resolveCommunityApiPort(env = process.env) {
   return Number.parseInt(env.PORT ?? env.SERVER_PORT ?? "4000", 10);
@@ -271,6 +272,12 @@ export function createCommunityHttpHandler(options = {}) {
           body
         }
       );
+
+      // Handle metrics endpoint specially
+      if (result.isMetrics) {
+        handleMetricsRequest(request, response);
+        return;
+      }
 
       writeJson(response, result.status, result.body);
     } catch (error) {

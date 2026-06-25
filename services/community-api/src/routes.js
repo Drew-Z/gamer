@@ -10,6 +10,7 @@ import {
 import { releaseCommit } from "./release.js";
 import { createSlaConfig } from "./sla.js";
 import { createCommunityStore } from "./store.js";
+import { handleMetricsRequest } from "./metrics.js";
 
 const json = (status, body) => ({ status, body });
 const defaultStore = createCommunityStore();
@@ -37,6 +38,16 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
 
   if (method === "GET" && url.pathname === "/v1/sla") {
     return json(200, createSlaConfig(env));
+  }
+
+  if (method === "GET" && url.pathname === "/metrics") {
+    // Metrics endpoint for Prometheus scraping
+    // No auth required for monitoring
+    return { 
+      status: 200, 
+      body: null, 
+      isMetrics: true 
+    };
   }
 
   if (method === "GET" && url.pathname === "/v1/feed") {
