@@ -597,7 +597,7 @@ class PetShellUiModelTest {
         val zh = petShellStrings(PetShellLanguage.Chinese)
         val en = petShellStrings(PetShellLanguage.English)
         val unsafeFailure =
-            "Generation poll failed: D:/workspace4Codex/fantasy-pet-rule/runs/job/codex-worker-task.json"
+            "Generation poll failed: runs/job/codex-worker-task.json"
         val proofSummaryFailure = "Generation poll failed: server-proof-summary.json"
         val adapterProvenanceFailure = "Review failed: adapterProvenance"
 
@@ -777,7 +777,7 @@ class PetShellUiModelTest {
             authorName = "Demo Keeper",
             reactionCount = 0,
             importDraftLabel = "Draft import-draft-local-001",
-            importPreviewLabel = "Preview D:/workspace4Codex/fantasy-pet-rule/runs/feed/preview.html",
+            importPreviewLabel = "Preview runs/feed/preview.html",
             exportArtifactLabel = "Package C:\\secret\\runs\\feed\\export.zip"
         )
 
@@ -937,7 +937,7 @@ class PetShellUiModelTest {
             approvedPet(
                 petId = "pet-moonfox-001",
                 displayName = "Moon Fox",
-                previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/export-registry/preview.html"
+                previewPath = "runs/export-registry/preview.html"
             )
         )
 
@@ -965,7 +965,7 @@ class PetShellUiModelTest {
             approvedPet(
                 petId = "pet-moonfox-001",
                 displayName = "Moon Fox",
-                exportArtifactPath = "D:\\workspace4Codex\\fantasy-pet-rule\\runs\\export-registry\\export.zip"
+                exportArtifactPath = "runs\\export-registry\\export.zip"
             )
         )
 
@@ -1025,7 +1025,7 @@ class PetShellUiModelTest {
             petId = "issue-1-fresh-timeout3600-20260610-1",
             displayName = "Generated pet",
             sourceKind = "",
-            previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png",
+            previewPath = "runs/job/output.png",
             previewUrl = "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
         )
 

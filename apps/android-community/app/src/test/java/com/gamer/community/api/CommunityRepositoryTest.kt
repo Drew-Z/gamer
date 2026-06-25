@@ -111,7 +111,7 @@ class CommunityRepositoryTest {
                         submissionsSummary = CommunityHomeSubmissionsSummaryDto(
                             pendingCount = 1,
                             latest = SubmissionDto(
-                                id = "D:/workspace4Codex/fantasy-pet-rule/runs/job/submission.json",
+                                id = "runs/job/submission.json",
                                 petId = "pet-home-001",
                                 userId = "user-demo-001",
                                 status = "pending"

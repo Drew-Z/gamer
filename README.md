@@ -5,8 +5,8 @@ Pet-first app and community ecosystem workspace.
 `gamer` is primarily the app/community repository. It owns the Android app,
 community API, admin review prototype, and shared app-facing packages. The
 server-side generation rules, worker orchestration, private pipeline, QA gates,
-and public app API contract live in the sibling repository:
-`D:\workspace4Codex\pet\fantasy-pet-rule`.
+and public app API contract are provided by `fantasy-pet-rule` (deployed to
+Baidu server).
 
 ## Structure
 
@@ -86,7 +86,7 @@ Run the standard verification set before committing a phase:
 npm.cmd test
 node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
 node --test services/community-api/src/database/*.test.js
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest --console=plain
+cd apps\android-community && .\gradlew testDebugUnitTest --console=plain && cd ..\..
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
