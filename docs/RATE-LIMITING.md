@@ -170,5 +170,7 @@ when (response.code) {
 ## 相关文档
 
 - [Community API 规范](../docs/api/community-api.md)
-- [安全威胁模型](../../pet-enterprise/docs/security/THREAT-MODEL.md)
-- [运维 Runbook](../../pet-enterprise/docs/ops/RUNBOOK.md)
+- [安全威胁模型](../../pet-enterprise/docs/security/THREAT-MODEL.md)（跨仓：sibling `pet-enterprise` 仓）
+- [运维 Runbook](../../pet-enterprise/docs/ops/RUNBOOK.md)（跨仓：sibling `pet-enterprise` 仓）
+
+> 跨仓链接说明：以上 `../../pet-enterprise/...` 链接假定 `gamer` 与 `pet-enterprise` 作为 sibling 目录共同 clone 在同一父目录下（如 `d:\workspace4Cursor\pet\`）。若仅单独 clone `gamer`，链接将断开，请在 `pet-enterprise` 仓内寻找对应文档。
