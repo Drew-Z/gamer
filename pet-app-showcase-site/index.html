@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gamer Pet App 展示与下载状态</title>
+    <meta
+      name="description"
+      content="Gamer Pet Android App 的当前展示页，包含桌宠模式、孵化入口、社区与个人页截图，以及公开 APK 构建状态。"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="release-board" aria-labelledby="page-title">
+        <div class="release-copy">
+          <p class="eyebrow">Gamer Pet App</p>
+          <h1 id="page-title">AI 桌宠社区 App 展示与下载状态</h1>
+          <p class="lead">
+            当前版本聚焦 Android 桌宠、孵化入口、社区展示、人审路径和个人页宠物架。
+            这里展示的是已截取的真实模拟器画面；公开 APK 需要完成构建、签名和审核后再开放。
+          </p>
+
+          <div class="release-actions" aria-label="下载与截图入口">
+            <button type="button" disabled aria-disabled="true">APK 待公开构建</button>
+            <a href="#screenshots">查看 App 截图</a>
+          </div>
+
+          <dl class="status-grid" aria-label="当前状态">
+            <div>
+              <dt>App 形态</dt>
+              <dd>Android 社区原型</dd>
+            </div>
+            <div>
+              <dt>核心链路</dt>
+              <dd>生成 - 人审 - 展示</dd>
+            </div>
+            <div>
+              <dt>下载状态</dt>
+              <dd>待公开构建</dd>
+            </div>
+            <div>
+              <dt>展示素材</dt>
+              <dd>模拟器截图</dd>
+            </div>
+          </dl>
+        </div>
+
+        <figure class="feature-shot">
+          <img src="./assets/android-main.png" alt="Gamer Pet App 桌宠模式首页截图" />
+          <figcaption>桌宠模式：首页展示当前桌宠、宠物币、签到、人审状态和快捷入口。</figcaption>
+        </figure>
+      </section>
+
+      <section class="capability-band" aria-labelledby="capability-title">
+        <div class="section-heading">
+          <p class="eyebrow">App Surface</p>
+          <h2 id="capability-title">当前可展示的产品面</h2>
+        </div>
+        <div class="capability-grid">
+          <article>
+            <span>01</span>
+            <h3>桌宠首页</h3>
+            <p>展示本地桌宠、动作表、远端同步状态、宠物币与签到状态。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>孵化入口</h3>
+            <p>把文本描述、候选预览、等待人审和下载门禁组织到一条 App 路径里。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>社区展示</h3>
+            <p>社区页围绕推荐、频道、展示架和动态流，承接通过审核的桌宠。</p>
+          </article>
+          <article>
+            <span>04</span>
+            <h3>个人宠物架</h3>
+            <p>个人页呈现账户状态、宠物架、创作记录和下一步操作入口。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="screenshots" class="screenshots-section" aria-labelledby="screens-title">
+        <div class="section-heading">
+          <p class="eyebrow">Verified Screens</p>
+          <h2 id="screens-title">Android 当前工作截图</h2>
+          <p>以下截图来自当前 Android E2E 记录，用来说明页面结构和阶段状态。</p>
+        </div>
+
+        <div class="screens-grid">
+          <figure>
+            <img src="./assets/android-main.png" alt="桌宠模式页面，展示当前桌宠和快捷入口" />
+            <figcaption>
+              <strong>桌宠模式</strong>
+              <span>当前桌宠、宠物币、签到、人审状态和远端同步提示。</span>
+            </figcaption>
+          </figure>
+          <figure>
+            <img src="./assets/android-hatch.png" alt="孵化桌宠页面，展示生成入口和候选状态" />
+            <figcaption>
+              <strong>孵化桌宠</strong>
+              <span>面向生成流程的输入、候选、审核与下载门禁入口。</span>
+            </figcaption>
+          </figure>
+          <figure>
+            <img src="./assets/android-community.png" alt="社区页面，展示频道、工具和社区内容" />
+            <figcaption>
+              <strong>社区</strong>
+              <span>桌宠展示、社区频道、动态流和创作入口的集中页面。</span>
+            </figcaption>
+          </figure>
+          <figure>
+            <img src="./assets/android-profile.png" alt="个人主页，展示账户和宠物架状态" />
+            <figcaption>
+              <strong>我的主页</strong>
+              <span>账户状态、宠物架、创作记录和审核反馈的个人视图。</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="release-notes" aria-labelledby="download-title">
+        <div>
+          <p class="eyebrow">Download Gate</p>
+          <h2 id="download-title">公开下载策略</h2>
+          <p>
+            当前页面不提供 APK 文件，也不放置占位下载链接。公开下载需要完成可复现构建、
+            签名策略、版本说明、基础回归和人工确认后再开启。
+          </p>
+        </div>
+        <ul>
+          <li>不把 debug 包伪装成公开发布包。</li>
+          <li>不绕过生成 - 人审 - 展示的状态门禁。</li>
+          <li>不暴露内部 worker、私有 token、服务器地址或 artifact 路径。</li>
+          <li>后续可接入正式 APK、版本号、校验摘要和更新日志。</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
