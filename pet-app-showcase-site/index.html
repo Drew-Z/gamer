@@ -24,6 +24,14 @@
           <div class="release-actions" aria-label="下载与截图入口">
             <button type="button" disabled aria-disabled="true">APK 待公开构建</button>
             <a href="#screenshots">查看 App 截图</a>
+            <a
+              class="secondary-link"
+              href="https://biau.playlab.eu.cc/projects/pet-workspace"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              主站项目详情
+            </a>
           </div>
 
           <dl class="status-grid" aria-label="当前状态">
@@ -40,8 +48,8 @@
               <dd>待公开构建</dd>
             </div>
             <div>
-              <dt>展示素材</dt>
-              <dd>模拟器截图</dd>
+              <dt>发布门禁</dt>
+              <dd>人工确认</dd>
             </div>
           </dl>
         </div>
@@ -120,6 +128,45 @@
         </div>
       </section>
 
+      <section class="release-checklist" aria-labelledby="checklist-title">
+        <div class="section-heading">
+          <p class="eyebrow">Release Checklist</p>
+          <h2 id="checklist-title">公开 APK 前置条件</h2>
+          <p>
+            下载区保持关闭，直到每个公开发布条件都有可复现证据。页面只展示当前 App 工作面，
+            不把调试包、内部 artifact 或未审核候选包装成正式下载。
+          </p>
+        </div>
+
+        <div class="checklist-grid" aria-label="公开 APK 发布清单">
+          <article>
+            <span>01</span>
+            <h3>可复现构建</h3>
+            <p>确认公开构建命令、版本号和产物来源，避免使用临时 debug 包。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>签名与校验</h3>
+            <p>确定公开签名策略，并准备包体摘要，便于下载后校验。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>基础回归</h3>
+            <p>覆盖首页、孵化、社区、个人页和下载门禁，不把未验证路径开放给访客。</p>
+          </article>
+          <article>
+            <span>04</span>
+            <h3>人审发布</h3>
+            <p>确认生成候选、人审状态和包下载边界，不绕过人工视觉审核。</p>
+          </article>
+          <article>
+            <span>05</span>
+            <h3>发布说明</h3>
+            <p>准备版本说明、当前限制和后续计划，再把按钮替换为真实下载链接。</p>
+          </article>
+        </div>
+      </section>
+
       <section class="release-notes" aria-labelledby="download-title">
         <div>
           <p class="eyebrow">Download Gate</p>
@@ -135,6 +182,29 @@
           <li>不暴露内部 worker、私有 token、服务器地址或 artifact 路径。</li>
           <li>后续可接入正式 APK、版本号、校验摘要和更新日志。</li>
         </ul>
+      </section>
+
+      <section class="site-bridge" aria-labelledby="bridge-title">
+        <div>
+          <p class="eyebrow">Project Bridge</p>
+          <h2 id="bridge-title">继续查看工程说明</h2>
+          <p>
+            访客可以先看主站项目页了解 Android App、Community API、Admin Review、生成服务和质量门禁的关系；
+            需要查看静态页源码时，再进入仓库目录。
+          </p>
+        </div>
+        <div class="bridge-links">
+          <a href="https://biau.playlab.eu.cc/projects/pet-workspace" target="_blank" rel="noopener noreferrer">
+            BIAU Port 项目详情
+          </a>
+          <a
+            href="https://github.com/Drew-Z/gamer/tree/cursor-windows-migration/pet-app-showcase-site"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            展示页源码
+          </a>
+        </div>
       </section>
     </main>
   </body>

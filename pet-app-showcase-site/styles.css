@@ -134,6 +134,12 @@ h3 {
   color: #ffffff;
 }
 
+.release-actions .secondary-link {
+  border-color: var(--line);
+  background: #ffffff;
+  color: var(--ink);
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -186,6 +192,8 @@ h3 {
 
 .capability-band,
 .screenshots-section,
+.release-checklist,
+.site-bridge,
 .release-notes {
   margin-top: 34px;
   padding: 28px;
@@ -242,6 +250,38 @@ h3 {
 }
 
 .capability-grid p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.checklist-grid article {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.checklist-grid span {
+  width: max-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.checklist-grid p {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.7;
@@ -316,9 +356,48 @@ h3 {
   line-height: 1.6;
 }
 
+.site-bridge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.48fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.site-bridge p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.bridge-links {
+  display: grid;
+  gap: 12px;
+}
+
+.bridge-links a {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.bridge-links a:first-child {
+  border-color: color-mix(in srgb, var(--mint) 48%, white);
+  background: var(--mint);
+  color: #ffffff;
+}
+
 @media (max-width: 980px) {
   .release-board,
-  .release-notes {
+  .release-notes,
+  .site-bridge {
     grid-template-columns: 1fr;
   }
 
@@ -328,6 +407,7 @@ h3 {
 
   .status-grid,
   .capability-grid,
+  .checklist-grid,
   .screens-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -341,12 +421,15 @@ h3 {
 
   .status-grid,
   .capability-grid,
+  .checklist-grid,
   .screens-grid {
     grid-template-columns: 1fr;
   }
 
   .capability-band,
   .screenshots-section,
+  .release-checklist,
+  .site-bridge,
   .release-notes {
     padding: 20px;
   }
