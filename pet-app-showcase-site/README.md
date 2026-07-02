@@ -11,6 +11,17 @@ Open `index.html` directly in a browser. No build step is required.
 Start-Process .\index.html
 ```
 
+## Static Deployment
+
+This directory is the source/reference version of the showcase page. The public
+BIAU Port entry is served from:
+
+- `https://biau.playlab.eu.cc/pet-app-showcase/`
+
+When syncing this page into the main site, keep it as a static HTML/CSS page and
+reuse public screenshots only. Do not copy private artifact paths, server
+addresses, tokens, signing paths, or local build output into the public site.
+
 ## Assets
 
 The screenshots in `assets/` are copied from the current Android E2E artifacts:
@@ -38,5 +49,6 @@ Before enabling the download button, prepare:
 
 ## Public Links
 
+- Public showcase page: `https://biau.playlab.eu.cc/pet-app-showcase/`
 - Main project page: `https://biau.playlab.eu.cc/projects/pet-workspace`
 - Showcase source directory: `https://github.com/Drew-Z/gamer/tree/cursor-windows-migration/pet-app-showcase-site`

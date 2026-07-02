@@ -4,6 +4,7 @@ import { listCommunityMigrations } from "./database/migrations.js";
 import { createPgClientOptions } from "./database/pg-options.js";
 import { runCommunityMigrations } from "./database/runner.js";
 import { createScoreReportFromImportDraft } from "./scoring.js";
+import { resolvePagination, buildNextCursor } from "./pagination.js";
 import {
   ALLOWED_REVIEW_STATUSES,
   TERMINAL_SUBMISSION_STATUSES,
@@ -445,22 +446,39 @@ export function createPostgresCommunityStore(options = {}) {
       return clone(mapUser(result.rows[0]));
     },
 
-    async getFeed() {
+    async getFeed(pagination = {}) {
+      const { limit, offset } = resolvePagination(pagination);
       const result = await query(
-        "select * from feed_posts order by created_at desc, id asc"
+        "select * from feed_posts order by created_at desc, id asc limit $1 offset $2",
+        [limit + 1, offset]
       );
+      const { hasMore, nextCursor } = buildNextCursor({
+        offset,
+        limit,
+        returnedCount: result.rows.length
+      });
       return {
-        items: result.rows.map(mapFeedPost),
-        nextCursor: "fixture-page-2"
+        items: result.rows.slice(0, limit).map(mapFeedPost),
+        nextCursor,
+        hasMore
       };
     },
 
-    async listApprovedPets() {
+    async listApprovedPets(pagination = {}) {
+      const { limit, offset } = resolvePagination(pagination);
       const result = await query(
-        "select * from approved_pets order by approved_at desc, pet_id asc"
+        "select * from approved_pets order by approved_at desc, pet_id asc limit $1 offset $2",
+        [limit + 1, offset]
       );
+      const { hasMore, nextCursor } = buildNextCursor({
+        offset,
+        limit,
+        returnedCount: result.rows.length
+      });
       return {
-        items: result.rows.map(mapApprovedPet).map(createPublicApprovedPet)
+        items: result.rows.slice(0, limit).map(mapApprovedPet).map(createPublicApprovedPet),
+        nextCursor,
+        hasMore
       };
     },
 

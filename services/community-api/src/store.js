@@ -8,6 +8,7 @@ import {
   users
 } from "../../../packages/community-contracts/src/index.js";
 import { createScoreReportFromImportDraft } from "./scoring.js";
+import { resolvePagination, paginateArray } from "./pagination.js";
 
 export const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -468,16 +469,27 @@ export function createCommunityStore(seed = defaultSeed, options = {}) {
       return clone(state.users[0]);
     },
 
-    getFeed() {
+    getFeed(pagination = {}) {
+      const { limit, offset } = resolvePagination(pagination);
+      const { page, nextCursor, hasMore } = paginateArray(clone(state.feedPosts), {
+        limit,
+        offset
+      });
       return {
-        items: clone(state.feedPosts),
-        nextCursor: "fixture-page-2"
+        items: page,
+        nextCursor,
+        hasMore
       };
     },
 
-    listApprovedPets() {
+    listApprovedPets(pagination = {}) {
+      const { limit, offset } = resolvePagination(pagination);
+      const all = state.approvedPets.map(createPublicApprovedPet);
+      const { page, nextCursor, hasMore } = paginateArray(all, { limit, offset });
       return {
-        items: state.approvedPets.map(createPublicApprovedPet)
+        items: page,
+        nextCursor,
+        hasMore
       };
     },
 

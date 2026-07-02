@@ -118,9 +118,10 @@ export function getMetricsCollector() {
     metricsCollector = new MetricsCollector();
     
     // Reset histograms every 5 minutes to prevent memory growth
-    setInterval(() => {
+    const resetTimer = setInterval(() => {
       metricsCollector.resetHistograms();
     }, 5 * 60_000);
+    resetTimer.unref?.();
   }
   return metricsCollector;
 }

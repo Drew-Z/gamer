@@ -88,7 +88,7 @@ class Logger {
 }
 
 // Create root logger
-export function createLogger(context = ) {
+export function createLogger(context = {}) {
   return new Logger(context);
 }
 

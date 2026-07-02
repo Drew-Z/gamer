@@ -11,6 +11,7 @@ import { releaseCommit } from "./release.js";
 import { createSlaConfig } from "./sla.js";
 import { createCommunityStore } from "./store.js";
 import { handleMetricsRequest } from "./metrics.js";
+import { parsePaginationFromUrl } from "./pagination.js";
 
 const json = (status, body) => ({ status, body });
 const defaultStore = createCommunityStore();
@@ -51,7 +52,7 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
   }
 
   if (method === "GET" && url.pathname === "/v1/feed") {
-    return withResult(store.getFeed(), (feed) => json(200, feed));
+    return withResult(store.getFeed(parsePaginationFromUrl(url)), (feed) => json(200, feed));
   }
 
   if (method === "GET" && url.pathname === "/v1/community-home") {
@@ -63,7 +64,7 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
   }
 
   if (method === "GET" && url.pathname === "/v1/pets/approved") {
-    return withResult(store.listApprovedPets(), (pets) => json(200, pets));
+    return withResult(store.listApprovedPets(parsePaginationFromUrl(url)), (pets) => json(200, pets));
   }
 
   if (

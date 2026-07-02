@@ -116,6 +116,10 @@ Returns community feed posts. Approved pet imports include audit metadata that
 lets clients show source, reward, preview, motion sheet, and export package
 evidence.
 
+Supports `?limit=<n>&cursor=<opaque>` for cursor pagination. `?offset=<n>` is
+accepted for local tooling when no cursor is supplied. Clients should treat
+`nextCursor` as opaque and round-trip it unchanged.
+
 `feed.items[].metadata.exportArtifactPath` is the approved pet package archive
 path carried from the import summary. Android renders it as `Package <path>` in
 feed audit labels.
@@ -146,7 +150,8 @@ Example response:
       }
     }
   ],
-  "nextCursor": "fixture-page-2"
+  "nextCursor": "eyJvZmZzZXQiOjF9",
+  "hasMore": true
 }
 ```
 
@@ -154,6 +159,10 @@ Example response:
 
 Returns the approved pet registry used by Android showcase views and admin
 review trace panels.
+
+Supports the same `?limit=<n>&cursor=<opaque>` pagination shape as the feed
+endpoint, with `?offset=<n>` available for local tooling when no cursor is
+supplied.
 
 `approvedPets.items[].assets.exportArtifactPath` is the approved package archive
 path for loading, auditing, or later package download flows.
@@ -190,7 +199,9 @@ Example response:
       "totalScore": 84,
       "approvedAt": "2026-06-10T16:21:58.516Z"
     }
-  ]
+  ],
+  "nextCursor": null,
+  "hasMore": false
 }
 ```
 
