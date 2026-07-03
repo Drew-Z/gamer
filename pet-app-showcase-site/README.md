@@ -1,7 +1,8 @@
 # Pet App Showcase Site
 
 This is a static showcase/download-status page for the current Gamer Pet Android
-app surface.
+app surface. It keeps the product name as Gamer Pet App while showing the parent
+site brand as `BIAU Port / 泊岸` in the browser title, favicon, and first screen.
 
 ## Preview
 
@@ -21,6 +22,8 @@ BIAU Port entry is served from:
 When syncing this page into the main site, keep it as a static HTML/CSS page and
 reuse public screenshots only. Do not copy private artifact paths, server
 addresses, tokens, signing paths, or local build output into the public site.
+Keep `favicon.svg` aligned with the canonical BIAU Port / 泊岸 mark used by the
+main site and sibling project demos.
 
 ## Assets
 
