@@ -2,6 +2,8 @@
 
 Static showcase and download-status page for the current Gamer Pet Android app surface. It presents the real emulator screenshots that are safe for visitors, while keeping the public APK download disabled until release gates are complete.
 
+简体中文文档：[README.zh-CN.md](README.zh-CN.md)
+
 ![Static Site](https://img.shields.io/badge/site-static%20html-15b8a6)
 ![Android](https://img.shields.io/badge/app-Android%20prototype-3b82f6)
 ![BIAU Port](https://img.shields.io/badge/ecosystem-BIAU%20Port-f59e0b)
