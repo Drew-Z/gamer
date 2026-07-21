@@ -1,8 +1,9 @@
 # Community API
 
-The community API currently runs on local in-memory state and exposes stable JSON
-contracts for the Android community shell, admin review console, and pet package
-integration services.
+The community API exposes stable JSON contracts for the Android community shell,
+admin review console, and pet package integration services. Local development uses
+a JSON snapshot by default; production deployments use PostgreSQL when
+`DATABASE_URL` is configured.
 
 ## Demo auth and gateway tokens
 
@@ -14,7 +15,7 @@ X-Demo-Token: <community-demo-token>
 
 `Authorization: Bearer <community-demo-token>` is also accepted for non-Android
 operator tooling. Public-safe probes stay readable without the community token:
-`GET /health`, `GET /v1/sla`, `GET /worker-readiness`, and
+`GET /health`, `GET /readyz`, `GET /v1/sla`, `GET /worker-readiness`, and
 `GET /app-api-contract`.
 
 When `FANTASY_PET_UPSTREAM_TOKEN` is configured, the Community API injects it as
@@ -116,6 +117,10 @@ Returns community feed posts. Approved pet imports include audit metadata that
 lets clients show source, reward, preview, motion sheet, and export package
 evidence.
 
+Supports `?limit=<n>&cursor=<opaque>` for cursor pagination. `?offset=<n>` is
+accepted for local tooling when no cursor is supplied. Clients should treat
+`nextCursor` as opaque and round-trip it unchanged.
+
 `feed.items[].metadata.exportArtifactPath` is the approved pet package archive
 path carried from the import summary. Android renders it as `Package <path>` in
 feed audit labels.
@@ -146,7 +151,8 @@ Example response:
       }
     }
   ],
-  "nextCursor": "fixture-page-2"
+  "nextCursor": "eyJvZmZzZXQiOjF9",
+  "hasMore": true
 }
 ```
 
@@ -154,6 +160,10 @@ Example response:
 
 Returns the approved pet registry used by Android showcase views and admin
 review trace panels.
+
+Supports the same `?limit=<n>&cursor=<opaque>` pagination shape as the feed
+endpoint, with `?offset=<n>` available for local tooling when no cursor is
+supplied.
 
 `approvedPets.items[].assets.exportArtifactPath` is the approved package archive
 path for loading, auditing, or later package download flows.
@@ -190,7 +200,9 @@ Example response:
       "totalScore": 84,
       "approvedAt": "2026-06-10T16:21:58.516Z"
     }
-  ]
+  ],
+  "nextCursor": null,
+  "hasMore": false
 }
 ```
 

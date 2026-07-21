@@ -31,6 +31,15 @@ test("database config accepts postgresql URL scheme", () => {
   assert.equal(config.sslMode, "verify-ca");
 });
 
+test("explicit SSL mode overrides provider URL defaults", () => {
+  const config = createDatabaseConfig({
+    DATABASE_URL: "postgresql://example.invalid/community?sslmode=require",
+    POSTGRES_SSLMODE: "verify-full"
+  });
+
+  assert.equal(config.sslMode, "verify-full");
+});
+
 test("database config infers SSL for Supabase pooler hosts", () => {
   const config = createDatabaseConfig({
     DATABASE_URL: "postgresql://postgres.example:example@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
@@ -44,5 +53,16 @@ test("database config rejects non-PostgreSQL URLs", () => {
   assert.throws(
     () => createDatabaseConfig({ DATABASE_URL: "mysql://example" }),
     /DATABASE_URL must use postgres/
+  );
+});
+
+test("database config rejects unknown SSL modes instead of disabling TLS", () => {
+  assert.throws(
+    () =>
+      createDatabaseConfig({
+        DATABASE_URL: "postgresql://example.invalid/community?sslmode=require",
+        POSTGRES_SSLMODE: "verify-fll"
+      }),
+    /POSTGRES_SSLMODE must be/u
   );
 });

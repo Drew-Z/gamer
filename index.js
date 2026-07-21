@@ -19,8 +19,8 @@ const { startCommunityApiServer } = await import(
 const publicPort = process.env.PORT ?? "24674";
 const communityApiPort = process.env.COMMUNITY_API_PORT ?? "4000";
 const communityApiUrl = `http://127.0.0.1:${communityApiPort}`;
-const fantasyPetApiBaseUrl =
-  process.env.FANTASY_PET_API_BASE_URL ?? "http://120.48.67.110:8765";
+// Keep the upstream explicit so local starts never call a private host by default.
+const fantasyPetApiBaseUrl = process.env.FANTASY_PET_API_BASE_URL ?? "";
 
 startCommunityApiServer({
   env: {

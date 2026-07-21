@@ -20,7 +20,7 @@ class FantasyPetPackageImportRequestBuilderTest {
               "schema": "fantasy-pet.package-manifest.v1",
               "runId": "run-public-lifecycle-smoke",
               "appJobId": "public-lifecycle-smoke",
-              "sourceOutput": "D:/workspace4Codex/fantasy-pet-rule/runs/job/tasks/output.json",
+              "sourceOutput": "runs/job/tasks/output.json",
               "acceptedBy": "human-review",
               "sourceDownloadId": "artifact-1",
               "sourceTaskId": "codex-worker-task",
@@ -74,7 +74,7 @@ class FantasyPetPackageImportRequestBuilderTest {
               "files": [
                 {
                   "kind": "candidate",
-                  "path": "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+                  "path": "runs/job/output.png"
                 }
               ]
             }

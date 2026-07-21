@@ -5,8 +5,8 @@ Pet-first app and community ecosystem workspace.
 `gamer` is primarily the app/community repository. It owns the Android app,
 community API, admin review prototype, and shared app-facing packages. The
 server-side generation rules, worker orchestration, private pipeline, QA gates,
-and public app API contract live in the sibling repository:
-`D:\workspace4Codex\pet\fantasy-pet-rule`.
+and public app API contract are provided by `fantasy-pet-rule` (deployed to
+Baidu server).
 
 ## Structure
 
@@ -86,7 +86,7 @@ Run the standard verification set before committing a phase:
 npm.cmd test
 node --test services/community-api/src/database/migrations.test.js services/community-api/src/database/config.test.js
 node --test services/community-api/src/database/*.test.js
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community testDebugUnitTest --console=plain
+cd apps\android-community && .\gradlew testDebugUnitTest --console=plain && cd ..\..
 docker compose config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml --profile fantasy-pet config
 docker compose -f compose.yaml -f compose.fantasy-pet.yaml -f compose.private-ops.yaml --profile fantasy-pet --profile private-ops config
@@ -104,6 +104,17 @@ npm.cmd run start:pet-generator
 ```
 
 ## Docker
+
+### Render Community API
+
+The repository-root `render.yaml` deploys the Community API as a Docker Web
+Service from `main`. Render uses the repository root as the Docker context,
+runs database migrations before listening, and checks `GET /readyz` against the
+configured store. Free instances require an external PostgreSQL `DATABASE_URL`;
+the deployment refuses the ephemeral JSON fallback.
+
+See `docs/deploy/render-community-api.md` for Blueprint setup, required secrets,
+verification, cutover, and rollback.
 
 Run the service skeletons with Docker Compose:
 
@@ -404,13 +415,13 @@ desktop-pet generation loop. The `fantasy-pet-rule` service lives beside this
 workspace:
 
 ```text
-D:\workspace4Codex\pet\fantasy-pet-rule
+D:\workspace4Cursor\pet\fantasy-pet-rule
 ```
 
 Start the public app API without admin endpoints:
 
 ```powershell
-Set-Location D:\workspace4Codex\pet\fantasy-pet-rule
+Set-Location D:\workspace4Cursor\pet\fantasy-pet-rule
 uv run --with-requirements requirements-server.txt python tools\app_server.py --run-root runs --host 127.0.0.1 --port 8765
 ```
 
@@ -436,7 +447,7 @@ Use this default single-backend setup for emulator builds:
 
 ```powershell
 $env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
+D:\workspace4Cursor\pet\floating-pet-android\gradlew.bat -p D:\workspace4Cursor\pet\gamer\apps\android-community assembleDebug
 ```
 
 Override both local API targets only when you intentionally want Android to
@@ -445,7 +456,7 @@ connect directly to the public `fantasy-pet-rule` server:
 ```powershell
 $env:COMMUNITY_API_BASE_URL = "http://10.0.2.2:4000"
 $env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community assembleDebug
+D:\workspace4Cursor\pet\floating-pet-android\gradlew.bat -p D:\workspace4Cursor\pet\gamer\apps\android-community assembleDebug
 ```
 
 Use `http://10.0.2.2:8765` for the Android emulator to reach the host machine's
@@ -586,7 +597,7 @@ the emulator before doing visual QA.
 
 ```powershell
 # Terminal A: seed a public demo job and keep the public API running.
-Set-Location D:\workspace4Codex\pet\fantasy-pet-rule
+Set-Location D:\workspace4Cursor\pet\fantasy-pet-rule
 $runRoot = Join-Path $env:TEMP "fantasy-pet-android-ui"
 Remove-Item -LiteralPath $runRoot -Recurse -Force -ErrorAction SilentlyContinue
 uv run --with-requirements requirements-server.txt python tools\run_server_job_lifecycle_demo.py --run-dir "$runRoot\public-lifecycle-smoke" --app-job-id public-lifecycle-smoke --run-id public-lifecycle-smoke --description "A tiny stardust dragon desktop pet with smooth idle motion." --body-shape wide-tail
@@ -601,7 +612,7 @@ npm.cmd run start:community-api
 ```powershell
 # Terminal C: install an emulator build pointed at the host service.
 $env:FANTASY_PET_API_BASE_URL = "http://10.0.2.2:8765"
-D:\workspace4Codex\pet\floating-pet-android\gradlew.bat -p D:\workspace4Codex\pet\gamer\apps\android-community installDebug --console=plain --rerun-tasks
+D:\workspace4Cursor\pet\floating-pet-android\gradlew.bat -p D:\workspace4Cursor\pet\gamer\apps\android-community installDebug --console=plain --rerun-tasks
 adb devices
 adb -s emulator-5554 shell pm clear com.gamer.community
 adb -s emulator-5554 shell am start -n com.gamer.community/.MainActivity

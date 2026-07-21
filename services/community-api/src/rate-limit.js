@@ -24,15 +24,34 @@ export function createRateLimiterPolicy({
   windowMs = 60_000,
   writeMax = 4,
   readMax = 60,
-  exemptPaths = ["/health"]
+  maxBuckets = 10_000,
+  exemptPaths = ["/health", "/readyz"]
 } = {}) {
   const writeBuckets = new Map();
   const readBuckets = new Map();
+  const bucketLimit = readPositiveInteger(maxBuckets, 10_000);
+
+  function startWindow(buckets, ip, now) {
+    if (!buckets.has(ip) && buckets.size >= bucketLimit) {
+      for (const [key, candidate] of buckets) {
+        if (now - candidate.windowStart >= windowMs) {
+          buckets.delete(key);
+        }
+      }
+
+      while (buckets.size >= bucketLimit) {
+        buckets.delete(buckets.keys().next().value);
+      }
+    }
+
+    buckets.delete(ip);
+    buckets.set(ip, { windowStart: now, count: 1 });
+  }
 
   function evaluate(buckets, ip, max, now) {
     const bucket = buckets.get(ip);
     if (!bucket || now - bucket.windowStart >= windowMs) {
-      buckets.set(ip, { windowStart: now, count: 1 });
+      startWindow(buckets, ip, now);
       return {
         limited: 1 > max,
         remaining: Math.max(0, max - 1),
@@ -54,7 +73,7 @@ export function createRateLimiterPolicy({
       return exemptPaths.includes(path);
     },
     check(method, ip, now = Date.now()) {
-      if (method === "POST") {
+      if (["DELETE", "PATCH", "POST", "PUT"].includes(String(method).toUpperCase())) {
         return evaluate(writeBuckets, ip, writeMax, now);
       }
       return evaluate(readBuckets, ip, readMax, now);

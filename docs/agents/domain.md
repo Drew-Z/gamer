@@ -15,7 +15,7 @@ If these files do not exist, proceed silently. Do not flag their absence or sugg
 
 `gamer` is the app/community workspace. It owns the Android app, app-facing community services, admin review prototype, and shared packages used by the app/community surface.
 
-`fantasy-pet-rule` is a separate sibling repository under `D:\workspace4Codex\pet\fantasy-pet-rule`. It owns server-side generation rules, worker orchestration, pipeline logic, QA gates, and the public app API contract consumed by this repo.
+`fantasy-pet-rule` is a separate sibling repository under `D:\workspace4Cursor\pet\fantasy-pet-rule`. It owns server-side generation rules, worker orchestration, pipeline logic, QA gates, and the public app API contract consumed by this repo.
 
 Do not move worker, Codex, GenericAgent, private generation, or server-admin concerns into `gamer` unless the user explicitly changes the repository boundary.
 

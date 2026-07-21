@@ -1,5 +1,6 @@
 const PUBLIC_SAFE_DEMO_PATHS = new Set([
   "/health",
+  "/readyz",
   "/v1/sla",
   "/app-api-contract",
   "/worker-readiness"

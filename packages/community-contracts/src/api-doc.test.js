@@ -18,6 +18,8 @@ test("community API docs include export artifact response examples", () => {
   assert.ok(doc.includes("dailyCheckIn"));
   assert.ok(doc.includes("submissionsSummary.pendingCount"));
   assert.ok(doc.includes("feed.items[].metadata.exportArtifactPath"));
+  assert.ok(doc.includes("Supports `?limit=<n>&cursor=<opaque>`"));
+  assert.ok(doc.includes('"hasMore": true'));
   assert.ok(doc.includes('"exportArtifactPath": "exports/stardust-package.zip"'));
   assert.ok(doc.includes("GET /v1/pets/approved"));
   assert.ok(doc.includes("approvedPets.items[].assets.exportArtifactPath"));

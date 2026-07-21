@@ -38,6 +38,29 @@ test("health route reports service status", () => {
   assert.equal(response.body.release.commit, "abc123");
 });
 
+test("readiness route checks the configured store", async () => {
+  let checks = 0;
+  const response = await handleCommunityRequest("GET", "/readyz", {
+    env: {
+      DATABASE_URL: "postgresql://example.invalid/community"
+    },
+    store: {
+      async getFeed() {
+        checks += 1;
+        return { items: [] };
+      }
+    }
+  });
+
+  assert.equal(checks, 1);
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, {
+    ok: true,
+    service: "community-api",
+    storage: "postgres"
+  });
+});
+
 test("feed route returns fixture posts", () => {
   const response = handleCommunityRequest("GET", "/v1/feed", {
     store: createCommunityStore()
@@ -46,6 +69,24 @@ test("feed route returns fixture posts", () => {
   assert.equal(response.status, 200);
   assert.ok(response.body.items.length >= 2);
   assert.ok(response.body.items.every((post) => post.petId));
+});
+
+test("feed route paginates posts with opaque cursors", () => {
+  const store = createCommunityStore();
+  const firstPage = handleCommunityRequest("GET", "/v1/feed?limit=1", { store });
+  const secondPage = handleCommunityRequest(
+    "GET",
+    `/v1/feed?limit=1&cursor=${encodeURIComponent(firstPage.body.nextCursor)}`,
+    { store }
+  );
+
+  assert.equal(firstPage.status, 200);
+  assert.equal(firstPage.body.items.length, 1);
+  assert.equal(firstPage.body.hasMore, true);
+  assert.ok(firstPage.body.nextCursor);
+  assert.equal(secondPage.status, 200);
+  assert.equal(secondPage.body.items.length, 1);
+  assert.notEqual(secondPage.body.items[0].id, firstPage.body.items[0].id);
 });
 
 test("community home route returns public home summary", () => {
@@ -658,6 +699,35 @@ test("approved pets route returns registered imported pet assets", () => {
   assert.equal(response.body.items.length, 1);
   assert.equal(response.body.items[0].petId, "pet-stardust-001");
   assert.equal(response.body.items[0].displayName, "Stardust Dragon");
+});
+
+test("approved pets route accepts limit and offset pagination", () => {
+  const state = createDefaultCommunityState();
+  const [firstPet] = state.approvedPets;
+  const store = createCommunityStore({
+    ...state,
+    approvedPets: [
+      firstPet,
+      {
+        ...firstPet,
+        petId: "pet-stardust-002",
+        displayName: "Stardust Dragon 2"
+      }
+    ]
+  });
+
+  const firstPage = handleCommunityRequest("GET", "/v1/pets/approved?limit=1", { store });
+  const secondPage = handleCommunityRequest("GET", "/v1/pets/approved?limit=1&offset=1", { store });
+
+  assert.equal(firstPage.status, 200);
+  assert.equal(firstPage.body.items.length, 1);
+  assert.equal(firstPage.body.hasMore, true);
+  assert.ok(firstPage.body.nextCursor);
+  assert.equal(secondPage.status, 200);
+  assert.equal(secondPage.body.items.length, 1);
+  assert.equal(secondPage.body.items[0].petId, "pet-stardust-002");
+  assert.equal(secondPage.body.hasMore, false);
+  assert.equal(secondPage.body.nextCursor, null);
 });
 
 test("approved pet package route returns export artifact descriptor", () => {

@@ -147,7 +147,7 @@ class HttpCommunityApiClientTest {
               "source": {
                 "kind": "fantasy-pet-rule",
                 "runId": "stardust-run-001",
-                "statePath": "D:/workspace4Codex/fantasy-pet-rule/runs/stardust/state.json"
+                "statePath": "runs/stardust/state.json"
               },
               "submissionId": "submission-local-001",
               "importDraftId": "import-draft-local-001",

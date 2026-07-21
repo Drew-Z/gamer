@@ -232,6 +232,7 @@ if (smokeSurface === "admin-review") {
   await runCheck("protected community write rejects missing token", async () => {
     const response = await requestJson("/v1/check-in", {
       method: "POST",
+      basicAuth: false,
       body: {
         date: "2026-06-24"
       }

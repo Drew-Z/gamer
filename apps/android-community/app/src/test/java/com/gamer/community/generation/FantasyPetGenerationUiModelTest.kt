@@ -561,7 +561,7 @@ class FantasyPetGenerationUiModelTest {
             packageImportCandidateMessage(
                 packageImportDraftFailureCandidate(
                     pendingCandidate,
-                    "D:/workspace4Codex/fantasy-pet-rule/runs/job/server_run.json"
+                    "server_run.json"
                 )
             )
         )
@@ -601,7 +601,7 @@ class FantasyPetGenerationUiModelTest {
         assertEquals(
             "Community submission blocked.",
             packageImportSubmissionFailureMessage(
-                "D:/workspace4Codex/fantasy-pet-rule/runs/job/server_run.json"
+                "server_run.json"
             )
         )
     }
@@ -632,7 +632,7 @@ class FantasyPetGenerationUiModelTest {
             "Community submission status unavailable.",
             packageImportSubmissionStatusMessage(
                 pendingSubmission.copy(
-                    id = "D:/workspace4Codex/fantasy-pet-rule/runs/job/submission.json"
+                    id = "runs/job/submission.json"
                 )
             )
         )
@@ -878,7 +878,7 @@ class FantasyPetGenerationUiModelTest {
                     packageFileName = "pet-public-lifecycle-smoke.zip",
                     packageByteCount = 664L,
                     status = "waiting-for-community-import",
-                    summary = "D:/workspace4Codex/fantasy-pet-rule/runs/job/server_run.json"
+                    summary = "server_run.json"
                 ),
                 readyPackageImportDraft = null,
                 packageImportSubmissionId = "D:/secret/runs/submission.json",
@@ -1119,7 +1119,7 @@ class FantasyPetGenerationUiModelTest {
                 )
             )
         )
-        val unsafeNotes = "D:/workspace4Codex/fantasy-pet-rule/runs/job/server_run.json"
+        val unsafeNotes = "server_run.json"
 
         assertEquals(
             "Revise and reject need specific visual notes.",
