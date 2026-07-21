@@ -10,6 +10,22 @@ android {
     def communityApiBaseUrl = System.getenv('COMMUNITY_API_BASE_URL') ?: 'http://10.0.2.2:4000'
     def fantasyPetApiBaseUrl = System.getenv('FANTASY_PET_API_BASE_URL') ?: communityApiBaseUrl
     def communityDemoToken = System.getenv('COMMUNITY_DEMO_TOKEN') ?: ''
+    def releaseSigning = [
+        storeFile: System.getenv('ANDROID_RELEASE_STORE_FILE'),
+        storePassword: System.getenv('ANDROID_RELEASE_STORE_PASSWORD'),
+        keyAlias: System.getenv('ANDROID_RELEASE_KEY_ALIAS'),
+        keyPassword: System.getenv('ANDROID_RELEASE_KEY_PASSWORD')
+    ]
+    def missingReleaseSigningKeys = releaseSigning.findAll { _, value ->
+        value == null || value.trim().isEmpty()
+    }.keySet()
+
+    if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') } &&
+        !missingReleaseSigningKeys.isEmpty()) {
+        throw new GradleException(
+            "Release signing is incomplete. Missing: ${missingReleaseSigningKeys.join(', ')}"
+        )
+    }
 
     defaultConfig {
         applicationId = 'com.gamer.community'
@@ -28,6 +44,25 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+
+    signingConfigs {
+        if (missingReleaseSigningKeys.isEmpty()) {
+            release {
+                storeFile = file(releaseSigning.storeFile)
+                storePassword = releaseSigning.storePassword
+                keyAlias = releaseSigning.keyAlias
+                keyPassword = releaseSigning.keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (missingReleaseSigningKeys.isEmpty()) {
+                signingConfig = signingConfigs.release
+            }
+        }
     }
 
     compileOptions {

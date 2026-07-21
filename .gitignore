@@ -10,6 +10,9 @@ node_modules/
 !.env.private-ops.example
 backups/
 secrets/
+*.jks
+*.keystore
+*.p12
 services/community-api/data/
 services/pet-generator/data/
 .venv/

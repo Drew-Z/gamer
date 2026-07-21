@@ -340,15 +340,19 @@ class PetShellAppFlowTest {
         assertEquals("fantasy-pet.app-job-create-request.v1", generationClient.createdRequest?.schema)
         assertEquals("tiny stardust dragon", generationClient.createdRequest?.description)
 
-        composeRule.onNodeWithText("鍊欓€夊浘鐢诲粖")
+        composeRule.onNodeWithContentDescription("generation-review-desk")
             .performScrollTo()
             .assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithContentDescription(
+                "generation-candidate-select-candidate-1"
+            ).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("candidate-select-candidate-1")
             .performScrollTo()
             .performClick()
-        composeRule.onNodeWithText("宸查€変负瀹℃牳瀵硅薄")
-            .performScrollTo()
-            .assertIsDisplayed()
+        composeRule.onNodeWithTag("candidate-select-candidate-1")
+            .assertIsNotEnabled()
         composeRule.onNodeWithTag("review-accept")
             .performScrollTo()
             .performClick()
@@ -517,7 +521,10 @@ class PetShellAppFlowTest {
         val description = args.getString("liveDescription")
             ?: "crystal fox mage pet standing cheerful blue scarf"
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val realGenerationClient = HttpFantasyPetGenerationClient(BuildConfig.FANTASY_PET_API_BASE_URL)
+        val realGenerationClient = HttpFantasyPetGenerationClient(
+            baseUrl = BuildConfig.FANTASY_PET_API_BASE_URL,
+            demoToken = BuildConfig.COMMUNITY_DEMO_TOKEN
+        )
         var createResult: ApiCallResult<PetGenerationJobResponseDto>? = null
         val generationClient = object : FantasyPetGenerationClient {
             override suspend fun createJob(
@@ -569,7 +576,10 @@ class PetShellAppFlowTest {
         composeRule.setContent {
             PetShellApp(
                 repository = CommunityRepository(
-                    HttpCommunityApiClient(BuildConfig.COMMUNITY_API_BASE_URL)
+                    HttpCommunityApiClient(
+                        baseUrl = BuildConfig.COMMUNITY_API_BASE_URL,
+                        demoToken = BuildConfig.COMMUNITY_DEMO_TOKEN
+                    )
                 ),
                 generationService = FantasyPetGenerationService(
                     client = generationClient,

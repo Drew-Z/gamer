@@ -406,6 +406,10 @@ cd apps/android-community
 .\gradlew.bat assembleDebug
 ```
 
+For a controlled signed APK/AAB build, signing-key handling, independent
+verification, and the current backend release caveat, see
+[`docs/ops/android-release-build.md`](docs/ops/android-release-build.md).
+
 ### Fantasy Pet Generation API
 
 The Android app should normally use the community API as its single backend

@@ -1424,7 +1424,11 @@ private fun DesktopPetStage(
                 pet = selectedPet,
                 action = state.petAction,
                 strings = strings,
-                modifier = Modifier.size(166.dp)
+                modifier = Modifier
+                    .size(166.dp)
+                    .semantics {
+                        contentDescription = strings.petAvatarContentDescription
+                    }
             )
             SpeechBubble(
                 text = strings.speechBubble(state.speechBubble),
@@ -2109,11 +2113,11 @@ private fun CommunityHome(
                 post = currentPost,
                 strings = strings
             )
-            FeedControls(
-                strings = strings,
-                onNavigate = onNavigate
-            )
         }
+        FeedControls(
+            strings = strings,
+            onNavigate = onNavigate
+        )
     }
 }
 
