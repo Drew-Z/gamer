@@ -6,7 +6,7 @@ export const validPetPackageManifest = {
   source: {
     kind: "fantasy-pet-rule",
     runId: "stardust-chinese-dragon-codex-02",
-    statePath: "D:/workspace4Codex/fantasy-pet-rule/runs/stardust-chinese-dragon-codex-02/state.json"
+    statePath: "D:/workspace4Cursor/pet/fantasy-pet-rule/runs/stardust-chinese-dragon-codex-02/state.json"
   },
   assets: {
     baseImage: "assets/base_identity_accepted_clean.png",

@@ -224,12 +224,12 @@ test("formatImportEvidenceDetails summarizes import evidence fields", () => {
 
 test("createFantasyPetImportPayload trims state path and ownership claim", () => {
   const payload = createFantasyPetImportPayload({
-    statePath: "  D:/workspace4Codex/fantasy-pet-rule/runs/demo/state.json  ",
+    statePath: "  D:/workspace4Cursor/pet/fantasy-pet-rule/runs/demo/state.json  ",
     ownershipClaimId: "  claim-pet-demo-001  "
   });
 
   assert.deepEqual(payload, {
-    statePath: "D:/workspace4Codex/fantasy-pet-rule/runs/demo/state.json",
+    statePath: "D:/workspace4Cursor/pet/fantasy-pet-rule/runs/demo/state.json",
     ownershipClaimId: "claim-pet-demo-001"
   });
 });
@@ -495,7 +495,7 @@ test("createApprovedPetRegistryModel summarizes approved pet assets", () => {
       {
         petId: "pet-unsafe-001",
         assets: {
-          previewUrl: "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+          previewUrl: "file:///D:/workspace4Cursor/pet/fantasy-pet-rule/runs/job/output.png"
         }
       }
     ]

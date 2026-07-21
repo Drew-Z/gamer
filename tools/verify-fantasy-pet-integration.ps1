@@ -1,5 +1,5 @@
 param(
-    [string]$GradleWrapper = "D:\workspace4Codex\floating-pet-android\gradlew.bat",
+    [string]$GradleWrapper = "D:\workspace4Cursor\pet\floating-pet-android\gradlew.bat",
     [switch]$IncludeAndroidUi,
     [int]$AndroidUiPublicApiPort = 18765
 )

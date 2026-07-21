@@ -47,7 +47,8 @@ const directProxyPrefixes = [
   "/v1/",
   "/pet-generation-jobs",
   "/worker-readiness",
-  "/app-api-contract"
+  "/app-api-contract",
+  "/metrics"
 ];
 
 const directProxyEndpoints = [

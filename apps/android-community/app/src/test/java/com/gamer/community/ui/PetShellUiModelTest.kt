@@ -1026,7 +1026,7 @@ class PetShellUiModelTest {
             displayName = "Generated pet",
             sourceKind = "",
             previewPath = "runs/job/output.png",
-            previewUrl = "file:///D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+            previewUrl = "file:///D:/workspace4Cursor/pet/fantasy-pet-rule/runs/job/output.png"
         )
 
         assertEquals("", approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674"))
@@ -1037,7 +1037,7 @@ class PetShellUiModelTest {
         val pet = approvedPet(
             petId = "issue-1-fresh-timeout3600-20260610-1",
             displayName = "Generated pet",
-            previewPath = "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png"
+            previewPath = "D:/workspace4Cursor/pet/fantasy-pet-rule/runs/job/output.png"
         )
 
         assertEquals("", approvedPetPreviewUrl(pet, baseUrl = "http://olivia.hidencloud.com:24674"))
@@ -1059,7 +1059,7 @@ class PetShellUiModelTest {
             "http://olivia.hidencloud.com:24674/pet-generation-jobs/job/artifacts/artifact-34",
             "/pet-generation-jobs/job/artifacts/artifact-34",
             "artifact-34",
-            "D:/workspace4Codex/fantasy-pet-rule/runs/job/output.png",
+            "D:/workspace4Cursor/pet/fantasy-pet-rule/runs/job/output.png",
             "server-proof-summary.json"
         )
 

@@ -1,6 +1,6 @@
 param(
     [string]$FantasyPetRuleRoot = "",
-    [string]$GradleWrapper = "D:\workspace4Codex\floating-pet-android\gradlew.bat",
+    [string]$GradleWrapper = "D:\workspace4Cursor\pet\floating-pet-android\gradlew.bat",
     [string]$RunRoot = "",
     [string]$AppJobId = "publicdemo1",
     [string]$Description = "A tiny stardust dragon desktop pet with smooth idle motion.",
