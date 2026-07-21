@@ -30,8 +30,8 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
 
-      - name: Run test suite
-        run: npm test
+      - name: Run deployment test suite
+        run: npm run test:community-api:ci
 
       - name: Build Community API image
         run: docker build --file services/community-api/Dockerfile --tag gamer-community-api:ci .

@@ -74,6 +74,11 @@ npm.cmd test
 docker build -f services/community-api/Dockerfile -t gamer-community-api:render .
 ```
 
+GitHub's `Community API CI` runs `npm run test:community-api:ci`, the subset that
+is self-contained in this repository checkout. The full `npm test` command also
+checks Windows tooling and integration contracts that use the sibling
+`fantasy-pet-rule` workspace, so keep running it from the local pet workspace.
+
 After Render deploys, replace the host and run:
 
 ```powershell
