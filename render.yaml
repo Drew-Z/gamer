@@ -1,6 +1,7 @@
 services:
   - type: web
     name: gamer-community-api
+    repo: https://github.com/Drew-Z/gamer
     runtime: docker
     plan: free
     region: singapore
@@ -10,7 +11,6 @@ services:
     dockerCommand: node services/community-api/src/render-start.js
     healthCheckPath: /readyz
     autoDeployTrigger: checksPass
-    maxShutdownDelaySeconds: 30
     buildFilter:
       paths:
         - package.json
