@@ -27,6 +27,8 @@ services:
         sync: false
       - key: POSTGRES_SSLMODE
         value: verify-full
+      - key: AIVEN_CA_CERT_PATH
+        value: /etc/secrets/aiven-project-ca.pem
       - key: COMMUNITY_DEMO_TOKEN
         sync: false
       - key: FANTASY_PET_API_BASE_URL
