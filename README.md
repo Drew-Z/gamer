@@ -641,3 +641,7 @@ node --test packages/community-contracts/src/fantasy-pet-community-api-safety-co
 This guard reads the current `fantasy-pet-rule` handoff record and verifies that
 the community API rejects every internal artifact basename when building import
 drafts from downloaded `pet.zip` package manifests.
+
+## License
+
+This repository is licensed under the [Apache License 2.0](LICENSE).
