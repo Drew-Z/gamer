@@ -46,9 +46,14 @@ COMMUNITY_ADMIN_REVIEW_TRUSTED_ORIGINS
 ```
 
 `POSTGRES_SSLMODE=verify-full`, production error redaction, and bounded request
-rate limiting are enabled by the Blueprint. If the database provider uses a
-private CA, add its certificate as a Render secret file and set
-`AIVEN_CA_CERT_PATH` to that file's `/etc/secrets/...` path.
+rate limiting are enabled by the Blueprint. The current Aiven deployment uses a
+project CA: upload it as a Render secret file named `aiven-project-ca.pem` before
+the first deploy. The Blueprint sets `AIVEN_CA_CERT_PATH` to
+`/etc/secrets/aiven-project-ca.pem`.
+
+Render Free rejects `maxShutdownDelaySeconds`, even though standalone Blueprint
+validation accepts the field. Keep the platform default shutdown delay on the
+Free plan.
 
 ## Deployment behavior
 
