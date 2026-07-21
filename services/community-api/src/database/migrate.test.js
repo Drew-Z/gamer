@@ -106,6 +106,29 @@ test("pg client options move Aiven CA verification out of the connection string"
 
   assert.equal(options.connectionString.includes("sslmode"), false);
   assert.deepEqual(options.ssl, {
-    ca: "ca from /run/secrets/aiven-ca.pem"
+    ca: "ca from /run/secrets/aiven-ca.pem",
+    rejectUnauthorized: true
   });
+});
+
+test("pg client options verify server certificates for Render TLS", () => {
+  const options = createPgClientOptions({
+    databaseUrl: "postgresql://example.invalid/community?sslmode=require",
+    sslMode: "verify-full",
+    caCertPath: ""
+  });
+
+  assert.equal(options.connectionString.includes("sslmode"), false);
+  assert.deepEqual(options.ssl, { rejectUnauthorized: true });
+});
+
+test("pg client options can explicitly disable TLS for private local networks", () => {
+  const options = createPgClientOptions({
+    databaseUrl: "postgresql://postgres:postgres@postgres:5432/community?sslmode=require",
+    sslMode: "disable",
+    caCertPath: ""
+  });
+
+  assert.equal(options.connectionString.includes("sslmode"), false);
+  assert.equal(options.ssl, false);
 });

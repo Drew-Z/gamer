@@ -38,6 +38,29 @@ test("health route reports service status", () => {
   assert.equal(response.body.release.commit, "abc123");
 });
 
+test("readiness route checks the configured store", async () => {
+  let checks = 0;
+  const response = await handleCommunityRequest("GET", "/readyz", {
+    env: {
+      DATABASE_URL: "postgresql://example.invalid/community"
+    },
+    store: {
+      async getFeed() {
+        checks += 1;
+        return { items: [] };
+      }
+    }
+  });
+
+  assert.equal(checks, 1);
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, {
+    ok: true,
+    service: "community-api",
+    storage: "postgres"
+  });
+});
+
 test("feed route returns fixture posts", () => {
   const response = handleCommunityRequest("GET", "/v1/feed", {
     store: createCommunityStore()

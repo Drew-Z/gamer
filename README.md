@@ -105,6 +105,17 @@ npm.cmd run start:pet-generator
 
 ## Docker
 
+### Render Community API
+
+The repository-root `render.yaml` deploys the Community API as a Docker Web
+Service from `main`. Render uses the repository root as the Docker context,
+runs database migrations before listening, and checks `GET /readyz` against the
+configured store. Free instances require an external PostgreSQL `DATABASE_URL`;
+the deployment refuses the ephemeral JSON fallback.
+
+See `docs/deploy/render-community-api.md` for Blueprint setup, required secrets,
+verification, cutover, and rollback.
+
 Run the service skeletons with Docker Compose:
 
 ```powershell

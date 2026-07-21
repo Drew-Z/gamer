@@ -1,4 +1,5 @@
 const postgresProtocols = new Set(["postgres:", "postgresql:"]);
+const postgresSslModes = new Set(["", "disable", "require", "verify-ca", "verify-full"]);
 
 export function createDatabaseConfig(env = process.env) {
   const databaseUrl = (env.DATABASE_URL ?? "").trim();
@@ -31,11 +32,18 @@ export function createDatabaseConfig(env = process.env) {
     parsed.hostname.endsWith(".supabase.com")
       ? "require"
       : "";
+  const sslMode = envSslMode || urlSslMode || inferredSslMode;
+
+  if (!postgresSslModes.has(sslMode)) {
+    throw new Error(
+      "POSTGRES_SSLMODE must be disable, require, verify-ca, or verify-full"
+    );
+  }
 
   return {
     mode: "postgres",
     databaseUrl,
-    sslMode: urlSslMode || envSslMode || inferredSslMode,
+    sslMode,
     caCertPath: (env.AIVEN_CA_CERT_PATH ?? "").trim()
   };
 }

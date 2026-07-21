@@ -6,6 +6,7 @@
     "test": "node --test \"apps/**/*.test.js\" \"packages/**/*.test.js\" \"services/**/*.test.js\" \"tools/**/*.test.js\"",
     "start:admin-review": "node apps/admin-review/server.js",
     "start:community-api": "node services/community-api/src/server.js",
+    "start:community-api:render": "node services/community-api/src/render-start.js",
     "start:pet-generator": "node services/pet-generator/src/server.js",
     "check:ga-random-pet-worker": "node services/pet-generator/src/ga-random-pet-worker.js --config-check",
     "start:ga-random-pet-worker": "node services/pet-generator/src/ga-random-pet-worker.js",

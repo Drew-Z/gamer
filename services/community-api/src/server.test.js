@@ -109,6 +109,37 @@ test("community API port prefers PORT then SERVER_PORT then default", () => {
   assert.equal(resolveCommunityApiPort({}), 4000);
 });
 
+test("HTTP readiness stays public and redacts production dependency errors", async () => {
+  const server = http.createServer(
+    createCommunityHttpHandler({
+      env: {
+        COMMUNITY_DEMO_TOKEN: "community-secret",
+        COMMUNITY_RATE_LIMIT_ENABLED: "1",
+        COMMUNITY_RATE_LIMIT_READ_MAX: "1",
+        NODE_ENV: "production"
+      },
+      store: {
+        async getFeed() {
+          throw new Error("database password should never be returned");
+        }
+      }
+    })
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+  try {
+    const first = await requestJson(server, "GET", "/readyz");
+    const second = await requestJson(server, "GET", "/readyz");
+
+    assert.equal(first.status, 500);
+    assert.equal(first.body.error, "internal_error");
+    assert.equal(first.body.message, "Internal server error");
+    assert.equal(second.status, 500);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("CORS headers are emitted only for configured allowed origins", () => {
   const env = {
     COMMUNITY_CORS_ALLOWED_ORIGINS: "https://desktop-pet.example.internal"

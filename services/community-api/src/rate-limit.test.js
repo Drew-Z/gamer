@@ -26,6 +26,30 @@ test("write limiter resets after the window elapses", () => {
   assert.equal(policy.check("POST", "ip", 1_500).limited, false);
 });
 
+test("write limiter covers every unsafe HTTP method", () => {
+  for (const method of ["DELETE", "PATCH", "POST", "PUT", "patch"]) {
+    const policy = createRateLimiterPolicy({ writeMax: 1, readMax: 10 });
+    assert.equal(policy.check(method, "ip", 0).limited, false);
+    assert.equal(policy.check(method, "ip", 0).limited, true);
+  }
+});
+
+test("rate limiter bounds retained client buckets", () => {
+  const policy = createRateLimiterPolicy({ writeMax: 1, maxBuckets: 2 });
+  assert.equal(policy.check("POST", "first", 0).limited, false);
+  assert.equal(policy.check("POST", "second", 0).limited, false);
+  assert.equal(policy.check("POST", "third", 0).limited, false);
+
+  assert.equal(policy.check("POST", "first", 0).limited, false);
+  assert.equal(policy.check("POST", "first", 0).limited, true);
+});
+
+test("rate limiter falls back when the bucket limit is invalid", () => {
+  const policy = createRateLimiterPolicy({ writeMax: 1, maxBuckets: 0 });
+  assert.equal(policy.check("POST", "ip", 0).limited, false);
+  assert.equal(policy.check("POST", "ip", 0).limited, true);
+});
+
 test("read limiter is independent and more generous", () => {
   const policy = createRateLimiterPolicy({ windowMs: 60_000, writeMax: 4, readMax: 60 });
   for (let i = 0; i < 4; i += 1) {
@@ -50,6 +74,12 @@ test("exempt paths bypass limiting", () => {
   const policy = createRateLimiterPolicy({ exemptPaths: ["/health"] });
   assert.equal(policy.isExempt("/health"), true);
   assert.equal(policy.isExempt("/v1/feed"), false);
+});
+
+test("default policy exempts liveness and readiness probes", () => {
+  const policy = createRateLimiterPolicy();
+  assert.equal(policy.isExempt("/health"), true);
+  assert.equal(policy.isExempt("/readyz"), true);
 });
 
 test("remaining decrements within the window", () => {

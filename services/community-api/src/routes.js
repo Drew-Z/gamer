@@ -27,6 +27,16 @@ export function handleCommunityRequest(method, requestUrl, options = {}) {
   const env = options.env ?? process.env;
   const currentUserId = body.userId ?? users[0].id;
 
+  if (method === "GET" && url.pathname === "/readyz") {
+    return withResult(store.getFeed({ limit: 1 }), () =>
+      json(200, {
+        ok: true,
+        service: "community-api",
+        storage: String(env.DATABASE_URL ?? "").trim() ? "postgres" : "local"
+      })
+    );
+  }
+
   if (method === "GET" && url.pathname === "/health") {
     return json(200, {
       ok: true,

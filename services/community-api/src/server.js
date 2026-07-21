@@ -283,7 +283,12 @@ export function createCommunityHttpHandler(options = {}) {
     } catch (error) {
       writeJson(response, 500, {
         error: "internal_error",
-        message: error instanceof Error ? error.message : "Unknown server error"
+        message:
+          env.NODE_ENV === "production"
+            ? "Internal server error"
+            : error instanceof Error
+              ? error.message
+              : "Unknown server error"
       });
     }
   };
